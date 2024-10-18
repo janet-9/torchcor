@@ -9,7 +9,7 @@ from boundary import apply_dirichlet_boundary_conditions
 
 
 # Step 1: Define problem parameters
-L = 100  # Length of domain in x and y directions
+L = 1000  # Length of domain in x and y directions
 T0 = 100
 Nx, Ny = L, L  # Number of grid points in x and y
 alpha = 6  # Thermal diffusivity
@@ -64,6 +64,8 @@ for n in range(1, nt):
 
     if not converge:
         print(f"The solution did not converge at {n} iteration")
+    else:
+        print(f"{n} / {nt}")
     U[n, :, :] = u.reshape((L, L))
 
 print("saving gif file")
