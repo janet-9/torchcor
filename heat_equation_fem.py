@@ -54,7 +54,7 @@ cg = ConjugateGradient(pcd)
 
 frames = u0.reshape((1, L, L))
 
-start = time.begin()
+start = time.time()
 print("solving")
 for n in range(1, nt):
     b = torch.sparse.mm(M_dt, u.unsqueeze(1)).squeeze(1)
