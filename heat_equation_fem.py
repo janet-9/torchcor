@@ -5,17 +5,18 @@ from preconditioner import Preconditioner
 from sovler import ConjugateGradient
 from utils import Visualization
 from matplotlib import tri
+from boundary import apply_dirichlet_boundary_conditions
 
 
 # Step 1: Define problem parameters
-L = 50  # Length of domain in x and y directions
+L = 100  # Length of domain in x and y directions
 T0 = 100
 Nx, Ny = L, L  # Number of grid points in x and y
 alpha = 6  # Thermal diffusivity
 # h = 0.5206164
 # print(h ** 2 / (2*alpha))
 dt = 0.0125  # Time step size
-nt = 3000  # Number of time steps
+nt = 1500  # Number of time steps
 
 device = torch.device("cuda" if torch.cuda.is_available() else "CPU")
 dtype = torch.float64
@@ -29,50 +30,42 @@ triangulation = tri.Triangulation(X.flatten(), Y.flatten())
 
 # Step 3: Initial condition
 u0 = torch.zeros((L * L,)).to(device=device, dtype=torch.float64)
-u0[:L] = 100
-
+u0[30 * L: 30 * L + 3 * L] = T0
+u = u0
 
 K, M = assemble_matrices(triangulation, alpha)
 K = K.to(device=device, dtype=dtype)
 M = M.to(device=device, dtype=dtype)
 
-u = u0
 M_dt = M * (1 / dt)
 A = M_dt + K
 
 # apply initial condition for A
-print("applying initial condition for A")
-sparse_indices = A._indices()
-sparse_values = A._values()
+print("applying boundary condition for A")
+dirichlet_boundary_nodes = torch.arange(30 * L, 30 * L + 3 * L, device=device)
+boundary_values = torch.ones_like(dirichlet_boundary_nodes, device=device, dtype=dtype) * T0
 
-mask = sparse_indices[0] >= L
-new_indices = sparse_indices[:, mask]
-new_values = sparse_values[mask]
+A = apply_dirichlet_boundary_conditions(A, dirichlet_boundary_nodes)
 
-identify_array = torch.arange(L, device=device)
-identity_indices = torch.stack([identify_array, identify_array], dim=0).to(device=device, dtype=dtype)  # Diagonal indices
-identity_values = torch.ones(L).to(device=device, dtype=dtype)  # Diagonal values are set to 1.0
-
-final_indices = torch.cat([new_indices, identity_indices], dim=1)
-final_values = torch.cat([new_values, identity_values])
-A = torch.sparse_coo_tensor(final_indices, final_values, A.shape)
-
-pcd = Preconditioner(device=device, dtype=dtype)
+pcd = Preconditioner()
 pcd.create_Jocobi(A)
-cg = ConjugateGradient(pcd, device=device, dtype=dtype)
+cg = ConjugateGradient(pcd)
 
 U = torch.zeros((nt, L, L)).to(device=device, dtype=dtype)
 U[0, :, :] = u0.reshape((L, L))
 
+print("solving")
 for n in range(1, nt):
-    print(f"{n}", end=" ")
-    b = torch.sparse.mm(M_dt, u.unsqueeze(1)).to(torch.float64).squeeze(1)
+    b = torch.sparse.mm(M_dt, u.unsqueeze(1)).squeeze(1)
 
-    b[:L] = T0  # apply initial condition for b
-    u = cg.solve(A, b, a_tol=1e-5, r_tol=1e-5, max_iter=100)
+    b[dirichlet_boundary_nodes] = boundary_values  # apply initial condition for b
 
+    u, converge = cg.solve(A, b, a_tol=1e-5, r_tol=1e-5, max_iter=100)
+
+    if not converge:
+        print(f"The solution did not converge at {n} iteration")
     U[n, :, :] = u.reshape((L, L))
 
-
+print("saving gif file")
 visualization = Visualization(U, triangulation, dt)
 visualization.save_gif("FEM - 2D Heat Equation - PCG - Sparse.gif")
