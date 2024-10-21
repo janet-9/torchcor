@@ -19,6 +19,7 @@ print(h ** 2 / (2 * alpha))
 dt = 0.0125  # Time step size
 nt = 1000  # Number of time steps
 ts_per_frame = 10
+max_iter = 100
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dtype = torch.float64
@@ -68,8 +69,8 @@ for n in range(1, nt):
     b = torch.sparse.mm(M_dt, u.unsqueeze(1)).squeeze(1)
     b[dirichlet_boundary_nodes] = boundary_values  # apply initial condition for b
 
-    u, total_iter = cg.solve(A, b, a_tol=1e-5, r_tol=1e-5, max_iter=100)
-    if total_iter == 100:
+    u, total_iter = cg.solve(A, b, a_tol=1e-5, r_tol=1e-5, max_iter=max_iter)
+    if total_iter == max_iter:
         print(f"The solution did not converge at {n} iteration")
     else:
         print(f"{n} / {nt}: {total_iter}")
