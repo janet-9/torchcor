@@ -61,12 +61,12 @@ for n in range(1, nt):
 
     b[dirichlet_boundary_nodes] = boundary_values  # apply initial condition for b
 
-    u, converge = cg.solve(A, b, a_tol=1e-5, r_tol=1e-5, max_iter=100)
+    u, total_iter = cg.solve(A, b, a_tol=1e-5, r_tol=1e-5, max_iter=100)
 
-    if not converge:
+    if total_iter == 100:
         print(f"The solution did not converge at {n} iteration")
     else:
-        print(f"{n} / {nt}")
+        print(f"{n} / {nt}: {total_iter}")
 
     if n % ts_per_frame == 0:
         frames = torch.cat((frames, u.reshape((1, L, L))))
