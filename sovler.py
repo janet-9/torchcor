@@ -8,7 +8,7 @@ class ConjugateGradient:
 
     def solve(self, A, b, a_tol=1e-6, r_tol=1e-6, max_iter=100):
         device, dtype = A.device, A.dtype
-        converge = True
+        total_iter = 0
 
         x = torch.zeros_like(b, device=device, dtype=dtype)  # Initial guess (zero vector)
         r = b - A @ x  # Initial residual
@@ -18,6 +18,8 @@ class ConjugateGradient:
         r_norm = torch.linalg.vector_norm(r)
 
         for i in range(max_iter):
+            total_iter = i
+
             Ap = A @ p  # Matrix-vector product A*p
             rz_scala = torch.dot(r, z)
             alpha = rz_scala / torch.dot(p, Ap)  # Step size
@@ -42,9 +44,4 @@ class ConjugateGradient:
             r = r_new
             z = z_new
 
-        else:
-            converge = False
-
-        return x, converge
-
-
+        return x, total_iter
