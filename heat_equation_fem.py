@@ -9,17 +9,17 @@ from boundary import apply_dirichlet_boundary_conditions
 import time
 
 # Step 1: Define problem parameters
-L = 1000  # Length of domain in x and y directions
+L = 100  # Length of domain in x and y directions
 T0 = 100
 Nx, Ny = L, L  # Number of grid points in x and y
-alpha = 6  # Thermal diffusivity
+alpha = 2  # Thermal diffusivity
 # h = 0.5206164
 # print(h ** 2 / (2*alpha))
 dt = 0.0125  # Time step size
-nt = 1000  # Number of time steps
+nt = 3000  # Number of time steps
 ts_per_frame = 10  # record a frame every ts_per_frame time steps
 
-device = torch.device("cuda" if torch.cuda.is_available() else "CPU")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dtype = torch.float64
 print(device)
 
