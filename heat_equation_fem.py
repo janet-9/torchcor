@@ -32,7 +32,7 @@ triangulation = tri.Triangulation(X.flatten(), Y.flatten())
 
 # Step 3: Initial condition
 u0 = torch.zeros((Nx * Ny,)).to(device=device, dtype=dtype)
-u0[20 * Nx: 20 * Nx + Ny] = T0
+u0[200 * Nx: 200 * Nx + Ny] = T0
 u = u0
 
 start = time.time()
@@ -48,7 +48,7 @@ A = M_dt + K
 
 # apply initial condition for A
 print("applying boundary condition for A")
-dirichlet_boundary_nodes = torch.arange(20 * Nx, 20 * Nx + Ny, device=device)
+dirichlet_boundary_nodes = torch.arange(200 * Nx, 200 * Nx + Ny, device=device)
 boundary_values = torch.ones_like(dirichlet_boundary_nodes, device=device, dtype=dtype) * T0
 
 A = apply_dirichlet_boundary_conditions(A, dirichlet_boundary_nodes)
