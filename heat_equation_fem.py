@@ -18,7 +18,7 @@ h = 0.5206164
 print(h ** 2 / (2 * alpha))
 dt = 0.0125  # Time step size
 nt = 1000  # Number of time steps
-ts_per_frame = 5
+ts_per_frame = 10
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dtype = torch.float64
@@ -28,6 +28,10 @@ print(device)
 x = np.linspace(0, L, Nx)
 y = np.linspace(0, L, Ny)
 X, Y = np.meshgrid(x, y)
+
+Y[1:Nx-1, 1: Ny-1] += np.random.rand(Nx-2, Ny-2) * 0.5
+X[1:Nx-1, 1: Ny-1] -= np.random.rand(Nx-2, Ny-2) * 0.5
+
 triangulation = tri.Triangulation(X.flatten(), Y.flatten())
 
 # Step 3: Initial condition
