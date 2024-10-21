@@ -18,7 +18,7 @@ class ConjugateGradient:
         r_norm = torch.linalg.vector_norm(r)
 
         for i in range(max_iter):
-            total_iter = i
+            total_iter += 1
 
             Ap = A @ p  # Matrix-vector product A*p
             rz_scala = torch.dot(r, z)

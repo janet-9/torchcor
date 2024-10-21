@@ -30,8 +30,8 @@ x = np.linspace(0, L, Nx)
 y = np.linspace(0, L, Ny)
 X, Y = np.meshgrid(x, y)
 
-Y[1:Nx-1, 1: Ny-1] += np.random.rand(Nx-2, Ny-2) * 0.5
-X[1:Nx-1, 1: Ny-1] -= np.random.rand(Nx-2, Ny-2) * 0.5
+# Y[1:Nx-1, 1: Ny-1] += np.random.rand(Nx-2, Ny-2) * 0.5
+# X[1:Nx-1, 1: Ny-1] -= np.random.rand(Nx-2, Ny-2) * 0.5
 
 triangulation = tri.Triangulation(X.flatten(), Y.flatten())
 
