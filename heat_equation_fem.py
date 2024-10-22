@@ -48,7 +48,7 @@ K = K.to(device=device, dtype=dtype)
 M = M.to(device=device, dtype=dtype)
 print(f"assembled in: {time.time() - start} seconds")
 
-print(K.to_dense().numpy())
+# print(K.to_dense().numpy())
 
 M_dt = M * (1 / dt)
 A = M_dt + K
