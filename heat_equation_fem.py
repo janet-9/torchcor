@@ -9,16 +9,16 @@ from boundary import apply_dirichlet_boundary_conditions
 import time
 
 # Step 1: Define problem parameters
-L = 1000  # Length of domain in x and y directions
-Nx = 1000
-Ny = 1000  # Number of grid points in x and y
+L = 1  # Length of domain in x and y directions
+Nx = 100
+Ny = 100  # Number of grid points in x and y
 T0 = 100
-alpha = 2  # Thermal diffusivity
-h = 0.5206164
-print(h ** 2 / (2 * alpha))
-dt = 0.0125  # Time step size
-nt = 3000  # Number of time steps
-ts_per_frame = 10
+alpha = 0.1  # Thermal diffusivity
+# h = 0.5206164
+# print(h ** 2 / (2 * alpha))
+dt = 0.00125  # Time step size
+nt = 1000  # Number of time steps
+ts_per_frame = 1
 max_iter = 100
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -47,6 +47,8 @@ K, M = matrices.assemble_matrices(triangulation, alpha)
 K = K.to(device=device, dtype=dtype)
 M = M.to(device=device, dtype=dtype)
 print(f"assembled in: {time.time() - start} seconds")
+
+print(K.to_dense().numpy())
 
 M_dt = M * (1 / dt)
 A = M_dt + K
@@ -84,3 +86,7 @@ print(f"solved in: {time.time() - start} seconds")
 print("saving gif file")
 visualization = Visualization(frames, triangulation, dt, ts_per_frame)
 visualization.save_gif("FEM - 2D Heat Equation - PCG - Sparse.gif")
+
+
+
+

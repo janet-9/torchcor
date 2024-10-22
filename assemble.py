@@ -37,15 +37,17 @@ class Matrices:
         dN_dxi = self.shape_function_gradients()  # Assuming this is constant for all triangles, shape (3, 2)
 
         # Calculate dN/dxy for all triangles using the inverse Jacobian
-        dN_dxy_batch = torch.matmul(inv_J_batch, dN_dxi.T)  # Shape (N, 2, 3)
-
+        dN_dxy_batch = (dN_dxi @ inv_J_batch).transpose(1, 2)  # Shape (N, 2, 3)
+        # raise Exception(dN_dxy_batch[0])
+        # print(alpha * det_J_batch * areas)
+        Ke_batch = (0.5 * alpha * det_J_batch).view(-1, 1, 1) * dN_dxy_batch.transpose(1, 2) @ dN_dxy_batch 
         # Stiffness matrix computation
-        Ke_batch = torch.zeros((coords.shape[0], 3, 3), device=self.device, dtype=self.dtype)
-        for i in range(3):
-            for j in range(3):
-                Ke_batch[:, i, j] = (alpha * det_J_batch * areas) * (
-                        dN_dxy_batch[:, 0, i] * dN_dxy_batch[:, 0, j] + dN_dxy_batch[:, 1, i] * dN_dxy_batch[:, 1, j])
-
+        # Ke_batch = torch.zeros((coords.shape[0], 3, 3), device=self.device, dtype=self.dtype)
+        # for i in range(3):
+        #     for j in range(3):
+        #         Ke_batch[:, i, j] = (alpha * det_J_batch * areas) * (
+        #             dN_dxy_batch[:, 0, i] * dN_dxy_batch[:, 0, j] + dN_dxy_batch[:, 1, i] * dN_dxy_batch[:, 1, j])
+        # raise Exception(Ke_batch[0])
         return Ke_batch
 
     def assemble_matrices(self, triangulation, alpha):
