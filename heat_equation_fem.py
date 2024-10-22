@@ -9,9 +9,9 @@ from boundary import apply_dirichlet_boundary_conditions
 import time
 
 # Step 1: Define problem parameters
-L = 100  # Length of domain in x and y directions
-Nx = 100
-Ny = 100  # Number of grid points in x and y
+L = 1000  # Length of domain in x and y directions
+Nx = 1000
+Ny = 1000  # Number of grid points in x and y
 T0 = 100
 alpha = 2  # Thermal diffusivity
 h = 0.5206164
@@ -61,12 +61,13 @@ A = apply_dirichlet_boundary_conditions(A, dirichlet_boundary_nodes)
 pcd = Preconditioner()
 pcd.create_Jocobi(A)
 cg = ConjugateGradient(pcd)
+cg.initialize(x=u)
 
 frames = u0.reshape((1, Nx, Ny))
 start = time.time()
 print("solving")
 for n in range(1, nt):
-    b = torch.sparse.mm(M_dt, u.unsqueeze(1)).squeeze(1)
+    b = M_dt @ u
     b[dirichlet_boundary_nodes] = boundary_values  # apply initial condition for b
 
     u, total_iter = cg.solve(A, b, a_tol=1e-5, r_tol=1e-5, max_iter=max_iter)
