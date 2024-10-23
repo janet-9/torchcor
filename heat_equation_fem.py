@@ -10,8 +10,8 @@ import time
 
 # Step 1: Define problem parameters
 L = 100  # Length of domain in x and y directions
-Nx = 100
-Ny = 100  # Number of grid points in x and y
+Nx = 500
+Ny = 500  # Number of grid points in x and y
 T0 = 100
 alpha = 2  # Thermal diffusivity
 # h = 0.5206164
