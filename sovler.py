@@ -21,7 +21,7 @@ class ConjugateGradient:
 
         for i in range(max_iter):
             total_iter += 1
-
+            
             Ap = A @ p  # Matrix-vector product A*p
             rz_scala = torch.dot(r, z)
             alpha = rz_scala / torch.dot(p, Ap)  # Step size
@@ -47,3 +47,6 @@ class ConjugateGradient:
             z = z_new
 
         return self.x, total_iter
+
+
+
