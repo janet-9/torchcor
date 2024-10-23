@@ -17,4 +17,9 @@ class ModifiedMS2v:
         dH = torch.where(U > self.u_gate, -H / self.tau_close, (1 - H) / self.tau_open)
         return dU, dH
 
+    def set_attribute(self, name, value):
+        if name in self.__dict__.keys():
+            setattr(self, name, value)
 
+    def get_attribute(self, name: str):
+        return getattr(self, name, None)

@@ -10,36 +10,46 @@ import time
 from ionic import ModifiedMS2v
 from material import Properties
 import os
+from mesh.triangulation import Triangulation
+from mesh.materialproperties import MaterialProperties
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dtype = torch.float64
 print(device)
 
-
-def load_stimulus_region(vtxfile):
+def load_stimulus_region(vtxfile: str) -> np.ndarray:
+    """ load_stimulus_region(vtxfile) reads the file vtxfile to
+    extract point IDs where stimulus will be applied
+    """
     with open(vtxfile,'r') as fstim:
         nodes = fstim.read()
         nodes = nodes.strip().split()
-    npt = int(nodes[0])
-    nodes = nodes[2:]
-    pointlist = -1.0 * np.ones(shape=npt, dtype=int)
-    for jj, inod in enumerate(nodes):
+    npt       = int(nodes[0])
+    nodes     = nodes[2:]
+    pointlist = -1.0*np.ones(shape=npt,dtype=int)
+    for jj,inod in enumerate(nodes):
         pointlist[jj] = int(inod)
+    return(pointlist.astype(int))
 
-    return pointlist.astype(int)
 
-#
-# def calculate_sigma(type, iElem, domain, properties):
-#     fibres = domain.fibres[iElem, :]
-#     region_id = domain.Elems()[type][iElem, -1]
-#     sigma_l = properties.element_property("sigma_l", type, iElem, region_id)
-#     sigma_t = properties.element_property("sigma_t", type, iElem, region_id)
-#     sigma = sigma_t * torch.eye(3)
-#     for i in range(3):
-#         for j in range(3):
-#             sigma[i, j] += (sigma_l - sigma_t) * fibres[i] * fibres[j]
-#
-#     return sigma
+def dfmass(elemtype:str, iElem:int,domain:Triangulation,matprop:MaterialProperties):
+    """ empty function for mass properties"""
+    return(None)
+
+def sigmaTens(elemtype:str, iElem:int,domain:Triangulation,matprop:MaterialProperties) -> np.ndarray :
+    """ function to evaluate the diffusion tensor """
+    fib   = domain.Fibres()[iElem,:]
+    rID   = domain.Elems()[elemtype][iElem,-1]
+    sigma_l = matprop.ElementProperty('sigma_l',elemtype,iElem,rID)
+    sigma_t = matprop.ElementProperty('sigma_t',elemtype,iElem,rID)
+    Sigma = sigma_t *np.eye(3)
+    for ii in range(3):
+        for jj in range(3):
+            Sigma[ii,jj] = Sigma[ii,jj]+ (sigma_l-sigma_t)*fib[ii]*fib[jj]
+    return(Sigma)
+
+
+
 #
 #
 #
@@ -66,7 +76,6 @@ def load_stimulus_region(vtxfile):
 #     if (uniform_only or (not self._use_renumbering)):
 #         self._materials.remove_all_nodal_properties()
 #
-# mdm = ModifiedMS2v()
 #
 # start = time.time()
 # print("assembling matrices")
@@ -121,6 +130,7 @@ if __name__ == "__main__":
     topen = 105.0
     tclose = 185.0
 
+
     config = {
         'mesh_file_name': "./data/Case_1",
         'use_renumbering': True,
@@ -134,21 +144,41 @@ if __name__ == "__main__":
                 'duration': np.max([2.0, dt]),
                 'intensity': 1.0,
                 'name': 'S1'}
+    material = MaterialProperties()
+    material.add_element_property('sigma_l', 'uniform', diffusl)
+    material.add_element_property('sigma_t', 'uniform', diffust)
+    material.add_nodal_property('tau_in', 'uniform', tin)
+    material.add_nodal_property('tau_out', 'uniform', tout)
+    material.add_nodal_property('tau_open', 'uniform', topen)
+    material.add_nodal_property('tau_close', 'uniform', tclose)
 
-    properties = Properties()
-    properties.add_element_property("sigma_l", "uniform", diffusl)
-    properties.add_element_property("sigma_t", "uniform", diffust)
-    properties.add_nodal_property("tau_in", "uniform", tin)
-    properties.add_nodal_property("tau_out", "uniform", tout)
-    properties.add_nodal_property("tau_open", "uniform", topen)
-    properties.add_nodal_property("tau_close", "uniform", tclose)
-    properties.add_nodal_property("u_gate", "uniform", vg)
-    properties.add_nodal_property("u_crit", "uniform", vg)
-    properties.add_function('mass', lambda x: None)
-    # properties.add_function('stiffness', calculate_sigma)
+    material.add_nodal_property('u_gate', 'uniform', vg)
+    material.add_nodal_property('u_crit', 'uniform', vg)
 
+    material.add_material_function('mass', dfmass)
+    material.add_material_function('stiffness', sigmaTens)
+
+    ionic_model = ModifiedMS2v()
+
+    domain = Triangulation()
+    domain.readMesh("./data/Case_1")
+
+    nodal_properties = material.nodal_property_names()
+    point_region_ids = domain.point_region_ids()
+
+    npt = point_region_ids.shape[0]
+    for npr in nodal_properties:
+        npr_type = material.nodal_property_type(npr)
+        attribute_value = ionic_model.get_attribute(npr)
+        if attribute_value:
+            if npr_type == "uniform":
+                values = material.nodal_property_type(npr)
+            else:
+                values = torch.full(size=(npt, 1), fill_value=attribute_value)
+                for point_id, region_id in enumerate(point_region_ids):
+                    values[point_id] = material.nodal_property_type(npr, point_id, region_id)
+            ionic_model.set_attribute(npr, values)
 
     pointlist = load_stimulus_region('./data/Case_1.vtx')  # (2168,)
-    print(pointlist.shape)
-    # S1=np.zeros(shape=model.domain().Pts().shape[0],dtype=bool)
-    # S1[pointlist]=True
+    S1 = np.zeros(shape=domain.Pts().shape[0], dtype=bool)
+    S1[pointlist] = True
