@@ -16,7 +16,7 @@ T0 = 100
 alpha = 0.1  # Thermal diffusivity
 # h = 0.5206164
 # print(h ** 2 / (2 * alpha))
-dt = 0.00125  # Time step size
+dt = 0.0125  # Time step size
 nt = 1000  # Number of time steps
 ts_per_frame = 1000
 max_iter = 100
