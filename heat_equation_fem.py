@@ -10,15 +10,15 @@ import time
 
 # Step 1: Define problem parameters
 L = 100  # Length of domain in x and y directions
-Nx = 1000
-Ny = 1000  # Number of grid points in x and y
+Nx = 100
+Ny = 100  # Number of grid points in x and y
 T0 = 100
 alpha = 2  # Thermal diffusivity
 # h = 0.5206164
 # print(h ** 2 / (2 * alpha))
 dt = 0.0125  # Time step size
 nt = 1000  # Number of time steps
-ts_per_frame = 1000
+ts_per_frame = 10
 max_iter = 100
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
