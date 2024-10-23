@@ -12,6 +12,7 @@ from material import Properties
 import os
 from mesh.triangulation import Triangulation
 from mesh.materialproperties import MaterialProperties
+from mesh.stimulus import Stimulus
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dtype = torch.float64
@@ -50,32 +51,7 @@ def sigmaTens(elemtype:str, iElem:int,domain:Triangulation,matprop:MaterialPrope
 
 
 
-#
-#
-#
-#
-# def assign_nodal_properties(properties):
-#     uniform_only = True
-#     nodal_properties = properties.nodal_property_names()
-#     if nodal_properties is not None:
-#         point_region_ids = self._Domain.point_region_ids()
-#         npt = point_region_ids.shape[0]
-#         for mat_prop in nodal_properties:
-#             prtype = self._materials.nodal_property_type(mat_prop)
-#             refval = self.get_parameter(mat_prop)
-#             if refval is not None:
-#                 if prtype == 'uniform':
-#                     pvals = self._materials.NodalProperty(mat_prop, -1, -1)
-#                 else:
-#                     uniform_only = False
-#                     pvals = np.full(shape=(npt, 1), fill_value=refval.numpy())
-#                     for pointID, regionID in enumerate(point_region_ids):
-#                         new_val = self._materials.NodalProperty(mat_prop, pointID, regionID)
-#                         pvals[pointID] = new_val
-#                 self.set_parameter(mat_prop, pvals)
-#     if (uniform_only or (not self._use_renumbering)):
-#         self._materials.remove_all_nodal_properties()
-#
+
 #
 # start = time.time()
 # print("assembling matrices")
@@ -130,13 +106,9 @@ if __name__ == "__main__":
     topen = 105.0
     tclose = 185.0
 
-
-    config = {
-        'mesh_file_name': "./data/Case_1",
-        'use_renumbering': True,
-        'dt': dt,
-        'dt_per_plot': int(1.0 / dt),  # record every ms
-        'Tend': 2400}
+    use_renumbering = True
+    T = 2400
+    nt = T // dt
 
     cfgstim1 = {'tstart': 0.0,
                 'nstim': 3,
@@ -155,30 +127,59 @@ if __name__ == "__main__":
     material.add_nodal_property('u_gate', 'uniform', vg)
     material.add_nodal_property('u_crit', 'uniform', vg)
 
-    material.add_material_function('mass', dfmass)
-    material.add_material_function('stiffness', sigmaTens)
+    material.add_ud_function('mass', dfmass)
+    material.add_ud_function('stiffness', sigmaTens)
 
     ionic_model = ModifiedMS2v()
 
     domain = Triangulation()
     domain.readMesh("./data/Case_1")
-
+    domain.exportCarpFormat("atrium")
+    
+    # assign nodal properties
     nodal_properties = material.nodal_property_names()
     point_region_ids = domain.point_region_ids()
-
     npt = point_region_ids.shape[0]
+
     for npr in nodal_properties:
         npr_type = material.nodal_property_type(npr)
         attribute_value = ionic_model.get_attribute(npr)
+
         if attribute_value:
             if npr_type == "uniform":
-                values = material.nodal_property_type(npr)
+                values = material.NodalProperty(npr, -1, -1)
             else:
                 values = torch.full(size=(npt, 1), fill_value=attribute_value)
                 for point_id, region_id in enumerate(point_region_ids):
-                    values[point_id] = material.nodal_property_type(npr, point_id, region_id)
+                    values[point_id] = material.NodalProperty(npr, point_id, region_id)
             ionic_model.set_attribute(npr, values)
 
+    # assemble matrix
+    
+
     pointlist = load_stimulus_region('./data/Case_1.vtx')  # (2168,)
-    S1 = np.zeros(shape=domain.Pts().shape[0], dtype=bool)
+    S1 = torch.zeros(size=(npt,), dtype=bool)
     S1[pointlist] = True
+
+    # set initial conditions
+    u = torch.full(size=(npt,), fill_value=0)
+    h = torch.full(size=(npt,), fill_value=1)
+
+    # add stimulus
+    nbstim = 1
+    stimulus_dict = {}
+    stimulus_dict[nbstim] = Stimulus(cfgstim1)
+    stimulus_dict[nbstim].set_stimregion(S1)
+
+    # solve
+    max_iter = npt // 2
+    ctime = 0
+    for i in range(nt):
+        ctime += dt
+        du, dh = ionic_model.differentiate(u, h)
+        b = u + dt * du 
+        for _, stimulus in stimulus_dict.items():
+            I0 = stimulus.stimApp(ctime)
+            b = b + dt * I0
+
+
