@@ -5,13 +5,15 @@ from preconditioner import Preconditioner
 class ConjugateGradient:
     def __init__(self, preconditioner: Preconditioner):
         self.preconditioner = preconditioner
+        self.x = None
+
+    def initialize(self, x): # Initial guess
+        self.x = x  
 
     def solve(self, A, b, a_tol=1e-6, r_tol=1e-6, max_iter=100):
-        device, dtype = A.device, A.dtype
         total_iter = 0
 
-        x = torch.zeros_like(b, device=device, dtype=dtype)  # Initial guess (zero vector)
-        r = b - A @ x  # Initial residual
+        r = b - A @ self.x  # Initial residual
         z = self.preconditioner.apply(r)  # Preconditioned residual
         p = z  # Initial search direction
 
@@ -19,11 +21,12 @@ class ConjugateGradient:
 
         for i in range(max_iter):
             total_iter += 1
+            
             Ap = A @ p  # Matrix-vector product A*p
             rz_scala = torch.dot(r, z)
             alpha = rz_scala / torch.dot(p, Ap)  # Step size
 
-            x = x + alpha * p
+            self.x = self.x + alpha * p
 
             r_new = r - alpha * Ap
 
@@ -43,6 +46,7 @@ class ConjugateGradient:
             r = r_new
             z = z_new
 
-        return x, total_iter
+        return self.x, total_iter
+
 
 
