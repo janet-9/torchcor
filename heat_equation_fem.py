@@ -10,8 +10,8 @@ import time
 
 # Step 1: Define problem parameters
 L = 100  # Length of domain in x and y directions
-Nx = 500
-Ny = 500  # Number of grid points in x and y
+Nx = 710
+Ny = 710  # Number of grid points in x and y
 T0 = 100
 alpha = 2  # Thermal diffusivity
 # h = 0.5206164
@@ -34,7 +34,7 @@ X, Y = np.meshgrid(x, y)
 # X[1:Nx-1, 1: Ny-1] -= np.random.rand(Nx-2, Ny-2) * 0.5
 
 triangulation = tri.Triangulation(X.flatten(), Y.flatten())
-
+print(f"Vertices: {len(triangulation.x)}, Nodes: {len(triangulation.triangles)}")
 # Step 3: Initial condition
 u0 = torch.zeros((Nx * Ny,)).to(device=device, dtype=dtype)
 u0[20 * Nx: 20 * Nx + Ny] = T0
