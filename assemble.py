@@ -13,11 +13,11 @@ class Matrices:
                                   [0, 1]], device=self.device, dtype=self.dtype)
 
     def jacobian(self, coords):
-        dN_dxi = self.shape_function_gradients()  # This should return shape (2, 3) for a single triangle
+        dN_dxi = self.shape_function_gradients()
 
         # Assuming coords is of shape (N, 3, 2), where N is the number of triangles
-        # Transpose `coords` so that it becomes (N, 2, 3) to match (2, 3) of dN_dxi
-        J = torch.matmul(coords.transpose(1, 2), dN_dxi)  # Result: (N, 2, 2)
+        # Transpose `coords` so that it becomes (N, 2, 3) to match (3, 2) of dN_dxi
+        J = coords.transpose(1, 2) @ dN_dxi  # Result: (N, 2, 2)
 
         return J
 
@@ -37,10 +37,10 @@ class Matrices:
         dN_dxi = self.shape_function_gradients()  # Assuming this is constant for all triangles, shape (3, 2)
 
         # Calculate dN/dxy for all triangles using the inverse Jacobian
-        dN_dxy_batch = dN_dxi @ inv_J_batch  # Shape (N, 2, 3)
+        dN_dxy_batch = dN_dxi @ inv_J_batch  # Shape (N, 3, 2)
         # raise Exception(dN_dxy_batch[0])
         # print(alpha * det_J_batch * areas)
-        Ke_batch = (0.5 * alpha * det_J_batch).view(-1, 1, 1) * dN_dxy_batch @ dN_dxy_batch .transpose(1, 2)
+        Ke_batch = (0.5 * alpha * det_J_batch).view(-1, 1, 1) * dN_dxy_batch @ dN_dxy_batch.transpose(1, 2)
         # Stiffness matrix computation
         # Ke_batch = torch.zeros((coords.shape[0], 3, 3), device=self.device, dtype=self.dtype)
         # for i in range(3):
@@ -59,7 +59,6 @@ class Matrices:
         # Get the coordinates for all triangles
         coords = torch.stack([x_coords[vertices], y_coords[vertices]],
                              dim=2)  # Shape: (N, 3, 2), where N is number of triangles
-
         # Augment with a column of ones for determinant calculation (for areas)
         coords_augmented = torch.cat([torch.ones(vertices.shape[0], 3, 1, device=self.device, dtype=self.dtype), coords], dim=2)
         # Calculate areas for all triangles at once
