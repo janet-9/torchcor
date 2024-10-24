@@ -1,25 +1,28 @@
+import sys
+import os
+import matplotlib.pyplot as plt
+
+# Get the parent directory
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(parent_dir)
+
 import torch
 import numpy as np
-from assemble import Matrices
+from assemble import Matrices3DSurface
 from preconditioner import Preconditioner
 from sovler import ConjugateGradient
-from utils import Visualization
-from matplotlib import tri
+from utils import Visualization3DSurface, Visualization
 from boundary import apply_dirichlet_boundary_conditions
 import time
+from scipy.spatial import Delaunay
 
 # Step 1: Define problem parameters
 L = 100  # Length of domain in x and y directions
-
 Nx = 110
 Ny = 110  # Number of grid points in x and y
 T0 = 100
-
 alpha = 2  # Thermal diffusivity
-# h = 0.5206164
-# print(h ** 2 / (2 * alpha))
 dt = 0.0125  # Time step size
-
 nt = 5000  # Number of time steps
 ts_per_frame = 10
 max_iter = 100
@@ -28,16 +31,19 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dtype = torch.float64
 print(device)
 
+
 # Step 2: Generate grid (structured triangular mesh)
 x = np.linspace(0, L, Nx)
 y = np.linspace(0, L, Ny)
 X, Y = np.meshgrid(x, y)
+Z = X + Y
 
-# Y[1:Nx-1, 1: Ny-1] += np.random.rand(Nx-2, Ny-2) * 0.5
-# X[1:Nx-1, 1: Ny-1] -= np.random.rand(Nx-2, Ny-2) * 0.5
+points = np.vstack([X.flatten(), Y.flatten()]).T
+vertices = np.vstack([X.flatten(), Y.flatten(), Z.flatten()]).T 
+triangles = Delaunay(points).simplices
+print(vertices.shape, triangles.shape)
+print(f"Vertices (Nodes): {len(vertices)}, Triangles: {len(triangles)}")
 
-triangulation = tri.Triangulation(X.flatten(), Y.flatten())
-print(f"Vertices: {len(triangulation.x)}, Nodes: {len(triangulation.triangles)}")
 # Step 3: Initial condition
 u0 = torch.zeros((Nx * Ny,)).to(device=device, dtype=dtype)
 u0[20 * Nx: 20 * Nx + Ny] = T0
@@ -45,8 +51,8 @@ u = u0
 
 start = time.time()
 print("assembling matrices")
-matrices = Matrices(device=device, dtype=dtype)
-K, M = matrices.assemble_matrices(triangulation, alpha)
+matrices = Matrices3DSurface(device=device, dtype=dtype)
+K, M = matrices.assemble_matrices(vertices, triangles, alpha)
 K = K.to(device=device, dtype=dtype)
 M = M.to(device=device, dtype=dtype)
 print(f"assembled in: {time.time() - start} seconds")
@@ -87,8 +93,10 @@ for n in range(1, nt):
 print(f"solved in: {time.time() - start} seconds")
 
 print("saving gif file")
-visualization = Visualization(frames, triangulation, dt, ts_per_frame)
-visualization.save_gif("FEM - 2D Heat Equation - PCG - Sparse.gif")
+print(frames.shape)
+visualization = Visualization(frames, vertices, triangles, dt, ts_per_frame)
+visualization.save_gif("./Heat Equation 3D surface.gif")
+
 
 
 

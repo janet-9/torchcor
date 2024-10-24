@@ -155,7 +155,16 @@ if __name__ == "__main__":
             ionic_model.set_attribute(npr, values)
 
     # assemble matrix
+    # matrices = Matrices(device=device, dtype=dtype)
+    # K, M = matrices.assemble_matrices(triangulation, alpha)
+    # K = K.to(device=device, dtype=dtype)
+    # M = M.to(device=device, dtype=dtype)
+    # A = M + K * dt 
+
+    # pcd = Preconditioner()
+    # pcd.create_Jocobi(A)
     
+
 
     pointlist = load_stimulus_region('./data/Case_1.vtx')  # (2168,)
     S1 = torch.zeros(size=(npt,), dtype=bool)
@@ -165,21 +174,26 @@ if __name__ == "__main__":
     u = torch.full(size=(npt,), fill_value=0)
     h = torch.full(size=(npt,), fill_value=1)
 
+    # cg = ConjugateGradient(pcd)
+    # cg.initialize(x=u)
+
     # add stimulus
     nbstim = 1
     stimulus_dict = {}
     stimulus_dict[nbstim] = Stimulus(cfgstim1)
     stimulus_dict[nbstim].set_stimregion(S1)
 
+    connectivity = domain.mesh_connectivity()
+    print(connectivity)
     # solve
-    max_iter = npt // 2
-    ctime = 0
-    for i in range(nt):
-        ctime += dt
-        du, dh = ionic_model.differentiate(u, h)
-        b = u + dt * du 
-        for _, stimulus in stimulus_dict.items():
-            I0 = stimulus.stimApp(ctime)
-            b = b + dt * I0
+    # max_iter = npt // 2
+    # ctime = 0
+    # for i in range(nt):
+    #     ctime += dt
+    #     du, dh = ionic_model.differentiate(u, h)
+    #     b = u + dt * du 
+    #     for _, stimulus in stimulus_dict.items():
+    #         I0 = stimulus.stimApp(ctime)
+    #         b = b + dt * I0
 
 
