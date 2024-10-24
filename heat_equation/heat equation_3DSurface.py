@@ -23,8 +23,8 @@ Ny = 110  # Number of grid points in x and y
 T0 = 100
 alpha = 2  # Thermal diffusivity
 dt = 0.0125  # Time step size
-nt = 5000  # Number of time steps
-ts_per_frame = 10
+nt = 1000  # Number of time steps
+ts_per_frame = 100
 max_iter = 100
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -37,6 +37,7 @@ x = np.linspace(0, L, Nx)
 y = np.linspace(0, L, Ny)
 X, Y = np.meshgrid(x, y)
 Z = X + Y
+# Z = np.sqrt(X**2 + Y**2)
 
 points = np.vstack([X.flatten(), Y.flatten()]).T
 vertices = np.vstack([X.flatten(), Y.flatten(), Z.flatten()]).T 
@@ -94,7 +95,7 @@ print(f"solved in: {time.time() - start} seconds")
 
 print("saving gif file")
 print(frames.shape)
-visualization = Visualization(frames, vertices, triangles, dt, ts_per_frame)
+visualization = Visualization3DSurface(frames, vertices, triangles, dt, ts_per_frame)
 visualization.save_gif("./Heat Equation 3D surface.gif")
 
 

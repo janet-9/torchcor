@@ -51,34 +51,44 @@ class Visualization3DSurface:
         self.ts_per_frame = ts_per_frame
         self.nt = len(self.frames)
 
+        # Ensure that vertices are reshaped into a grid format (if they are structured)
+        # You may need to adjust this depending on the exact layout of your vertices
+        self.X = self.vertices[:, 0].reshape((int(np.sqrt(len(vertices))), -1))  # Reshape X coordinates
+        self.Y = self.vertices[:, 1].reshape((int(np.sqrt(len(vertices))), -1))  # Reshape Y coordinates
+        self.Z = self.vertices[:, 2].reshape((int(np.sqrt(len(vertices))), -1))  # Reshape Z coordinates
+
+        self.fig = plt.figure()
+
     def plotheatmap(self, k):
-        plt.clf()
-
-        fig = plt.figure()  # Create a new figure for each frame
-        ax = fig.add_subplot(111, projection='3d')
-
+        ax = self.fig.add_subplot(111, projection='3d')
         ax.clear()  # Clear the previous frame
         ax.set_title(f"Temperature at t = {k * self.dt * self.ts_per_frame:.3f} unit time")
         ax.set_xlabel("X")
         ax.set_ylabel("Y")
         ax.set_zlabel("Z")
 
-        u_k = self.frames[k]
-
-        # Plot the surface
-        surf = ax.plot_trisurf(self.vertices[:, 0], self.vertices[:, 1], self.vertices[:, 2],
-                        triangles=self.triangles, cmap='jet', facecolors=plt.cm.jet(u_k.flatten() / np.max(u_k)),
-                        linewidth=0)
-        fig.colorbar(surf)
-        plt.show()
+        u_k = self.frames[k].reshape(self.X.shape)
+        
+        surf = ax.plot_surface(self.X, 
+                               self.Y, 
+                               self.Z,
+                               facecolors=plt.cm.jet((u_k - np.min(u_k)) / (np.max(u_k) - np.min(u_k))),  # Normalize `u_k`
+                               cmap='jet',
+                               rstride=1,
+                               cstride=1,
+                               linewidth=0,
+                               antialiased=True
+                            )
+        self.fig.colorbar(surf)
+        if k == 10:
+            plt.show()
 
     def animate(self, k):
         self.plotheatmap(k)
 
     def save_gif(self, filepath):
-        fig = plt.figure()
-        anim = animation.FuncAnimation(fig, self.animate, interval=1, frames=self.nt, repeat=False)
-        anim.save(filepath, writer='pillow')  # Change to 'pillow' if ImageMagick is not available
+        anim = animation.FuncAnimation(self.fig, self.animate, interval=1, frames=self.nt, repeat=False)
+        anim.save(filepath)  
 
 
 
