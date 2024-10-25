@@ -14,12 +14,12 @@ from utils import Visualization
 from boundary import apply_dirichlet_boundary_conditions
 import time
 from scipy.spatial import Delaunay
-
+import pickle
 # Step 1: Define problem parameters
-L = 100  # Length of domain in x and y directions
+L = 10  # Length of domain in x and y directions
 
-Nx = 110
-Ny = 110  # Number of grid points in x and y
+Nx = 50
+Ny = 50  # Number of grid points in x and y
 T0 = 100
 
 alpha = 2  # Thermal diffusivity
@@ -27,8 +27,8 @@ alpha = 2  # Thermal diffusivity
 # print(h ** 2 / (2 * alpha))
 dt = 0.0125  # Time step size
 
-nt = 10000  # Number of time steps
-ts_per_frame = 10
+nt = 100  # Number of time steps
+ts_per_frame = 1
 max_iter = 100
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -44,9 +44,11 @@ X, Y = np.meshgrid(x, y)
 # X[1:Nx-1, 1: Ny-1] -= np.random.rand(Nx-2, Ny-2) * 0.5
 
 # Flatten the X, Y, Z arrays for input to Delaunay
-vertices = np.vstack([X.flatten(), Y.flatten()]).T 
+vertices = np.vstack([X.flatten(), Y.flatten()]).T
+print(vertices.shape)
 triangles = Delaunay(vertices).simplices
-
+triangles.sort(axis=1)
+raise Exception(sorted(triangles.tolist(), key=lambda x: x[0]))
 
 print(f"Vertices: {len(vertices)}, Nodes: {len(triangles)}")
 # Step 3: Initial condition
@@ -74,11 +76,12 @@ boundary_values = torch.ones_like(dirichlet_boundary_nodes, device=device, dtype
 
 A = apply_dirichlet_boundary_conditions(A, dirichlet_boundary_nodes)
 
-pcd = Preconditioner()
-pcd.create_Jocobi(A)
-cg = ConjugateGradient(pcd)
-cg.initialize(x=u)
+# pcd = Preconditioner()
+# pcd.create_Jocobi(A)
+# cg = ConjugateGradient(pcd)
+# cg.initialize(x=u)
 
+LU, pivots = torch.linalg.lu_factor(A.to_dense())
 frames = u0.reshape((1, Nx, Ny))
 start = time.time()
 print("solving")
@@ -86,14 +89,19 @@ for n in range(1, nt):
     b = M_dt @ u
     b[dirichlet_boundary_nodes] = boundary_values  # apply initial condition for b
 
-    u, total_iter = cg.solve(A, b, a_tol=1e-5, r_tol=1e-5, max_iter=max_iter)
-    if total_iter == max_iter:
-        print(f"The solution did not converge at {n} iteration")
-    else:
-        print(f"{n} / {nt}: {total_iter}")
+    u = torch.linalg.lu_solve(LU, pivots, b.unsqueeze(1)).squeeze()
+
+    # u, total_iter = cg.solve(A, b, a_tol=1e-5, r_tol=1e-5, max_iter=max_iter)
+    # if total_iter == max_iter:
+    #     print(f"The solution did not converge at {n} iteration")
+    # else:
+    #     print(f"{n} / {nt}: {total_iter}")
 
     if n % ts_per_frame == 0:
         frames = torch.cat((frames, u.reshape((1, Nx, Ny))))
+
+with open("2d.pkl", "wb") as f:
+    pickle.dump(frames[1:, :, :], f)
 
 print(f"solved in: {time.time() - start} seconds")
 

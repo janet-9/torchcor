@@ -60,8 +60,9 @@ class Visualization3DSurface:
         self.fig = plt.figure()
 
     def plotheatmap(self, k):
+        plt.clf()
+
         ax = self.fig.add_subplot(111, projection='3d')
-        ax.clear()  # Clear the previous frame
         ax.set_title(f"Temperature at t = {k * self.dt * self.ts_per_frame:.3f} unit time")
         ax.set_xlabel("X")
         ax.set_ylabel("Y")
@@ -77,11 +78,11 @@ class Visualization3DSurface:
                                rstride=1,
                                cstride=1,
                                linewidth=0,
-                               antialiased=True
+                               antialiased=True,
+                               vmin=np.min(u_k),  # Set the minimum value for the colormap
+                               vmax=np.max(u_k)
                             )
         self.fig.colorbar(surf)
-        if k == 10:
-            plt.show()
 
     def animate(self, k):
         self.plotheatmap(k)

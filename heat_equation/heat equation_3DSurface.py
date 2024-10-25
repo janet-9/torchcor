@@ -1,3 +1,4 @@
+import math
 import sys
 import os
 import matplotlib.pyplot as plt
@@ -8,23 +9,24 @@ sys.path.append(parent_dir)
 
 import torch
 import numpy as np
-from assemble import Matrices3DSurface
+from assemble import Matrices3DSurface, Matrices3D
 from preconditioner import Preconditioner
 from sovler import ConjugateGradient
 from utils import Visualization3DSurface, Visualization
 from boundary import apply_dirichlet_boundary_conditions
 import time
 from scipy.spatial import Delaunay
+import pickle
 
 # Step 1: Define problem parameters
-L = 100  # Length of domain in x and y directions
-Nx = 110
-Ny = 110  # Number of grid points in x and y
+L = 10  # Length of domain in x and y directions
+Nx = 50
+Ny = 50  # Number of grid points in x and y
 T0 = 100
 alpha = 2  # Thermal diffusivity
 dt = 0.0125  # Time step size
-nt = 1000  # Number of time steps
-ts_per_frame = 100
+nt = 100  # Number of time steps
+ts_per_frame = 1
 max_iter = 100
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -36,12 +38,18 @@ print(device)
 x = np.linspace(0, L, Nx)
 y = np.linspace(0, L, Ny)
 X, Y = np.meshgrid(x, y)
-Z = X + Y
+Y = 0.5 * Y
+Z = math.sqrt(3) * Y
+# Z = X + Y
 # Z = np.sqrt(X**2 + Y**2)
 
 points = np.vstack([X.flatten(), Y.flatten()]).T
 vertices = np.vstack([X.flatten(), Y.flatten(), Z.flatten()]).T 
 triangles = Delaunay(points).simplices
+triangles.sort(axis=1)
+raise Exception(sorted(triangles.tolist(), key=lambda x: x[0]))
+
+
 print(vertices.shape, triangles.shape)
 print(f"Vertices (Nodes): {len(vertices)}, Triangles: {len(triangles)}")
 
@@ -70,10 +78,12 @@ boundary_values = torch.ones_like(dirichlet_boundary_nodes, device=device, dtype
 
 A = apply_dirichlet_boundary_conditions(A, dirichlet_boundary_nodes)
 
-pcd = Preconditioner()
-pcd.create_Jocobi(A)
-cg = ConjugateGradient(pcd)
-cg.initialize(x=u)
+# pcd = Preconditioner()
+# pcd.create_Jocobi(A)
+# cg = ConjugateGradient(pcd)
+# cg.initialize(x=u)
+
+LU, pivots = torch.linalg.lu_factor(A.to_dense())
 
 frames = u0.reshape((1, Nx, Ny))
 start = time.time()
@@ -82,14 +92,19 @@ for n in range(1, nt):
     b = M_dt @ u
     b[dirichlet_boundary_nodes] = boundary_values  # apply initial condition for b
 
-    u, total_iter = cg.solve(A, b, a_tol=1e-5, r_tol=1e-5, max_iter=max_iter)
-    if total_iter == max_iter:
-        print(f"The solution did not converge at {n} iteration")
-    else:
-        print(f"{n} / {nt}: {total_iter}")
+    u = torch.linalg.lu_solve(LU, pivots, b.unsqueeze(1)).squeeze()
+
+    # u, total_iter = cg.solve(A, b, a_tol=1e-5, r_tol=1e-5, max_iter=max_iter)
+    # if total_iter == max_iter:
+    #     print(f"The solution did not converge at {n} iteration")
+    # else:
+    #     print(f"{n} / {nt}: {total_iter}")
 
     if n % ts_per_frame == 0:
         frames = torch.cat((frames, u.reshape((1, Nx, Ny))))
+
+with open("3d_surface.pkl", "wb") as f:
+    pickle.dump(frames[1:, :, :], f)
 
 print(f"solved in: {time.time() - start} seconds")
 
