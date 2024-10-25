@@ -47,7 +47,7 @@ points = np.vstack([X.flatten(), Y.flatten()]).T
 vertices = np.vstack([X.flatten(), Y.flatten(), Z.flatten()]).T 
 triangles = Delaunay(points).simplices
 triangles.sort(axis=1)
-raise Exception(sorted(triangles.tolist(), key=lambda x: x[0]))
+# raise Exception(sorted(triangles.tolist(), key=lambda x: x[0]))
 
 
 print(vertices.shape, triangles.shape)

@@ -48,7 +48,7 @@ vertices = np.vstack([X.flatten(), Y.flatten()]).T
 print(vertices.shape)
 triangles = Delaunay(vertices).simplices
 triangles.sort(axis=1)
-raise Exception(sorted(triangles.tolist(), key=lambda x: x[0]))
+# raise Exception(sorted(triangles.tolist(), key=lambda x: x[0]))
 
 print(f"Vertices: {len(vertices)}, Nodes: {len(triangles)}")
 # Step 3: Initial condition
@@ -100,8 +100,6 @@ for n in range(1, nt):
     if n % ts_per_frame == 0:
         frames = torch.cat((frames, u.reshape((1, Nx, Ny))))
 
-with open("2d.pkl", "wb") as f:
-    pickle.dump(frames[1:, :, :], f)
 
 print(f"solved in: {time.time() - start} seconds")
 
