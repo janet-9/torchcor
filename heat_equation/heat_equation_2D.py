@@ -14,10 +14,9 @@ from utils import Visualization
 from boundary import apply_dirichlet_boundary_conditions
 import time
 from scipy.spatial import Delaunay
-import pickle
+
 # Step 1: Define problem parameters
 L = 10  # Length of domain in x and y directions
-
 Nx = 50
 Ny = 50  # Number of grid points in x and y
 T0 = 100
@@ -47,8 +46,7 @@ X, Y = np.meshgrid(x, y)
 vertices = np.vstack([X.flatten(), Y.flatten()]).T
 print(vertices.shape)
 triangles = Delaunay(vertices).simplices
-triangles.sort(axis=1)
-# raise Exception(sorted(triangles.tolist(), key=lambda x: x[0]))
+
 
 print(f"Vertices: {len(vertices)}, Nodes: {len(triangles)}")
 # Step 3: Initial condition

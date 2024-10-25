@@ -3,9 +3,11 @@ import torch
 
 def apply_dirichlet_boundary_conditions(A, dirichlet_boundary_nodes):
     device = A.device
+
+    A = A.coalesce()
     
-    sparse_indices = A._indices()  # apply boundary condition
-    sparse_values = A._values()
+    sparse_indices = A.indices()  # apply boundary condition
+    sparse_values = A.values()
 
     mask = ~torch.isin(sparse_indices[0], dirichlet_boundary_nodes)
     new_indices = sparse_indices[:, mask]
