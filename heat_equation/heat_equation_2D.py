@@ -16,9 +16,9 @@ import time
 from scipy.spatial import Delaunay
 
 # Step 1: Define problem parameters
-L = 10  # Length of domain in x and y directions
-Nx = 50
-Ny = 50  # Number of grid points in x and y
+L = 50  # Length of domain in x and y directions
+Nx = 100
+Ny = 100  # Number of grid points in x and y
 T0 = 100
 
 alpha = 2  # Thermal diffusivity
@@ -26,8 +26,8 @@ alpha = 2  # Thermal diffusivity
 # print(h ** 2 / (2 * alpha))
 dt = 0.0125  # Time step size
 
-nt = 100  # Number of time steps
-ts_per_frame = 1
+nt = 1000  # Number of time steps
+ts_per_frame = 10
 max_iter = 100
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -56,8 +56,9 @@ u = u0
 
 start = time.time()
 print("assembling matrices")
-matrices = Matrices2D(device=device, dtype=dtype)
-K, M = matrices.assemble_matrices(vertices, triangles, alpha)
+matrices = Matrices2D(vertices, triangles, device=device, dtype=dtype)
+matrices.renumber_permutation()
+K, M = matrices.assemble_matrices(alpha)
 K = K.to(device=device, dtype=dtype)
 M = M.to(device=device, dtype=dtype)
 print(f"assembled in: {time.time() - start} seconds")
@@ -98,6 +99,7 @@ for n in range(1, nt):
     if n % ts_per_frame == 0:
         frames = torch.cat((frames, u.reshape((1, Nx, Ny))))
 
+print(u)
 
 print(f"solved in: {time.time() - start} seconds")
 

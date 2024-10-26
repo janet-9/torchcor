@@ -9,7 +9,7 @@ sys.path.append(parent_dir)
 
 import torch
 import numpy as np
-from assemble import Matrices3DSurface, Matrices3D
+from assemble import Matrices3DSurface
 from preconditioner import Preconditioner
 from sovler import ConjugateGradient
 from utils import Visualization3DSurface, Visualization
@@ -19,13 +19,13 @@ from scipy.spatial import Delaunay
 import pickle
 
 # Step 1: Define problem parameters
-L = 10  # Length of domain in x and y directions
-Nx = 50
-Ny = 50  # Number of grid points in x and y
+L = 50  # Length of domain in x and y directions
+Nx = 100
+Ny = 100  # Number of grid points in x and y
 T0 = 100
 alpha = 2  # Thermal diffusivity
 dt = 0.0125  # Time step size
-nt = 100  # Number of time steps
+nt = 1000  # Number of time steps
 ts_per_frame = 1
 max_iter = 100
 
@@ -38,9 +38,9 @@ print(device)
 x = np.linspace(0, L, Nx)
 y = np.linspace(0, L, Ny)
 X, Y = np.meshgrid(x, y)
-Y = 0.5 * Y
-Z = math.sqrt(3) * Y
-# Z = X + Y
+# Y = 0.5 * Y
+# Z = math.sqrt(3) * Y
+Z = X + Y ** 2
 # Z = np.sqrt(X**2 + Y**2)
 
 points = np.vstack([X.flatten(), Y.flatten()]).T
@@ -60,8 +60,8 @@ u = u0
 
 start = time.time()
 print("assembling matrices")
-matrices = Matrices3DSurface(device=device, dtype=dtype)
-K, M = matrices.assemble_matrices(vertices, triangles, alpha)
+matrices = Matrices3DSurface(vertices, triangles, device=device, dtype=dtype)
+K, M = matrices.assemble_matrices(alpha)
 K = K.to(device=device, dtype=dtype)
 M = M.to(device=device, dtype=dtype)
 print(f"assembled in: {time.time() - start} seconds")
@@ -102,16 +102,17 @@ for n in range(1, nt):
 
     if n % ts_per_frame == 0:
         frames = torch.cat((frames, u.reshape((1, Nx, Ny))))
-
-with open("3d_surface.pkl", "wb") as f:
-    pickle.dump(frames[1:, :, :], f)
+# print(u)
+# with open("3d_surface.pkl", "wb") as f:
+#     pickle.dump(frames[1:, :, :], f)
 
 print(f"solved in: {time.time() - start} seconds")
 
 print("saving gif file")
 print(frames.shape)
 visualization = Visualization3DSurface(frames, vertices, triangles, dt, ts_per_frame)
-visualization.save_gif("./Heat Equation 3D surface.gif")
+# visualization.save_gif("./Heat Equation 3D surface (X + Y).gif")
+visualization.save_gif("./Heat Equation 3D surface (Z = X + Y ** 2) LU.gif")
 
 
 
