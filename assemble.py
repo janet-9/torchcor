@@ -113,7 +113,7 @@ class Matrices2D:
         pattern_scipy = sp.csr_matrix((values, (indices[0], indices[1])), shape=(self.n_vertices, self.n_vertices))
 
         rcm_order = reverse_cuthill_mckee(pattern_scipy)
-        raise Exception(rcm_order)
+        # raise Exception(rcm_order)
     
         return rcm_order
         
