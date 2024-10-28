@@ -1,0 +1,9 @@
+
+1.   when dx and dy is too small, the conjugate gradient does not converge.
+     For instances, when dx=dy=0.1, it converges. But it does not when dx=dy=0.01.
+
+
+2. Now, we have the reverse_cuthill_mckee permutation, how to make use of it?
+
+
+3.
