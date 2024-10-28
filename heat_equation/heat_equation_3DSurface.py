@@ -39,7 +39,7 @@ y = np.linspace(0, L, Ny)
 X, Y = np.meshgrid(x, y)
 # Y = 0.5 * Y
 # Z = math.sqrt(3) * Y
-Z = X + Y ** 2
+# Z = X + Y ** 2
 Z = np.sqrt(X**2 + Y**2)
 
 points = np.vstack([X.flatten(), Y.flatten()]).T
