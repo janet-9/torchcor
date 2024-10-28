@@ -1,12 +1,14 @@
+1.
+when dx and dy is too small, the conjugate gradient does not converge.
+For instances, when dx=dy=0.1, it converges. But it does not when dx=dy=0.01.
+Because thermal diffusivity is too large.
 
-1.   when dx and dy is too small, the conjugate gradient does not converge.
-     For instances, when dx=dy=0.1, it converges. But it does not when dx=dy=0.01.
-     Because thermal diffusivity is too large.
-
-     The smaller the thermal diffusivity, the less number of iteration it takes to converge.
+The smaller the thermal diffusivity, the less number of iteration it takes to converge.
 
 
-2. Now, we have the reverse_cuthill_mckee permutation, how to make use of it?
+2.
+Are the non-zeros in mass and stiffness matrix always at the same location?
+Now, we have the reverse_cuthill_mckee permutation, how to make use of it?
 
 
 3.

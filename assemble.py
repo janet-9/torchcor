@@ -96,7 +96,6 @@ class Matrices2D:
     
     def renumber_permutation(self):
         indices = []
-        values = []
 
         for i, j in combinations(list(range(self.triangles.shape[-1])), 2):
             x = self.triangles[:, i]  # (N, )
