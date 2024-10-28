@@ -39,7 +39,7 @@ y = np.linspace(0, L, Ny)
 X, Y = np.meshgrid(x, y)
 # Y = 0.5 * Y
 # Z = math.sqrt(3) * Y
-Z = X ** 2 + Y
+Z = X + Y
 # Z = np.sqrt(X**2 + Y**2)
 
 points = np.vstack([X.flatten(), Y.flatten()]).T
@@ -104,7 +104,7 @@ print(f"solved in: {time.time() - start} seconds")
 print("saving gif file")
 print(frames.shape)
 visualization = Visualization3DSurface(frames, vertices, triangles, dt, ts_per_frame)
-visualization.save_gif(f"./(Z = X ** 2 + Y) 3D surface L={L}, alpha={alpha}, dx=dy={L/Nx}.gif")
+visualization.save_gif(f"./(Z = X + Y) 3D surface L={L}, alpha={alpha}, dx=dy={L/Nx}.gif")
 
 
 
