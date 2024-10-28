@@ -26,7 +26,7 @@ alpha = 0.001  # Thermal diffusivity
 dt = 0.0125  # Time step size
 nt = 1000  # Number of time steps
 ts_per_frame = 10
-max_iter = 200
+max_iter = 100
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dtype = torch.float64
@@ -39,8 +39,8 @@ y = np.linspace(0, L, Ny)
 X, Y = np.meshgrid(x, y)
 # Y = 0.5 * Y
 # Z = math.sqrt(3) * Y
-Z = X ** 2 + Y
-# Z = np.sqrt(X**2 + Y**2)
+# Z = X ** 2 + Y
+Z = np.sqrt(X**2 + Y**2)
 
 points = np.vstack([X.flatten(), Y.flatten()]).T
 vertices = np.vstack([X.flatten(), Y.flatten(), Z.flatten()]).T 
@@ -106,7 +106,7 @@ print(f"solved in: {time.time() - start} seconds")
 print("saving gif file")
 print(frames.shape)
 visualization = Visualization3DSurface(frames, vertices, triangles, dt, ts_per_frame)
-visualization.save_gif(f"./(Z = X ** 2 + Y) 3D surface L={L}, alpha={alpha}, dx=dy={L/Nx}.gif")
+visualization.save_gif(f"./(Z = np.sqrt(X**2 + Y**2)) 3D surface L={L}, alpha={alpha}, dx=dy={L/Nx}.gif")
 
 
 
