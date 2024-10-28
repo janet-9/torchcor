@@ -24,7 +24,7 @@ Ny = 200  # Number of grid points in x and y
 T0 = 100
 alpha = 0.001  # Thermal diffusivity
 dt = 0.0125  # Time step size
-nt = 1000  # Number of time steps
+nt = 1500  # Number of time steps
 ts_per_frame = 10
 max_iter = 100
 
@@ -53,15 +53,13 @@ print(f"Vertices (Nodes): {len(vertices)}, Triangles: {len(triangles)}")
 
 # Step 3: Initial condition
 u0 = torch.zeros((Nx * Ny,)).to(device=device, dtype=dtype)
-u0[20 * Nx: 20 * Nx + Ny] = T0
+u0[80 * Nx: 80 * Nx + Ny] = T0
 u = u0
 
 start = time.time()
 print("assembling matrices")
 matrices = Matrices3DSurface(vertices, triangles, device=device, dtype=dtype)
 K, M = matrices.assemble_matrices(alpha)
-K = K.to(device=device, dtype=dtype)
-M = M.to(device=device, dtype=dtype)
 print(f"assembled in: {time.time() - start} seconds")
 
 # print(K.to_dense().numpy())
@@ -71,7 +69,7 @@ A = M_dt + K
 
 # apply initial condition for A
 print("applying boundary condition for A")
-dirichlet_boundary_nodes = torch.arange(20 * Nx, 20 * Nx + Ny, device=device)
+dirichlet_boundary_nodes = torch.arange(80 * Nx, 80 * Nx + Ny, device=device)
 boundary_values = torch.ones_like(dirichlet_boundary_nodes, device=device, dtype=dtype) * T0
 
 A = apply_dirichlet_boundary_conditions(A, dirichlet_boundary_nodes)

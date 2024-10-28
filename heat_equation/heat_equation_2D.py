@@ -59,8 +59,7 @@ print("assembling matrices")
 matrices = Matrices2D(vertices, triangles, device=device, dtype=dtype)
 matrices.renumber_permutation()
 K, M = matrices.assemble_matrices(alpha)
-K = K.to(device=device, dtype=dtype)
-M = M.to(device=device, dtype=dtype)
+
 print(f"assembled in: {time.time() - start} seconds")
 
 # print(K.to_dense().numpy())

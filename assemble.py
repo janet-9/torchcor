@@ -89,6 +89,9 @@ class Matrices2D:
             size=(self.n_vertices, self.n_vertices)
         )
 
+        K = K.to(device=self.device, dtype=self.dtype)
+        M = M.to(device=self.device, dtype=self.dtype)
+
         return K.coalesce(), M.coalesce()
     
     def renumber_permutation(self):
