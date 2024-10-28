@@ -1,14 +1,16 @@
 import torch
+import numpy as np
 from itertools import combinations
 import scipy.sparse as sp
 from scipy.sparse.csgraph import reverse_cuthill_mckee
+import matplotlib.pyplot as plt
 
 
 class Matrices2D:
     def __init__(self, vertices, triangles, device, dtype):
-        self.vertices = torch.tensor(vertices, dtype=torch.float64, device=device) # (12100, 2)
+        self.vertices = torch.tensor(vertices, dtype=torch.float64)  # (12100, 2)
         self.n_vertices = vertices.shape[0]
-        self.triangles = torch.tensor(triangles, dtype=torch.long, device=device) # (23762, 3)
+        self.triangles = torch.tensor(triangles, dtype=torch.long)  # (23762, 3)
         self.device = device
         self.dtype = dtype
 
@@ -52,6 +54,9 @@ class Matrices2D:
         return areas
     
     def construct_local_matrices(self, alpha):
+        self.vertices = self.vertices.to(self.device)
+        self.triangles = self.triangles.to(self.device)
+
         triangle_coords = self.vertices[self.triangles]  # (23762, 3, 2)
 
         # Calculate areas for all triangles at once
@@ -101,24 +106,27 @@ class Matrices2D:
             x = self.triangles[:, i]  # (N, )
             y = self.triangles[:, j]  # (N, )
             indices.append(torch.stack([x, y],  dim=0))  # (2, N)
-            # TODO: add diagonal? 
         
         indices = torch.cat(indices, dim=1)   # (2, N)
         values = torch.ones(indices.shape[1])
-        # pattern = torch.sparse_coo_tensor(indices, 
-        #                                   values, 
+        # pattern = torch.sparse_coo_tensor(indices,
+        #                                   values,
         #                                   size=(self.n_vertices, self.n_vertices),
         #                                   device=self.device)
-        
+
         indices = indices.cpu().numpy()
         values = values.cpu().numpy()
         pattern_scipy = sp.csr_matrix((values, (indices[0], indices[1])), shape=(self.n_vertices, self.n_vertices))
 
         rcm_order = reverse_cuthill_mckee(pattern_scipy)
-        raise Exception(rcm_order)
-    
-        return rcm_order
-        
+
+        rcm_order_dict = {j: i for i, j in enumerate(rcm_order)}
+
+        self.triangles.apply_(lambda x: rcm_order_dict[x])
+
+        self.vertices = self.vertices[rcm_order.copy()]
+
+        return rcm_order_dict
 
         
 
@@ -153,3 +161,5 @@ class Matrices3DSurface(Matrices2D):
         areas = 0.5 * torch.norm(cross_product, dim=1)  # Shape (N,)
 
         return areas
+
+
