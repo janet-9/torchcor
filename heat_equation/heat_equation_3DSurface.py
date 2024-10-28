@@ -1,7 +1,6 @@
 import math
 import sys
 import os
-import matplotlib.pyplot as plt
 
 # Get the parent directory
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -24,7 +23,7 @@ Ny = 200  # Number of grid points in x and y
 T0 = 100
 alpha = 0.001  # Thermal diffusivity
 dt = 0.0125  # Time step size
-nt = 1500  # Number of time steps
+nt = 2000  # Number of time steps
 ts_per_frame = 10
 max_iter = 100
 
@@ -40,6 +39,7 @@ X, Y = np.meshgrid(x, y)
 # Y = 0.5 * Y
 # Z = math.sqrt(3) * Y
 Z = X + Y
+# Z = X ** 2 + Y
 # Z = np.sqrt(X**2 + Y**2)
 
 points = np.vstack([X.flatten(), Y.flatten()]).T
