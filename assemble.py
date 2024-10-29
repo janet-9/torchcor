@@ -32,7 +32,7 @@ class Matrices2D:
 
     def local_stiffness(self, alpha, triangle_coords):
         # Calculate the Jacobian for each triangle
-        J_batch = self.jacobian(triangle_coords)  # Assumed to return a batch of Jacobians, shape (N, 2, 2)
+        J_batch = self.jacobian(triangle_coords)  
         det_J_batch = torch.linalg.det(J_batch)
         inv_J_batch = torch.linalg.inv(J_batch)
 
@@ -158,13 +158,15 @@ class Matrices3D:
                                                                             [1, 2, 1, 1],
                                                                             [1, 1, 2, 1],
                                                                             [1, 1, 1, 2]],
-                                                                            device=self.device, dtype=self.dtype).unsqueeze(0)  # Shape (M, 4, 4)
+                                                                            device=self.device, 
+                                                                            dtype=self.dtype).unsqueeze(0)  # Shape (M, 4, 4)
         return Me_batch
 
     def local_stiffness(self, alpha, tetrahedron_coords):
         # Calculate the Jacobian for each tetrahedron
         J_batch = self.jacobian(tetrahedron_coords)  # (M, 3, 3)
         det_J_batch = torch.abs(torch.linalg.det(J_batch))
+        print(tetrahedron_coords[0], J_batch[0])
         inv_J_batch = torch.linalg.inv(J_batch)
 
         # Calculate dN/dxyz for all tetrahedrons using the inverse Jacobian

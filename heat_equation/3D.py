@@ -72,7 +72,8 @@ print(f"Vertices: {len(vertices)}, Tetrahedrons: {len(tetrahedrons)}")
 start = time.time()
 print("assembling matrices")
 rcm = RCM()
-rcm_vertices, rcm_tetrahedrons = rcm.calculate_rcm_order(vertices, tetrahedrons)
+rcm_vertices, rcm_tetrahedrons = vertices, tetrahedrons # rcm.calculate_rcm_order(vertices, tetrahedrons)
+
 
 matrices = Matrices3D(torch.tensor(rcm_vertices, device=device, dtype=dtype), 
                       torch.tensor(rcm_tetrahedrons, device=device, dtype=torch.long),
@@ -101,7 +102,8 @@ pcd.create_Jocobi(A)
 cg = ConjugateGradient(pcd)
 cg.initialize(x=u)
 
-frames = rcm.inverse(u0).reshape((1, Nx, Ny, Nz))
+# frames = rcm.inverse(u0).reshape((1, Nx, Ny, Nz))
+frames = u0.reshape((1, Nx, Ny, Nz))
 
 # Step 6: Time-stepping solution
 start = time.time()
@@ -117,7 +119,8 @@ for n in range(nt):
         print(f"{n} / {nt}: {total_iter}")
 
     if n % ts_per_frame == 0:
-        frames = torch.cat((frames, rcm.inverse(u).reshape((1, Nx, Ny, Nz))))
+        # frames = torch.cat((frames, rcm.inverse(u).reshape((1, Nx, Ny, Nz))))
+        frames = torch.cat((frames, u.reshape((1, Nx, Ny, Nz))))
 
 print(f"solved in: {time.time() - start} seconds")
 
