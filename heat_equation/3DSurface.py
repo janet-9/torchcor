@@ -1,3 +1,4 @@
+import math
 import sys
 import os
 
@@ -7,27 +8,23 @@ sys.path.append(parent_dir)
 
 import torch
 import numpy as np
-from assemble import Matrices2D
+from assemble import Matrices3DSurface
 from preconditioner import Preconditioner
-from sovler import ConjugateGradient
-from utils import Visualization
+from solver import ConjugateGradient
+from utils import Visualization3DSurface, Visualization
 from boundary import apply_dirichlet_boundary_conditions
 import time
 from scipy.spatial import Delaunay
-import matplotlib.pyplot as plt
+from reorder import RCM
 
 # Step 1: Define problem parameters
 L = 1  # Length of domain in x and y directions
-Nx = 100
-Ny = 100  # Number of grid points in x and y
+Nx = 200
+Ny = 200  # Number of grid points in x and y
 T0 = 100
-
 alpha = 0.001  # Thermal diffusivity
-# h = 0.5206164
-# print(h ** 2 / (2 * alpha))
 dt = 0.0125  # Time step size
-
-nt = 1000  # Number of time steps
+nt = 2000  # Number of time steps
 ts_per_frame = 10
 max_iter = 100
 
@@ -35,43 +32,44 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dtype = torch.float64
 print(device)
 
+
 # Step 2: Generate grid (structured triangular mesh)
 x = np.linspace(0, L, Nx)
 y = np.linspace(0, L, Ny)
 X, Y = np.meshgrid(x, y)
+# Y = 0.5 * Y
+# Z = math.sqrt(3) * Y
+# Z = X + Y
+# Z = X ** 2 + Y
+Z = np.sqrt(X**2 + Y**2)
 
-# Y[1:Nx-1, 1: Ny-1] += np.random.rand(Nx-2, Ny-2) * 0.5
-# X[1:Nx-1, 1: Ny-1] -= np.random.rand(Nx-2, Ny-2) * 0.5
-
-# Flatten the X, Y, Z arrays for input to Delaunay
-vertices = np.vstack([X.flatten(), Y.flatten()]).T
-print(vertices.shape)
-triangles = Delaunay(vertices).simplices
+points = np.vstack([X.flatten(), Y.flatten()]).T
+vertices = np.vstack([X.flatten(), Y.flatten(), Z.flatten()]).T 
+triangles = Delaunay(points).simplices
+triangles.sort(axis=1)
 
 
-print(f"Vertices: {len(vertices)}, Nodes: {len(triangles)}")
+print(vertices.shape, triangles.shape)
+print(f"Vertices (Nodes): {len(vertices)}, Triangles: {len(triangles)}")
+
 
 start = time.time()
 print("assembling matrices")
-matrices = Matrices2D(vertices, triangles, device=device, dtype=dtype)
-
-rcm_order_dict = matrices.renumber_permutation()
-
+rcm = RCM()
+rcm_vertices, rcm_triangles = rcm.calculate_rcm_order(vertices, triangles)
+matrices = Matrices3DSurface(rcm_vertices, rcm_triangles, device=device, dtype=dtype)
 K, M = matrices.assemble_matrices(alpha)
 print(f"assembled in: {time.time() - start} seconds")
 
+# print(K.to_dense().numpy())
 
 M_dt = M * (1 / dt)
 A = M_dt + K
 
 # apply initial condition for A
 print("applying boundary condition for A")
-dirichlet_boundary_nodes = torch.arange(50 * Nx, 50 * Nx + Ny)
-dirichlet_boundary_nodes.apply_(lambda x: rcm_order_dict[x])
-
-
-dirichlet_boundary_nodes = dirichlet_boundary_nodes.to(device)
-# raise Exception(dirichlet_boundary_nodes)
+dirichlet_boundary_nodes = torch.arange(80 * Nx, 80 * Nx + Ny, device=device)
+dirichlet_boundary_nodes = rcm.apply(dirichlet_boundary_nodes)
 boundary_values = torch.ones_like(dirichlet_boundary_nodes, device=device, dtype=dtype) * T0
 
 u0 = torch.zeros((Nx * Ny,), device=device, dtype=dtype)
@@ -86,12 +84,11 @@ cg = ConjugateGradient(pcd)
 cg.initialize(x=u)
 
 # LU, pivots = torch.linalg.lu_factor(A.to_dense())
-inverse_rcm_order = torch.argsort(torch.tensor(list(rcm_order_dict.keys())))
 
-frames = u0[inverse_rcm_order].reshape((1, Nx, Ny))
+frames = rcm.inverse(u0).reshape((1, Nx, Ny))
 start = time.time()
 print("solving")
-for n in range(0, nt):
+for n in range(1, nt):
     b = M_dt @ u
     b[dirichlet_boundary_nodes] = boundary_values  # apply initial condition for b
 
@@ -104,15 +101,15 @@ for n in range(0, nt):
         print(f"{n} / {nt}: {total_iter}")
 
     if n % ts_per_frame == 0:
-
-        v = u[inverse_rcm_order]
-        frames = torch.cat((frames, v.reshape((1, Nx, Ny))))
+        frames = torch.cat((frames, rcm.inverse(u).reshape((1, Nx, Ny))))
 
 print(f"solved in: {time.time() - start} seconds")
 
 print("saving gif file")
-visualization = Visualization(frames, vertices, triangles, dt, ts_per_frame)
-visualization.save_gif("./2D Heat Equation.gif")
+print(frames.shape)
+visualization = Visualization3DSurface(frames, vertices, triangles, dt, ts_per_frame)
+visualization.save_gif(f"./(Z = np.sqrt(X**2 + Y**2)) 3D surface L={L}, alpha={alpha}, dx=dy={L/Nx}.gif")
+
 
 
 

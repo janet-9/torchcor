@@ -1,18 +1,14 @@
 import torch
-import numpy as np
-from itertools import combinations
-import scipy.sparse as sp
-from scipy.sparse.csgraph import reverse_cuthill_mckee
-import matplotlib.pyplot as plt
 
 
 class Matrices2D:
     def __init__(self, vertices, triangles, device, dtype):
-        self.vertices = torch.tensor(vertices, dtype=torch.float64)  # (12100, 2)
+        self.vertices = vertices.clone()  # (12100, 2)
         self.n_vertices = vertices.shape[0]
-        self.triangles = torch.tensor(triangles, dtype=torch.long)  # (23762, 3)
+        self.triangles = triangles.clone()  # (23762, 3)
         self.device = device
         self.dtype = dtype
+
 
     def shape_function_gradients(self):
         # Gradients of shape functions in the reference element (master triangle) (3, 2)
@@ -99,37 +95,7 @@ class Matrices2D:
 
         return K.coalesce(), M.coalesce()
     
-    def renumber_permutation(self):
-        indices = []
-
-        for i, j in combinations(list(range(self.triangles.shape[-1])), 2):
-            x = self.triangles[:, i]  # (N, )
-            y = self.triangles[:, j]  # (N, )
-            indices.append(torch.stack([x, y],  dim=0))  # (2, N)
         
-        indices = torch.cat(indices, dim=1)   # (2, N)
-        values = torch.ones(indices.shape[1])
-        # pattern = torch.sparse_coo_tensor(indices,
-        #                                   values,
-        #                                   size=(self.n_vertices, self.n_vertices),
-        #                                   device=self.device)
-
-        indices = indices.cpu().numpy()
-        values = values.cpu().numpy()
-        pattern_scipy = sp.csr_matrix((values, (indices[0], indices[1])), shape=(self.n_vertices, self.n_vertices))
-
-        rcm_order = reverse_cuthill_mckee(pattern_scipy)
-
-        rcm_order_dict = {j: i for i, j in enumerate(rcm_order)}
-
-        self.triangles.apply_(lambda x: rcm_order_dict[x])
-
-        self.vertices = self.vertices[rcm_order.copy()]
-
-        return rcm_order_dict
-
-        
-
 
 class Matrices3DSurface(Matrices2D):
     def __init__(self, vertices, triangles, device, dtype):
@@ -163,3 +129,103 @@ class Matrices3DSurface(Matrices2D):
         return areas
 
 
+
+class Matrices3D:
+    def __init__(self, vertices, tetrahedrons, device, dtype):
+        self.vertices = vertices.clone()  # (N, 3) for 3D vertices
+        self.n_vertices = vertices.shape[0]
+        self.tetrahedrons = tetrahedrons.clone()  # (M, 4) for 4-node tetrahedrons
+        self.device = device
+        self.dtype = dtype
+
+    def shape_function_gradients(self):
+        # Gradients of shape functions in the reference element (master tetrahedron) (4, 3)
+        return torch.tensor([[-1, -1, -1],
+                             [1, 0, 0],
+                             [0, 1, 0],
+                             [0, 0, 1]], device=self.device, dtype=self.dtype)
+
+    def jacobian(self, tetrahedron_coords):
+        dN_dxi = self.shape_function_gradients()  # (4, 3)
+        
+        # Transpose `coords` (M, 4, 3) to (M, 3, 4) for matrix multiplication
+        J = tetrahedron_coords.transpose(1, 2) @ dN_dxi  # Result: (M, 3, 3) for each tetrahedron
+
+        return J
+
+    def local_mass(self, volumes):
+        Me_batch = (volumes / 20).unsqueeze(1).unsqueeze(2) * torch.tensor([[2, 1, 1, 1],
+                                                                            [1, 2, 1, 1],
+                                                                            [1, 1, 2, 1],
+                                                                            [1, 1, 1, 2]],
+                                                                            device=self.device, dtype=self.dtype).unsqueeze(0)  # Shape (M, 4, 4)
+        return Me_batch
+
+    def local_stiffness(self, alpha, tetrahedron_coords):
+        # Calculate the Jacobian for each tetrahedron
+        J_batch = self.jacobian(tetrahedron_coords)  # (M, 3, 3)
+        det_J_batch = torch.abs(torch.linalg.det(J_batch))
+        inv_J_batch = torch.linalg.inv(J_batch)
+
+        # Calculate dN/dxyz for all tetrahedrons using the inverse Jacobian
+        dN_dxi = self.shape_function_gradients()  # Shape (4, 3)
+        dN_dxyz_batch = dN_dxi @ inv_J_batch  # Shape (M, 4, 3)
+        Ke_batch = (alpha * det_J_batch / 6).view(-1, 1, 1) * (dN_dxyz_batch @ dN_dxyz_batch.transpose(1, 2))
+
+        return Ke_batch
+    
+    def calculate_volume(self, tetrahedron_coords):
+        # Adding a column of ones to calculate the volume determinant
+        coords_augmented = torch.cat([torch.ones(tetrahedron_coords.shape[0], 4, 1, device=self.device, dtype=self.dtype),
+                                      tetrahedron_coords], dim=2)
+        volumes = torch.abs(torch.linalg.det(coords_augmented)) / 6
+
+        return volumes
+
+    def construct_local_matrices(self, alpha):
+        self.vertices = self.vertices.to(self.device)
+        self.tetrahedrons = self.tetrahedrons.to(self.device)
+
+        tetrahedron_coords = self.vertices[self.tetrahedrons]  # (M, 4, 3)
+
+        # Calculate volumes for all tetrahedrons at once
+        volumes = self.calculate_volume(tetrahedron_coords)
+
+        # Mass and stiffness matrices for all tetrahedrons: (M, 4, 4)
+        Me_batch = self.local_mass(volumes)
+        Ke_batch = self.local_stiffness(alpha, tetrahedron_coords)
+
+        return Me_batch, Ke_batch
+
+    def assemble_matrices(self, alpha):
+        # Precompute vertex coordinates for all tetrahedrons
+        Me_batch, Ke_batch = self.construct_local_matrices(alpha)
+        
+        # Lists to store the indices and values of non-zero elements for K and M
+        rows, cols, K_vals, M_vals = [], [], [], []
+        
+        # Collect contributions for global matrices in sparse form
+        for i in range(4):
+            for j in range(4):
+                rows.extend(self.tetrahedrons[:, i].tolist())
+                cols.extend(self.tetrahedrons[:, j].tolist())
+                K_vals.extend(Ke_batch[:, i, j].tolist())
+                M_vals.extend(Me_batch[:, i, j].tolist())
+
+        # Create sparse tensors from the accumulated lists
+        K = torch.sparse_coo_tensor(
+            indices=[rows, cols],
+            values=K_vals,
+            size=(self.n_vertices, self.n_vertices)
+        )
+
+        M = torch.sparse_coo_tensor(
+            indices=[rows, cols],
+            values=M_vals,
+            size=(self.n_vertices, self.n_vertices)
+        )
+
+        K = K.to(device=self.device, dtype=self.dtype)
+        M = M.to(device=self.device, dtype=self.dtype)
+
+        return K.coalesce(), M.coalesce()

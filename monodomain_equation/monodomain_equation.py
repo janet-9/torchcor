@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from assemble import Matrices
 from preconditioner import Preconditioner
-from sovler import ConjugateGradient
+from solver import ConjugateGradient
 from utils import Visualization
 from matplotlib import tri
 from boundary import apply_dirichlet_boundary_conditions
