@@ -27,6 +27,7 @@ logging.basicConfig(
 parser = argparse.ArgumentParser(description="A simple example of argparse.")
 parser.add_argument("-s", '--mesh_size', type=float, default=0.1)
 parser.add_argument('--no_cmr', action='store_false')
+parser.add_argument('--vtk', action='store_true')
 args = parser.parse_args()
 
 # Step 1: Define problem parameters
@@ -38,6 +39,7 @@ ts_per_frame = 10  # Frames per output time step
 max_iter = 100  # Max CG iterations
 apply_cmr = args.no_cmr
 mesh_size = args.mesh_size
+save_frames = args.vtk
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dtype = torch.float64
@@ -102,7 +104,7 @@ cg.initialize(x=u)
 visualization = Visualization3D(vertices, tetrahedrons)
 # Step 6: Time-stepping solution
 start = time.time()
-frames = [(0, u)]
+frames = [(0, u)] if save_frames else []
 for n in range(nt):
     b = M_dt @ u
     b[boundary_nodes] = boundary_values  # Apply initial condition for b
@@ -113,7 +115,7 @@ for n in range(nt):
     else:
         print(f"{n} / {nt}: {total_iter}")
 
-    if n % ts_per_frame == 0:
+    if n % ts_per_frame == 0 and save_frames:
         frames.append((n, u))
 solving_time = time.time() - start
 logging.info(f"Solved {n_vertices} nodes ({mesh_size}) for {nt} timesteps in {round(solving_time, 2)} seconds; "
@@ -121,10 +123,11 @@ logging.info(f"Solved {n_vertices} nodes ({mesh_size}) for {nt} timesteps in {ro
              f"CMR:{apply_cmr}")
 print(f"Solved {n_vertices} nodes ({mesh_size}) for {nt} timesteps in {solving_time} seconds; CMR:{apply_cmr}")
 
-print("Saving frames: ", end="")
-for n, u in frames:
-    visualization.save_frame(color_values=rcm.inverse(u).cpu().numpy() if apply_cmr else u.cpu().numpy(),
-                             frame_path=f"./vtk_files_{len(vertices)}_{apply_cmr}/frame_{n}.vtk")
-print("Done")
+if save_frames:
+    print("Saving frames: ", end="")
+    for n, u in frames:
+        visualization.save_frame(color_values=rcm.inverse(u).cpu().numpy() if apply_cmr else u.cpu().numpy(),
+                                 frame_path=f"./vtk_files_{len(vertices)}_{apply_cmr}/frame_{n}.vtk")
+    print("Done")
 
 
