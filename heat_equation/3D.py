@@ -12,7 +12,7 @@ import time
 from reorder import RCM
 import pygmsh
 import meshio
-from utils import Visualization3D
+from visualize import Visualization3D
 import argparse
 import logging
 
@@ -45,22 +45,18 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dtype = torch.float64
 print(f"Using {device}")
 
-print("Constructing mesh: ", end="")
 start = time.time()
-
+print("Constructing mesh: ", end="")
 with pygmsh.geo.Geometry() as geom:
     # Define a box with specific corner points (x0, y0, z0) and (x1, y1, z1)
     cube = geom.add_box(x0=0, x1=1, y0=0, y1=1, z0=0, z1=1, mesh_size=mesh_size)
     mesh = geom.generate_mesh()
-
-    vertices = mesh.points   # (235, 3)
-    n_vertices = len(vertices)
-    tetrahedrons = mesh.cells_dict["tetra"]   # (718, 4)
-
-    meshio.write(f"./3D_Mesh/{n_vertices}_nodes.vtk", mesh)
-    print(f"Vertices (Nodes): {n_vertices}", end=" ")
 print(f"done in: {time.time() - start} seconds")
 
+vertices = mesh.points   # (235, 3)
+n_vertices = len(vertices)
+tetrahedrons = mesh.cells_dict["tetra"]   # (718, 4)
+print(f"Vertices (Nodes): {n_vertices}", end=" ")
 
 # Step 3: RCM ordering and matrix assembly
 print("Assembling matrices: ", end="")
