@@ -34,7 +34,7 @@ mesh_size = args.mesh_size
 save_frames = args.vtk
 
 device = torch.device(f"cuda:{args.cuda}" if torch.cuda.is_available() else "cpu")
-dtype = torch.float32
+dtype = torch.float64
 print(f"Using {device}")
 
 start = time.time()
