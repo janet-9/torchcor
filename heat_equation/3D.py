@@ -35,7 +35,7 @@ with pygmsh.geo.Geometry() as geom:
 
     vertices = mesh.points   # (235, 3)
     tetrahedrons = mesh.cells_dict["tetra"]   # (718, 4)
-    print(f"Vertices: {len(vertices)}, Nodes: {len(tetrahedrons)}")
+    print(f"Vertices (Nodes): {len(vertices)}, Tetrahedrons: {len(tetrahedrons)}")
 
 
 # Step 3: RCM ordering and matrix assembly
@@ -85,7 +85,7 @@ for n in range(nt):
 
     if n % ts_per_frame == 0:
         frames.append((n, u))
-print(f"Solved in: {time.time() - start} seconds")
+print(f"Solved {len(vertices)} nodes in: {time.time() - start} seconds")
 
 print("Saving frames: ", end="")
 for n, u in frames:
