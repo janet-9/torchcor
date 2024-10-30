@@ -33,7 +33,7 @@ args = parser.parse_args()
 T0 = 100  # Initial temperature on the boundary
 alpha = 0.01  # Thermal diffusivity
 dt = 0.0125  # Time step size
-nt = 100  # Number of time steps
+nt = 1000  # Number of time steps
 ts_per_frame = 10  # Frames per output time step
 max_iter = 100  # Max CG iterations
 apply_cmr = args.no_cmr
@@ -115,11 +115,11 @@ for n in range(nt):
 
     if n % ts_per_frame == 0:
         frames.append((n, u))
-
-logging.info(f"Solved {n_vertices} nodes ({mesh_size}) in {round(time.time() - start, 2)} seconds; "
+solving_time = time.time() - start
+logging.info(f"Solved {n_vertices} nodes ({mesh_size}) for {nt} timesteps in {round(solving_time, 2)} seconds; "
              f"Assemble: {round(assemble_matrix_time, 2)}; "
              f"CMR:{apply_cmr}")
-print(f"Solved {n_vertices} nodes ({mesh_size}) in {time.time() - start} seconds; CMR:{apply_cmr}")
+print(f"Solved {n_vertices} nodes ({mesh_size}) for {nt} timesteps in {solving_time} seconds; CMR:{apply_cmr}")
 
 print("Saving frames: ", end="")
 for n, u in frames:
