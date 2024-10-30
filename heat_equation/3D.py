@@ -26,7 +26,7 @@ logging.basicConfig(
 
 parser = argparse.ArgumentParser(description="A simple example of argparse.")
 parser.add_argument("-s", '--mesh_size', type=float, default=0.1)
-parser.add_argument('--no_cmr', action='store_false')
+parser.add_argument('--no_rcm', action='store_false')
 parser.add_argument('--vtk', action='store_true')
 args = parser.parse_args()
 
@@ -37,7 +37,7 @@ dt = 0.0125  # Time step size
 nt = 1000  # Number of time steps
 ts_per_frame = 10  # Frames per output time step
 max_iter = 100  # Max CG iterations
-apply_cmr = args.no_cmr
+apply_rcm = args.no_rcm
 mesh_size = args.mesh_size
 save_frames = args.vtk
 
@@ -67,7 +67,7 @@ print("Assembling matrices: ", end="")
 start = time.time()
 
 rcm = RCM(device=device, dtype=dtype)
-if apply_cmr:
+if apply_rcm:
     rcm_vertices, rcm_tetrahedrons = rcm.calculate_rcm_order(vertices, tetrahedrons)
 else:
     rcm_vertices = torch.from_numpy(vertices).to(dtype=dtype, device=device)
@@ -85,7 +85,7 @@ A = M_dt + K
 
 # Step 4: Apply Dirichlet boundary conditions
 boundary_nodes = torch.tensor([i for i, (x, y, z) in enumerate(vertices) if x == 0], device=device, dtype=torch.long)
-if apply_cmr:
+if apply_rcm:
     boundary_nodes = rcm.apply(boundary_nodes)
 boundary_values = torch.ones_like(boundary_nodes, device=device, dtype=dtype) * T0
 
@@ -120,14 +120,14 @@ for n in range(nt):
 solving_time = time.time() - start
 logging.info(f"Solved {n_vertices} nodes ({mesh_size}) for {nt} timesteps in {round(solving_time, 2)} seconds; "
              f"Assemble: {round(assemble_matrix_time, 2)}; "
-             f"CMR:{apply_cmr}")
-print(f"Solved {n_vertices} nodes ({mesh_size}) for {nt} timesteps in {solving_time} seconds; CMR:{apply_cmr}")
+             f"RCM:{apply_rcm}")
+print(f"Solved {n_vertices} nodes ({mesh_size}) for {nt} timesteps in {solving_time} seconds; RCM:{apply_rcm}")
 
 if save_frames:
     print("Saving frames: ", end="")
     for n, u in frames:
-        visualization.save_frame(color_values=rcm.inverse(u).cpu().numpy() if apply_cmr else u.cpu().numpy(),
-                                 frame_path=f"./vtk_files_{len(vertices)}_{apply_cmr}/frame_{n}.vtk")
+        visualization.save_frame(color_values=rcm.inverse(u).cpu().numpy() if apply_rcm else u.cpu().numpy(),
+                                 frame_path=f"./vtk_files_{len(vertices)}_{apply_rcm}/frame_{n}.vtk")
     print("Done")
 
 
