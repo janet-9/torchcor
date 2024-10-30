@@ -1,5 +1,6 @@
 import os
-import meshio
+import torch
+
 
 def file_exists(folder_path, prefix="0.01"):
     # Look for the file whose name starts with the prefix
@@ -11,3 +12,26 @@ def file_exists(folder_path, prefix="0.01"):
                 return True
 
     return False
+
+
+def select_device():
+    # Check the total number of GPUs
+    num_gpus = torch.cuda.device_count()
+
+    if num_gpus == 0:
+        return torch.device("cpu")
+
+    # Get memory usage for each GPU
+    min_usage = float('inf')
+    best_device = None
+
+    for i in range(num_gpus):
+        mem_usage = torch.cuda.memory_allocated(i)
+        print(f"GPU {i} memory usage: {mem_usage}")
+
+        if mem_usage < min_usage:
+            min_usage = mem_usage
+            best_device = torch.device(f"cuda:{i}")
+
+    return best_device
+

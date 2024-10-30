@@ -11,7 +11,7 @@ from boundary import apply_dirichlet_boundary_conditions
 import time
 from reorder import RCM
 import pygmsh
-import meshio
+from utils import select_device
 from visualize import Visualization3D
 import argparse
 import logging
@@ -41,7 +41,7 @@ apply_rcm = args.no_rcm
 mesh_size = args.mesh_size
 save_frames = args.vtk
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = select_device()
 dtype = torch.float64
 print(f"Using {device}")
 
