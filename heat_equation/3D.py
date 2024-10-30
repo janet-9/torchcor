@@ -13,6 +13,7 @@ from boundary import apply_dirichlet_boundary_conditions
 import time
 from reorder import RCM
 import pygmsh
+import meshio
 from utils import Visualization3D
 
 # Step 1: Define problem parameters
@@ -28,19 +29,27 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dtype = torch.float64
 print(f"Using {device}")
 
+print("Constructing mesh: ", end="")
+start = time.time()
+
 with pygmsh.geo.Geometry() as geom:
     # Define a box with specific corner points (x0, y0, z0) and (x1, y1, z1)
-    cube = geom.add_box(x0=0, x1=1, y0=0, y1=1, z0=0, z1=1, mesh_size=0.01)
+    cube = geom.add_box(x0=0, x1=1, y0=0, y1=1, z0=0, z1=1, mesh_size=0.005)
     mesh = geom.generate_mesh()
 
     vertices = mesh.points   # (235, 3)
+    n_vertices = len(vertices)
     tetrahedrons = mesh.cells_dict["tetra"]   # (718, 4)
-    print(f"Vertices (Nodes): {len(vertices)}, Tetrahedrons: {len(tetrahedrons)}")
+
+    meshio.write(f"./3D_Mesh/{n_vertices}_nodes.vtk", mesh)
+    print(f"Vertices (Nodes): {n_vertices}", end="")
+print(f"done in: {time.time() - start} seconds")
 
 
 # Step 3: RCM ordering and matrix assembly
-start = time.time()
 print("Assembling matrices: ", end="")
+start = time.time()
+
 rcm = RCM(device=device, dtype=dtype)
 rcm_vertices, rcm_tetrahedrons = rcm.calculate_rcm_order(vertices, tetrahedrons)
 matrices = Matrices3D(rcm_vertices,
@@ -85,7 +94,7 @@ for n in range(nt):
 
     if n % ts_per_frame == 0:
         frames.append((n, u))
-print(f"Solved {len(vertices)} nodes in: {time.time() - start} seconds")
+print(f"Solved {n_vertices} nodes in: {time.time() - start} seconds")
 
 print("Saving frames: ", end="")
 for n, u in frames:
