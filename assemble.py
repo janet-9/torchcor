@@ -95,7 +95,6 @@ class Matrices2D:
 
         return K.coalesce(), M.coalesce()
     
-        
 
 class Matrices3DSurface(Matrices2D):
     def __init__(self, vertices, triangles, device, dtype):
@@ -127,7 +126,6 @@ class Matrices3DSurface(Matrices2D):
         areas = 0.5 * torch.norm(cross_product, dim=1)  # Shape (N,)
 
         return areas
-
 
 
 class Matrices3D:
@@ -166,7 +164,7 @@ class Matrices3D:
         # Calculate the Jacobian for each tetrahedron
         J_batch = self.jacobian(tetrahedron_coords)  # (M, 3, 3)
         det_J_batch = torch.abs(torch.linalg.det(J_batch))
-        print(tetrahedron_coords[0], J_batch[0])
+
         inv_J_batch = torch.linalg.inv(J_batch)
 
         # Calculate dN/dxyz for all tetrahedrons using the inverse Jacobian
@@ -230,4 +228,4 @@ class Matrices3D:
         K = K.to(device=self.device, dtype=self.dtype)
         M = M.to(device=self.device, dtype=self.dtype)
 
-        return K.coalesce(), M.coalesce()
+        return K, M

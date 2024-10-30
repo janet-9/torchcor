@@ -54,7 +54,7 @@ print(f"Vertices: {len(vertices)}, Nodes: {len(triangles)}")
 
 start = time.time()
 print("assembling matrices")
-rcm = RCM()
+rcm = RCM(device=device, dtype=dtype)
 rcm_vertices, rcm_triangles = rcm.calculate_rcm_order(vertices, triangles)
 
 matrices = Matrices2D(rcm_vertices, rcm_triangles, device=device, dtype=dtype)

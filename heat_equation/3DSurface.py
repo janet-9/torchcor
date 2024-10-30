@@ -55,7 +55,7 @@ print(f"Vertices (Nodes): {len(vertices)}, Triangles: {len(triangles)}")
 
 start = time.time()
 print("assembling matrices")
-rcm = RCM()
+rcm = RCM(device=device, dtype=dtype)
 rcm_vertices, rcm_triangles = rcm.calculate_rcm_order(vertices, triangles)
 matrices = Matrices3DSurface(rcm_vertices, rcm_triangles, device=device, dtype=dtype)
 K, M = matrices.assemble_matrices(alpha)
@@ -106,7 +106,6 @@ for n in range(1, nt):
 print(f"solved in: {time.time() - start} seconds")
 
 print("saving gif file")
-print(frames.shape)
 visualization = Visualization3DSurface(frames, vertices, triangles, dt, ts_per_frame)
 visualization.save_gif(f"./(Z = np.sqrt(X**2 + Y**2)) 3D surface L={L}, alpha={alpha}, dx=dy={L/Nx}.gif")
 

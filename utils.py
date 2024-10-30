@@ -1,11 +1,10 @@
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-import torch
-
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import torch
+import pyvista as pv
+from pathlib import Path
+
 
 class Visualization:
     def __init__(self, frames, vertices, triangles, dt, ts_per_frame):
@@ -90,6 +89,27 @@ class Visualization3DSurface:
     def save_gif(self, filepath):
         anim = animation.FuncAnimation(self.fig, self.animate, interval=1, frames=self.nt, repeat=False)
         anim.save(filepath)  
+
+
+class Visualization3D:
+    def __init__(self, vertices, tetrahedrons):
+        self.vertices = vertices
+        self.tetrahedrons = tetrahedrons
+        self.n_tetrahedrons = tetrahedrons.shape[0]
+
+    def save_frame(self, color_values, frame_path):
+        cells = np.hstack((np.full((self.n_tetrahedrons, 1), 4, dtype=int), self.tetrahedrons)).flatten().astype(int)
+        cell_type = np.full(self.n_tetrahedrons, 10, dtype=int)
+        grid = pv.UnstructuredGrid(cells, cell_type, self.vertices)
+        grid.point_data["colors"] = color_values
+
+        # Plot the mesh
+        # plotter = pv.Plotter()
+        # plotter.add_mesh(grid, scalars="colors", cmap="viridis", show_edges=True)
+        # plotter.show()
+        file_path = Path(frame_path)
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        grid.save(frame_path)
 
 
 
