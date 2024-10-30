@@ -30,7 +30,7 @@ print(f"Using {device}")
 
 with pygmsh.geo.Geometry() as geom:
     # Define a box with specific corner points (x0, y0, z0) and (x1, y1, z1)
-    cube = geom.add_box(x0=0, x1=1, y0=0, y1=1, z0=0, z1=1, mesh_size=0.02)
+    cube = geom.add_box(x0=0, x1=1, y0=0, y1=1, z0=0, z1=1, mesh_size=0.01)
     mesh = geom.generate_mesh()
 
     vertices = mesh.points   # (235, 3)
