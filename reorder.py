@@ -32,7 +32,7 @@ class RCM:
 
         rcm = torch.tensor(reverse_cuthill_mckee(pattern_scipy).copy(), dtype=torch.long, device=self.device)
 
-        self.rcm_order = torch.zeros_like(rcm, device=self.device)
+        self.rcm_order = torch.zeros_like(rcm, dtype=torch.long, device=self.device)
         self.rcm_order[rcm] = torch.arange(n_vertices, dtype=torch.long, device=self.device)
        
         self.inverse_rcm_order = torch.argsort(rcm)

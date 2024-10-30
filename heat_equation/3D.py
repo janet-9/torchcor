@@ -17,6 +17,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description="A simple example of argparse.")
 parser.add_argument("-s", '--mesh_size', type=float, default=0.1)
+parser.add_argument("-c", '--cuda', type=int, default=0)
 parser.add_argument('--no_rcm', action='store_false')
 parser.add_argument('--vtk', action='store_true')
 args = parser.parse_args()
@@ -32,7 +33,7 @@ apply_rcm = args.no_rcm
 mesh_size = args.mesh_size
 save_frames = args.vtk
 
-device = select_device()
+device = torch.device(f"cuda:{args.cuda}" if torch.cuda.is_available() else "cpu")
 dtype = torch.float64
 print(f"Using {device}")
 
