@@ -1,6 +1,6 @@
 import os
 import torch
-
+import logging
 
 def file_exists(folder_path, prefix="0.01"):
     # Look for the file whose name starts with the prefix
@@ -35,3 +35,13 @@ def select_device():
 
     return best_device
 
+
+def set_logger(name):
+    logging.basicConfig(
+        filename=name,
+        filemode='a',
+        format='%(message)s',
+        level=logging.INFO
+    )
+
+    return logging.getLogger(name)

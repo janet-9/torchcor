@@ -11,18 +11,9 @@ from boundary import apply_dirichlet_boundary_conditions
 import time
 from reorder import RCM
 import pygmsh
-from utils import select_device
+from utils import select_device, set_logger
 from visualize import Visualization3D
 import argparse
-import logging
-
-
-logging.basicConfig(
-    filename='experiments.log',
-    filemode='a',
-    format='%(message)s',
-    level=logging.INFO
-)
 
 parser = argparse.ArgumentParser(description="A simple example of argparse.")
 parser.add_argument("-s", '--mesh_size', type=float, default=0.1)
@@ -114,9 +105,11 @@ for n in range(nt):
     if n % ts_per_frame == 0 and save_frames:
         frames.append((n, u))
 solving_time = time.time() - start
-logging.info(f"Solved {n_vertices} nodes ({mesh_size}) for {nt} timesteps in {round(solving_time, 2)} seconds; "
-             f"Assemble: {round(assemble_matrix_time, 2)}; "
-             f"RCM:{apply_rcm}")
+
+logger = set_logger("experiments.log")
+logger.info(f"Solved {n_vertices} nodes ({mesh_size}) for {nt} timesteps in {round(solving_time, 2)} seconds; "
+            f"Assemble: {round(assemble_matrix_time, 2)}; "
+            f"RCM:{apply_rcm}")
 print(f"Solved {n_vertices} nodes ({mesh_size}) for {nt} timesteps in {solving_time} seconds; RCM:{apply_rcm}")
 
 if save_frames:
