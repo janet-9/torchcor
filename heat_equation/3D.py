@@ -75,7 +75,8 @@ matrices = Matrices3D(rcm_vertices,
                       rcm_tetrahedrons,
                       device=device, dtype=dtype)
 K, M = matrices.assemble_matrices(alpha)
-print(f"done in: {time.time() - start} seconds")
+assemble_matrix_time = time.time() - start
+print(f"done in: {assemble_matrix_time} seconds")
 
 M_dt = M * (1 / dt)
 A = M_dt + K
@@ -115,7 +116,9 @@ for n in range(nt):
     if n % ts_per_frame == 0:
         frames.append((n, u))
 
-logging.info(f"Solved {n_vertices} nodes ({mesh_size}) in {time.time() - start} seconds; CMR:{apply_cmr}")
+logging.info(f"Solved {n_vertices} nodes ({mesh_size}) in {round(time.time() - start, 2)} seconds; "
+             f"Assemble: {round(assemble_matrix_time, 2)}; "
+             f"CMR:{apply_cmr}")
 print(f"Solved {n_vertices} nodes ({mesh_size}) in {time.time() - start} seconds; CMR:{apply_cmr}")
 
 print("Saving frames: ", end="")
