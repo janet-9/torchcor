@@ -18,7 +18,7 @@ from scipy.spatial import Delaunay
 import argparse
 
 parser = argparse.ArgumentParser(description="A simple example of argparse.")
-parser.add_argument("-n", '--n_grid', type=float, default=100)
+parser.add_argument("-n", '--n_grid', type=int, default=100)
 parser.add_argument("-c", '--cuda', type=int, default=0)
 parser.add_argument('--no_rcm', action='store_false')
 parser.add_argument('--vtk', action='store_true')
