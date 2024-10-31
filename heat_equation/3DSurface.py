@@ -21,7 +21,7 @@ parser = argparse.ArgumentParser(description="A simple example of argparse.")
 parser.add_argument("-n", '--n_grid', type=int, default=100)
 parser.add_argument("-c", '--cuda', type=int, default=0)
 parser.add_argument('--no_rcm', action='store_false')
-parser.add_argument('--vtk', action='store_true')
+parser.add_argument('--vtk', action='store_false')
 args = parser.parse_args()
 
 # Step 1: Define problem parameters
@@ -99,7 +99,6 @@ cg.initialize(x=u)
 
 frames = rcm.inverse(u0).reshape((1, Nx, Ny))
 start = time.time()
-frames = [(0, u)] if save_frames else []
 for n in range(nt):
     b = M_dt @ u
     b[boundary_nodes] = boundary_values  # Apply initial condition for b
