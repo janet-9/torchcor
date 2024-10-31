@@ -35,7 +35,8 @@ save_frames = args.vtk
 
 device = torch.device(f"cuda:{args.cuda}" if torch.cuda.is_available() else "cpu")
 dtype = torch.float64
-torch.cuda.reset_max_memory_allocated(device=device)
+torch.cuda.set_device(device)
+torch.cuda.reset_peak_memory_stats()
 print(f"Using {device}")
 
 start = time.time()
@@ -108,7 +109,7 @@ for n in range(nt):
         frames.append((n, u))
 solving_time = time.time() - start
 
-max_memory_used = torch.cuda.max_memory_allocated(device=device) / 1024 ** 2
+max_memory_used = torch.cuda.max_memory_allocated(device=device.index) / 1024 ** 2
 logger = set_logger("experiments.log")
 logger.info(f"Solved {n_vertices} nodes ({mesh_size}) for {nt} timesteps in {round(solving_time, 2)} seconds; "
             f"Assemble: {round(assemble_matrix_time, 2)}; "
