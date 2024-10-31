@@ -115,7 +115,7 @@ solving_time = time.time() - start
 
 max_memory_used = torch.cuda.max_memory_allocated(device=device.index) / 1024 ** 3
 logger = set_logger("3DSurface.log")
-logger.info(f"Solved {n_vertices} nodes ({Nx}) for {nt} timesteps in {round(solving_time, 2)} seconds; "
+logger.info(f"Solved {n_vertices} nodes ({Nx}), {len(triangles)} triangles for {nt} timesteps in {round(solving_time, 2)} seconds; "
             f"Assemble: {round(assemble_matrix_time, 2)}; "
             f"RCM:{apply_rcm}; "
             f"Memory Usage: {round(max_memory_used, 4)} GB")
