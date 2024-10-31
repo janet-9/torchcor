@@ -24,8 +24,8 @@ args = parser.parse_args()
 
 # Step 1: Define problem parameters
 T0 = 100  # Initial temperature on the boundary
-alpha = 0.01  # Thermal diffusivity
-dt = 0.0125  # Time step size
+alpha = 0.001  # Thermal diffusivity
+dt = 0.0015  # Time step size
 nt = 1000  # Number of time steps
 ts_per_frame = 10  # Frames per output time step
 max_iter = 100  # Max CG iterations
