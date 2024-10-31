@@ -119,7 +119,7 @@ logger = set_logger("3DSurface.log")
 logger.info(f"Solved {n_vertices} nodes ({Nx}) for {nt} timesteps in {round(solving_time, 2)} seconds; "
             f"Assemble: {round(assemble_matrix_time, 2)}; "
             f"RCM:{apply_rcm}; "
-            f"Memory Usage: {round(max_memory_used, 4)} Mb")
+            f"Memory Usage: {round(max_memory_used, 4)} GB")
 print(f"Solved {n_vertices} nodes ({Nx}) for {nt} timesteps in {solving_time} seconds; RCM:{apply_rcm}")
 
 
