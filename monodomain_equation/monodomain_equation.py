@@ -1,9 +1,14 @@
+import sys
+import os
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(parent_dir)
+
 import torch
 import numpy as np
-from assemble import Matrices
+from assemble import Matrices3DSurface
 from preconditioner import Preconditioner
 from solver import ConjugateGradient
-from utils import Visualization
+from visualize import Visualization3DSurface
 from matplotlib import tri
 from boundary import apply_dirichlet_boundary_conditions
 import time
@@ -13,109 +18,35 @@ import os
 from mesh.triangulation import Triangulation
 from mesh.materialproperties import MaterialProperties
 from mesh.stimulus import Stimulus
-
+from tools import load_stimulus_region, dfmass, sigmaTens
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dtype = torch.float64
 print(device)
 
-def load_stimulus_region(vtxfile: str) -> np.ndarray:
-    """ load_stimulus_region(vtxfile) reads the file vtxfile to
-    extract point IDs where stimulus will be applied
-    """
-    with open(vtxfile,'r') as fstim:
-        nodes = fstim.read()
-        nodes = nodes.strip().split()
-    npt       = int(nodes[0])
-    nodes     = nodes[2:]
-    pointlist = -1.0*np.ones(shape=npt,dtype=int)
-    for jj,inod in enumerate(nodes):
-        pointlist[jj] = int(inod)
-    return(pointlist.astype(int))
 
+dt = 0.01
+vg = 0.1
+diffusl = (1000 * 1000) * 0.175
+diffust = (1000 * 1000) * 0.04375
+tin = 0.15
+tout = 1.5
+topen = 105.0
+tclose = 185.0
 
-def dfmass(elemtype:str, iElem:int,domain:Triangulation,matprop:MaterialProperties):
-    """ empty function for mass properties"""
-    return(None)
+use_renumbering = True
+T = 2400
+nt = T // dt
 
-def sigmaTens(elemtype:str, iElem:int,domain:Triangulation,matprop:MaterialProperties) -> np.ndarray :
-    """ function to evaluate the diffusion tensor """
-    fib   = domain.Fibres()[iElem,:]
-    rID   = domain.Elems()[elemtype][iElem,-1]
-    sigma_l = matprop.ElementProperty('sigma_l',elemtype,iElem,rID)
-    sigma_t = matprop.ElementProperty('sigma_t',elemtype,iElem,rID)
-    Sigma = sigma_t *np.eye(3)
-    for ii in range(3):
-        for jj in range(3):
-            Sigma[ii,jj] = Sigma[ii,jj]+ (sigma_l-sigma_t)*fib[ii]*fib[jj]
-    return(Sigma)
-
-
-
-
-#
-# start = time.time()
-# print("assembling matrices")
-# matrices = Matrices(device=device, dtype=dtype)
-# K, M = matrices.assemble_matrices(triangulation, alpha)
-# K = K.to(device=device, dtype=dtype)
-# M = M.to(device=device, dtype=dtype)
-# print(f"assembled in: {time.time() - start} seconds")
-#
-# # print(K.to_dense().numpy())
-#
-#
-#
-#
-#
-# # apply initial condition for A
-# print("applying boundary condition for A")
-# dirichlet_boundary_nodes = torch.arange(20 * Nx, 20 * Nx + Ny, device=device)
-# boundary_values = torch.ones_like(dirichlet_boundary_nodes, device=device, dtype=dtype) * T0
-#
-# A = M + dt * K
-# A = apply_dirichlet_boundary_conditions(A, dirichlet_boundary_nodes)
-#
-# pcd = Preconditioner()
-# pcd.create_Jocobi(A)
-# cg = ConjugateGradient(pcd)
-# cg.initialize(x=u)
-#
-# frames = u0.reshape((1, Nx, Ny))
-# start = time.time()
-# print("solving")
-# for n in range(1, nt):
-#     I0 = torch.zeros_like(u, dtype=dtype, device=device)
-#
-#     du, dh = mdm.differentiate(u, h)
-#     du = du + I0
-#     b = M @ (u + dt * du)
-#
-#     u, total_iter = cg.solve(A, b, a_tol=1e-5, r_tol=1e-5, max_iter=100)
-#     h = h + dt * dh
-#
-# print(f"solved in: {time.time() - start} seconds")
+cfgstim1 = {'tstart': 0.0,
+            'nstim': 3,
+            'period': 800,
+            'duration': np.max([2.0, dt]),
+            'intensity': 1.0,
+            'name': 'S1'}
 
 
 if __name__ == "__main__":
-    dt = 0.01
-    vg = 0.1
-    diffusl = (1000 * 1000) * 0.175
-    diffust = (1000 * 1000) * 0.04375
-    tin = 0.15
-    tout = 1.5
-    topen = 105.0
-    tclose = 185.0
-
-    use_renumbering = True
-    T = 2400
-    nt = T // dt
-
-    cfgstim1 = {'tstart': 0.0,
-                'nstim': 3,
-                'period': 800,
-                'duration': np.max([2.0, dt]),
-                'intensity': 1.0,
-                'name': 'S1'}
+    
     material = MaterialProperties()
     material.add_element_property('sigma_l', 'uniform', diffusl)
     material.add_element_property('sigma_t', 'uniform', diffust)
@@ -123,20 +54,18 @@ if __name__ == "__main__":
     material.add_nodal_property('tau_out', 'uniform', tout)
     material.add_nodal_property('tau_open', 'uniform', topen)
     material.add_nodal_property('tau_close', 'uniform', tclose)
-
     material.add_nodal_property('u_gate', 'uniform', vg)
     material.add_nodal_property('u_crit', 'uniform', vg)
-
     material.add_ud_function('mass', dfmass)
     material.add_ud_function('stiffness', sigmaTens)
 
-    ionic_model = ModifiedMS2v()
 
     domain = Triangulation()
     domain.readMesh("./data/Case_1")
-    domain.exportCarpFormat("atrium")
+    # domain.exportCarpFormat("atrium")
     
     # assign nodal properties
+    ionic_model = ModifiedMS2v()
     nodal_properties = material.nodal_property_names()
     point_region_ids = domain.point_region_ids()
     npt = point_region_ids.shape[0]
@@ -183,8 +112,8 @@ if __name__ == "__main__":
     stimulus_dict[nbstim] = Stimulus(cfgstim1)
     stimulus_dict[nbstim].set_stimregion(S1)
 
-    connectivity = domain.mesh_connectivity()
-    print(connectivity)
+    # connectivity = domain.mesh_connectivity()
+    # print(connectivity)
     # solve
     # max_iter = npt // 2
     # ctime = 0
