@@ -111,7 +111,7 @@ for n in range(nt):
 solving_time = time.time() - start
 
 max_memory_used = torch.cuda.max_memory_allocated(device=device.index) / 1024 ** 3
-logger = set_logger("3D.log")
+logger = set_logger("./logs/3D.log")
 logger.info(f"Solved {n_vertices} nodes ({mesh_size}), {n_tetrahedrons} tetrahedrons for {nt} timesteps in {round(solving_time, 2)} seconds; "
             f"Assemble: {round(assemble_matrix_time, 2)}; "
             f"RCM:{apply_rcm}; "

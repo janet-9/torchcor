@@ -36,12 +36,15 @@ def select_device():
     return best_device
 
 
-def set_logger(name):
+def set_logger(log_path):
+    log_dir = os.path.dirname(log_path)
+    os.makedirs(log_dir, exist_ok=True)
+
     logging.basicConfig(
-        filename=name,
+        filename=log_path,
         filemode='a',
         format='%(message)s',
         level=logging.INFO
     )
 
-    return logging.getLogger(name)
+    return logging.getLogger(log_path)
