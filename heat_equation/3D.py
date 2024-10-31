@@ -91,7 +91,7 @@ pcd.create_Jocobi(A)
 cg = ConjugateGradient(pcd)
 cg.initialize(x=u)
 
-visualization = Visualization3D(vertices, tetrahedrons)
+
 # Step 6: Time-stepping solution
 start = time.time()
 frames = [(0, u)] if save_frames else []
@@ -110,7 +110,7 @@ for n in range(nt):
 solving_time = time.time() - start
 
 max_memory_used = torch.cuda.max_memory_allocated(device=device.index) / 1024 ** 3
-logger = set_logger("experiments.log")
+logger = set_logger("3D.log")
 logger.info(f"Solved {n_vertices} nodes ({mesh_size}) for {nt} timesteps in {round(solving_time, 2)} seconds; "
             f"Assemble: {round(assemble_matrix_time, 2)}; "
             f"RCM:{apply_rcm}; "
@@ -118,6 +118,7 @@ logger.info(f"Solved {n_vertices} nodes ({mesh_size}) for {nt} timesteps in {rou
 print(f"Solved {n_vertices} nodes ({mesh_size}) for {nt} timesteps in {solving_time} seconds; RCM:{apply_rcm}")
 
 if save_frames:
+    visualization = Visualization3D(vertices, tetrahedrons)
     print("Saving frames: ", end="")
     for n, u in frames:
         visualization.save_frame(color_values=rcm.inverse(u).cpu().numpy() if apply_rcm else u.cpu().numpy(),
