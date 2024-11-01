@@ -21,21 +21,8 @@ parser = argparse.ArgumentParser(description="A simple example of argparse.")
 parser.add_argument("-n", '--n_grid', type=int, default=100)
 parser.add_argument("-c", '--cuda', type=int, default=0)
 parser.add_argument('--no_rcm', action='store_false')
-parser.add_argument('--vtk', action='store_true')
+parser.add_argument('--vtk', action='store_false')
 args = parser.parse_args()
-
-# Step 1: Define problem parameters
-T0 = 100
-L = 1  # Length of domain in x and y directions
-Nx = args.n_grid
-Ny = args.n_grid  # Number of grid points in x and y
-alpha = 0.001  # Thermal diffusivity
-dt = 0.0015  # Time step size
-nt = 1000  # Number of time steps
-ts_per_frame = 10
-max_iter = 100
-apply_rcm = args.no_rcm
-save_frames = args.vtk
 
 device = torch.device(f"cuda:{args.cuda}" if torch.cuda.is_available() else "cpu")
 dtype = torch.float64
@@ -43,6 +30,21 @@ if device.type != "cpu":
     torch.cuda.set_device(device)
     torch.cuda.reset_peak_memory_stats()
 print(f"Using {device}")
+
+# Step 1: Define problem parameters
+T0 = 100
+L = 1  # Length of domain in x and y directions
+Nx = args.n_grid
+Ny = args.n_grid  # Number of grid points in x and y
+alpha = torch.tensor([[0.001, 0, 0],
+                           [0, 0.001, 0],
+                           [0, 0, 0.001]], device=device, dtype=dtype)  # Thermal diffusivity
+dt = 0.0015  # Time step size
+nt = 1000  # Number of time steps
+ts_per_frame = 10
+max_iter = 100
+apply_rcm = args.no_rcm
+save_frames = args.vtk
 
 
 start = time.time()

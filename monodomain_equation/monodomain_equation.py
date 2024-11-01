@@ -8,7 +8,7 @@ import numpy as np
 from assemble import Matrices3DSurface
 from preconditioner import Preconditioner
 from solver import ConjugateGradient
-from visualize import Visualization3DSurface
+from visualize import Visualization3D
 from boundary import apply_dirichlet_boundary_conditions
 import time
 from ionic import ModifiedMS2v
@@ -32,7 +32,7 @@ tclose = 185.0
 
 use_renumbering = True
 T = 2400
-nt = T // dt
+nt = int(T // dt)
 
 cfgstim1 = {'tstart': 0.0,
             'nstim': 3,
@@ -47,6 +47,7 @@ if __name__ == "__main__":
     material = MaterialProperties()
     material.add_element_property('sigma_l', 'uniform', diffusl)
     material.add_element_property('sigma_t', 'uniform', diffust)
+
     material.add_nodal_property('tau_in', 'uniform', tin)
     material.add_nodal_property('tau_out', 'uniform', tout)
     material.add_nodal_property('tau_open', 'uniform', topen)
@@ -55,7 +56,6 @@ if __name__ == "__main__":
     material.add_nodal_property('u_crit', 'uniform', vg)
     material.add_ud_function('mass', dfmass)
     material.add_ud_function('stiffness', sigmaTens)
-
 
     domain = Triangulation()
     domain.readMesh("/home/bzhou6/Projects/FinitePDE/data/Case_1")
@@ -80,31 +80,33 @@ if __name__ == "__main__":
                     values[point_id] = material.NodalProperty(npr, point_id, region_id)
             ionic_model.set_attribute(npr, values)
 
-    '''
-    tau_in 0.15
-    tau_out 1.5
-    tau_open 105.0
-    tau_close 185.0
-    u_gate 0.1
-    u_crit 0.1
-    '''
-
+    # sigma calculation:
+    fibers = torch.from_numpy(domain.Fibres())
+    # region_ids = domain.Elems()['Trias'][:, -1]
+    sigma_l = diffusl
+    sigma_t = diffust
+    sigma = sigma_t * torch.eye(3).unsqueeze(0).expand(fibers.shape[0], 3, 3)
+    sigma += (sigma_l - sigma_t) * fibers.unsqueeze(2) @ fibers.unsqueeze(1)
+    sigma = sigma.to(dtype=dtype, device=device)
     # assemble matrix
-    matrices = Matrices3DSurface(device=device, dtype=dtype)
-    K, M = matrices.assemble_matrices(triangulation, alpha)
+    vertices = torch.from_numpy(domain.Pts())
+    triangles = torch.from_numpy(domain.Elems()['Trias'][:, :-1])
+    matrices = Matrices3DSurface(vertices=vertices, triangles=triangles, device=device, dtype=dtype)
+    K, M = matrices.assemble_matrices(sigma)
     K = K.to(device=device, dtype=dtype)
     M = M.to(device=device, dtype=dtype)
     A = M + K * dt
 
     pcd = Preconditioner()
     pcd.create_Jocobi(A)
-    
 
 
     pointlist = load_stimulus_region('/home/bzhou6/Projects/FinitePDE/data/Case_1.vtx')  # (2168,)
-    S1 = torch.zeros(size=(npt,), dtype=bool)
+    S1 = torch.zeros(size=(npt,), dtype=torch.bool)
     S1[pointlist] = True
-    stimuli = [Stimulus(cfgstim1).set_stimregion(S1)]
+    stimulus = Stimulus(cfgstim1)
+    stimulus.set_stimregion(S1)
+    stimuli = [stimulus]
 
     # set initial conditions
     u = torch.full(size=(npt,), fill_value=0)

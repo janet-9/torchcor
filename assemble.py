@@ -30,7 +30,7 @@ class Matrices2D:
                                                                          dtype=self.dtype).unsqueeze(0)  # Shape (N, 3, 3)
         return Me_batch
 
-    def local_stiffness(self, alpha, triangle_coords):
+    def local_stiffness(self, sigma, triangle_coords):
         # Calculate the Jacobian for each triangle
         J_batch = self.jacobian(triangle_coords)  
         det_J_batch = torch.linalg.det(J_batch)
@@ -39,7 +39,7 @@ class Matrices2D:
         # Calculate dN/dxy for all triangles using the inverse Jacobian
         dN_dxi = self.shape_function_gradients()  # Assuming this is constant for all triangles, shape (3, 2)
         dN_dxy_batch = dN_dxi @ inv_J_batch  # Shape (N, 3, 2)
-        Ke_batch = (0.5 * alpha * det_J_batch).view(-1, 1, 1) * dN_dxy_batch @ dN_dxy_batch.transpose(1, 2)
+        Ke_batch = (0.5 * det_J_batch).view(-1, 1, 1) * dN_dxy_batch @ (sigma @ dN_dxy_batch.transpose(1, 2))
 
         return Ke_batch
     
@@ -49,7 +49,7 @@ class Matrices2D:
 
         return areas
     
-    def construct_local_matrices(self, alpha):
+    def construct_local_matrices(self, sigma):
         self.vertices = self.vertices.to(self.device)
         self.triangles = self.triangles.to(self.device)
 
@@ -60,13 +60,13 @@ class Matrices2D:
 
         # Mass and stiffness matrix for all triangles: (N, 3, 3)
         Me_batch = self.local_mass(areas)
-        Ke_batch = self.local_stiffness(alpha, triangle_coords)
+        Ke_batch = self.local_stiffness(sigma, triangle_coords)
 
         return Me_batch, Ke_batch
 
-    def assemble_matrices(self, alpha):
+    def assemble_matrices(self, sigma):
         # Precompute vertex coordinates for all triangles
-        Me_batch, Ke_batch = self.construct_local_matrices(alpha)
+        Me_batch, Ke_batch = self.construct_local_matrices(sigma)
         # Lists to store the indices and values of non-zero elements for K and M
         rows, cols, K_vals, M_vals = [], [], [], []
         # Collect contributions for global matrices in sparse form
@@ -100,10 +100,7 @@ class Matrices3DSurface(Matrices2D):
     def __init__(self, vertices, triangles, device, dtype):
         super().__init__(vertices, triangles, device, dtype)
 
-    def jacobian(self, triangle_coords):
-        dN_dxi = self.shape_function_gradients()
-        # Transpose `coords` to match dimensions: (N, 3, 3)
-
+    def rotation_matrix(self, triangle_coords):
         u1 = triangle_coords[:, 1, :] - triangle_coords[:, 0, :]  # (N, 3)
         u2 = triangle_coords[:, 2, :] - triangle_coords[:, 0, :]  # (N, 3)
 
@@ -113,7 +110,12 @@ class Matrices3DSurface(Matrices2D):
         beta = beta / torch.linalg.norm(beta, dim=1, keepdim=True)  # (N, 3)
 
         rotation_matrix = torch.stack([alpha, beta], dim=1)  # (N, 2, 3)
+        return rotation_matrix
 
+    def jacobian(self, triangle_coords):
+        dN_dxi = self.shape_function_gradients()
+        # Transpose `coords` to match dimensions: (N, 3, 3)
+        rotation_matrix = self.rotation_matrix(triangle_coords)
         J = rotation_matrix @ triangle_coords.transpose(1, 2) @ dN_dxi
 
         return J
@@ -126,6 +128,21 @@ class Matrices3DSurface(Matrices2D):
         areas = 0.5 * torch.norm(cross_product, dim=1)  # Shape (N,)
 
         return areas
+
+    def local_stiffness(self, sigma, triangle_coords):
+        rotation_matrix = self.rotation_matrix(triangle_coords)  # (N, 2, 3)
+        sigma = rotation_matrix @ sigma @ rotation_matrix.transpose(1, 2)
+
+        J_batch = self.jacobian(triangle_coords)
+        det_J_batch = torch.linalg.det(J_batch)
+        inv_J_batch = torch.linalg.inv(J_batch)
+
+        # Calculate dN/dxy for all triangles using the inverse Jacobian
+        dN_dxi = self.shape_function_gradients()  # Assuming this is constant for all triangles, shape (3, 2)
+        dN_dxy_batch = dN_dxi @ inv_J_batch  # Shape (N, 3, 2)
+        Ke_batch = (0.5 * det_J_batch).view(-1, 1, 1) * dN_dxy_batch @ (sigma @ dN_dxy_batch.transpose(1, 2))
+
+        return Ke_batch
 
 
 class Matrices3D:
@@ -160,7 +177,7 @@ class Matrices3D:
                                                                             dtype=self.dtype).unsqueeze(0)  # Shape (M, 4, 4)
         return Me_batch
 
-    def local_stiffness(self, alpha, tetrahedron_coords):
+    def local_stiffness(self, sigma, tetrahedron_coords):
         # Calculate the Jacobian for each tetrahedron
         J_batch = self.jacobian(tetrahedron_coords)  # (M, 3, 3)
         det_J_batch = torch.abs(torch.linalg.det(J_batch))
@@ -170,7 +187,7 @@ class Matrices3D:
         # Calculate dN/dxyz for all tetrahedrons using the inverse Jacobian
         dN_dxi = self.shape_function_gradients()  # Shape (4, 3)
         dN_dxyz_batch = dN_dxi @ inv_J_batch  # Shape (M, 4, 3)
-        Ke_batch = (alpha * det_J_batch / 6).view(-1, 1, 1) * (dN_dxyz_batch @ dN_dxyz_batch.transpose(1, 2))
+        Ke_batch = (det_J_batch / 6).view(-1, 1, 1) * (dN_dxyz_batch @ (sigma @ dN_dxyz_batch.transpose(1, 2)))
 
         return Ke_batch
     
@@ -182,7 +199,7 @@ class Matrices3D:
 
         return volumes
 
-    def construct_local_matrices(self, alpha):
+    def construct_local_matrices(self, sigma):
         self.vertices = self.vertices.to(self.device)
         self.tetrahedrons = self.tetrahedrons.to(self.device)
 
@@ -193,13 +210,13 @@ class Matrices3D:
 
         # Mass and stiffness matrices for all tetrahedrons: (M, 4, 4)
         Me_batch = self.local_mass(volumes)
-        Ke_batch = self.local_stiffness(alpha, tetrahedron_coords)
+        Ke_batch = self.local_stiffness(sigma, tetrahedron_coords)
 
         return Me_batch, Ke_batch
 
-    def assemble_matrices(self, alpha):
+    def assemble_matrices(self, sigma):
         # Precompute vertex coordinates for all tetrahedrons
-        Me_batch, Ke_batch = self.construct_local_matrices(alpha)
+        Me_batch, Ke_batch = self.construct_local_matrices(sigma)
         
         # Lists to store the indices and values of non-zero elements for K and M
         rows, cols, K_vals, M_vals = [], [], [], []

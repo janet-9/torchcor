@@ -11,7 +11,7 @@ class ModifiedMS2v:
         self.u_crit = 0.13
 
     def differentiate(self, U, H):
-        J_in = -1.0 * H * U (U - self.u_crit) * (1 - U) / self.tau_in
+        J_in = -1.0 * H * U * (U - self.u_crit) * (1 - U) / self.tau_in
         J_out = (1 - H) * U / self.tau_out
         dU = - (J_in + J_out)
         dH = torch.where(U > self.u_gate, -H / self.tau_close, (1 - H) / self.tau_open)
