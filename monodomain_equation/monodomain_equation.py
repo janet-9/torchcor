@@ -8,7 +8,7 @@ import numpy as np
 from assemble import Matrices3DSurface
 from preconditioner import Preconditioner
 from solver import ConjugateGradient
-from visualize import Visualization3D
+from visualize import Visualization3DSurface
 from boundary import apply_dirichlet_boundary_conditions
 import time
 from ionic import ModifiedMS2v
@@ -100,17 +100,16 @@ if __name__ == "__main__":
     pcd = Preconditioner()
     pcd.create_Jocobi(A)
 
-
     pointlist = load_stimulus_region('/home/bzhou6/Projects/FinitePDE/data/Case_1.vtx')  # (2168,)
-    S1 = torch.zeros(size=(npt,), dtype=torch.bool)
+    S1 = torch.zeros(size=(npt,), device=device, dtype=torch.bool)
     S1[pointlist] = True
     stimulus = Stimulus(cfgstim1)
     stimulus.set_stimregion(S1)
     stimuli = [stimulus]
 
     # set initial conditions
-    u = torch.full(size=(npt,), fill_value=0)
-    h = torch.full(size=(npt,), fill_value=1)
+    u = torch.full(size=(npt,), fill_value=0, device=device, dtype=dtype)
+    h = torch.full(size=(npt,), fill_value=1, device=device, dtype=dtype)
 
     cg = ConjugateGradient(pcd)
     cg.initialize(x=u)
