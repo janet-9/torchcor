@@ -9,12 +9,9 @@ from assemble import Matrices3DSurface
 from preconditioner import Preconditioner
 from solver import ConjugateGradient
 from visualize import Visualization3DSurface
-from matplotlib import tri
 from boundary import apply_dirichlet_boundary_conditions
 import time
 from ionic import ModifiedMS2v
-from material import Properties
-import os
 from mesh.triangulation import Triangulation
 from mesh.materialproperties import MaterialProperties
 from mesh.stimulus import Stimulus
@@ -61,7 +58,7 @@ if __name__ == "__main__":
 
 
     domain = Triangulation()
-    domain.readMesh("./data/Case_1")
+    domain.readMesh("/home/bzhou6/Projects/FinitePDE/data/Case_1")
     # domain.exportCarpFormat("atrium")
     
     # assign nodal properties
@@ -74,7 +71,7 @@ if __name__ == "__main__":
         npr_type = material.nodal_property_type(npr)
         attribute_value = ionic_model.get_attribute(npr)
 
-        if attribute_value:
+        if attribute_value is not None:
             if npr_type == "uniform":
                 values = material.NodalProperty(npr, -1, -1)
             else:
@@ -83,46 +80,55 @@ if __name__ == "__main__":
                     values[point_id] = material.NodalProperty(npr, point_id, region_id)
             ionic_model.set_attribute(npr, values)
 
-    # assemble matrix
-    # matrices = Matrices(device=device, dtype=dtype)
-    # K, M = matrices.assemble_matrices(triangulation, alpha)
-    # K = K.to(device=device, dtype=dtype)
-    # M = M.to(device=device, dtype=dtype)
-    # A = M + K * dt 
+    '''
+    tau_in 0.15
+    tau_out 1.5
+    tau_open 105.0
+    tau_close 185.0
+    u_gate 0.1
+    u_crit 0.1
+    '''
 
-    # pcd = Preconditioner()
-    # pcd.create_Jocobi(A)
+    # assemble matrix
+    matrices = Matrices3DSurface(device=device, dtype=dtype)
+    K, M = matrices.assemble_matrices(triangulation, alpha)
+    K = K.to(device=device, dtype=dtype)
+    M = M.to(device=device, dtype=dtype)
+    A = M + K * dt
+
+    pcd = Preconditioner()
+    pcd.create_Jocobi(A)
     
 
 
-    pointlist = load_stimulus_region('./data/Case_1.vtx')  # (2168,)
+    pointlist = load_stimulus_region('/home/bzhou6/Projects/FinitePDE/data/Case_1.vtx')  # (2168,)
     S1 = torch.zeros(size=(npt,), dtype=bool)
     S1[pointlist] = True
+    stimuli = [Stimulus(cfgstim1).set_stimregion(S1)]
 
     # set initial conditions
     u = torch.full(size=(npt,), fill_value=0)
     h = torch.full(size=(npt,), fill_value=1)
 
-    # cg = ConjugateGradient(pcd)
-    # cg.initialize(x=u)
+    cg = ConjugateGradient(pcd)
+    cg.initialize(x=u)
 
-    # add stimulus
-    nbstim = 1
-    stimulus_dict = {}
-    stimulus_dict[nbstim] = Stimulus(cfgstim1)
-    stimulus_dict[nbstim].set_stimregion(S1)
+    max_iter = npt // 2
+    ctime = 0
+    for n in range(nt):
+        ctime += dt
+        du, dh = ionic_model.differentiate(u, h)
+        b = u + dt * du
+        for stimulus in stimuli:
+            I0 = stimulus.stimApp(ctime)
+            b = b + dt * I0
+        b = M @ b
 
-    # connectivity = domain.mesh_connectivity()
-    # print(connectivity)
-    # solve
-    # max_iter = npt // 2
-    # ctime = 0
-    # for i in range(nt):
-    #     ctime += dt
-    #     du, dh = ionic_model.differentiate(u, h)
-    #     b = u + dt * du 
-    #     for _, stimulus in stimulus_dict.items():
-    #         I0 = stimulus.stimApp(ctime)
-    #         b = b + dt * I0
+        u, total_iter = cg.solve(A, b, a_tol=1e-5, r_tol=1e-5, max_iter=max_iter)
+        h = h + dt * dh
 
+        if total_iter == max_iter:
+            print(f"The solution did not converge at {n} iteration")
+        else:
+            print(f"{n} / {nt}: {total_iter}")
 
