@@ -8,7 +8,7 @@ import numpy as np
 from assemble import Matrices3DSurface
 from preconditioner import Preconditioner
 from solver import ConjugateGradient
-from visualize import Visualization3DSurface
+from visualize import VTK3DSurface
 from boundary import apply_dirichlet_boundary_conditions
 import time
 from ionic import ModifiedMS2v
@@ -32,7 +32,7 @@ tclose = 185.0
 
 use_renumbering = True
 T = 2400
-nt = int(T // dt)
+
 
 cfgstim1 = {'tstart': 0.0,
             'nstim': 3,
@@ -114,8 +114,11 @@ if __name__ == "__main__":
     cg = ConjugateGradient(pcd)
     cg.initialize(x=u)
 
-    max_iter = npt // 2
+    max_iter = 1000
+    nt = int(T // dt)
+    ts_per_frame = 1000
     ctime = 0
+    frames = [(0, u)]
     for n in range(nt):
         ctime += dt
         du, dh = ionic_model.differentiate(u, h)
@@ -133,3 +136,10 @@ if __name__ == "__main__":
         else:
             print(f"{n} / {nt}: {total_iter}")
 
+        if n % ts_per_frame == 0:
+            frames.append((n, u))
+
+visualization = VTK3DSurface(vertices, triangles)
+for n, u in frames:
+    visualization.save_frame(color_values=u.cpu().numpy(),
+                             frame_path=f"./vtk_files_{len(vertices)}/frame_{n}.vtk")
