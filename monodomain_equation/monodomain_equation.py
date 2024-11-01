@@ -119,6 +119,7 @@ if __name__ == "__main__":
     ts_per_frame = 1000
     ctime = 0
     frames = [(0, u)]
+    visualization = VTK3DSurface(vertices, triangles)
     for n in range(nt):
         ctime += dt
         du, dh = ionic_model.differentiate(u, h)
@@ -137,9 +138,9 @@ if __name__ == "__main__":
             print(f"{n} / {nt}: {total_iter}")
 
         if n % ts_per_frame == 0:
-            frames.append((n, u))
+            # frames.append((n, u))
 
-visualization = VTK3DSurface(vertices, triangles)
-for n, u in frames:
-    visualization.save_frame(color_values=u.cpu().numpy(),
-                             frame_path=f"./vtk_files_{len(vertices)}/frame_{n}.vtk")
+            visualization.save_frame(color_values=u.cpu().numpy(),
+                                     frame_path=f"./vtk_files_{len(vertices)}/frame_{n}.vtk")
+
+
