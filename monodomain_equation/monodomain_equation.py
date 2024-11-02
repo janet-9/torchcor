@@ -80,6 +80,7 @@ if __name__ == "__main__":
                     values[point_id] = material.NodalProperty(npr, point_id, region_id)
             ionic_model.set_attribute(npr, values)
 
+    start_time = time.time()
     # sigma calculation:
     fibers = torch.from_numpy(domain.Fibres())
     # region_ids = domain.Elems()['Trias'][:, -1]
@@ -96,6 +97,8 @@ if __name__ == "__main__":
     K = K.to(device=device, dtype=dtype)
     M = M.to(device=device, dtype=dtype)
     A = M + K * dt
+    assemble_time = time.time() - start_time
+    print(f"assemble time: {round(assemble_time, 2)}")
 
     pcd = Preconditioner()
     pcd.create_Jocobi(A)
@@ -113,7 +116,8 @@ if __name__ == "__main__":
 
     cg = ConjugateGradient(pcd)
     cg.initialize(x=u)
-
+    
+    start_time = time.time()
     max_iter = 1000
     nt = int(T // dt)
     ts_per_frame = 1000
@@ -135,12 +139,12 @@ if __name__ == "__main__":
         if total_iter == max_iter:
             print(f"The solution did not converge at {n} iteration")
         else:
-            print(f"{n} / {nt}: {total_iter}")
+            print(f"{n} / {nt}: {total_iter}; {round(time.time() - start_time, 2)}")
 
-        if n % ts_per_frame == 0:
-            # frames.append((n, u))
+        # if n % ts_per_frame == 0:
+        #     # frames.append((n, u))
 
-            visualization.save_frame(color_values=u.cpu().numpy(),
-                                     frame_path=f"./vtk_files_{len(vertices)}/frame_{n}.vtk")
+        #     visualization.save_frame(color_values=u.cpu().numpy(),
+        #                              frame_path=f"./vtk_files_{len(vertices)}/frame_{n}.vtk")
 
 
