@@ -4,6 +4,7 @@ parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir)
 
 import torch
+from collections import deque
 import numpy as np
 from assemble import Matrices3DSurface
 from preconditioner import Preconditioner
@@ -118,6 +119,7 @@ if __name__ == "__main__":
     cg.initialize(x=u)
     
     start_time = time.time()
+    stable_list = deque(maxlen=10)
     max_iter = 1000
     nt = int(T // dt)
     ts_per_frame = 1000
@@ -135,6 +137,10 @@ if __name__ == "__main__":
 
         u, total_iter = cg.solve(A, b, a_tol=1e-5, r_tol=1e-5, max_iter=max_iter)
         h = h + dt * dh
+
+        stable_list.append(total_iter)
+        if sum(stable_list) == stable_list.maxlen:
+            break
 
         if total_iter == max_iter:
             print(f"The solution did not converge at {n} iteration")
