@@ -17,7 +17,13 @@ from mesh.triangulation import Triangulation
 from mesh.materialproperties import MaterialProperties
 from mesh.stimulus import Stimulus
 from tools import load_stimulus_region, dfmass, sigmaTens
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+import argparse
+
+parser = argparse.ArgumentParser(description="A simple example of argparse.")
+parser.add_argument("-c", '--cuda', type=int, default=0)
+args = parser.parse_args()
+
+device = torch.device(f"cuda:{args.cuda}" if torch.cuda.is_available() else "cpu")
 dtype = torch.float64
 print(device)
 
