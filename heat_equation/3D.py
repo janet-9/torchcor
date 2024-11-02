@@ -12,7 +12,7 @@ import time
 from reorder import RCM
 import pygmsh
 from utils import select_device, set_logger
-from visualize import Visualization3D
+from visualize import VTK3D
 import argparse
 
 parser = argparse.ArgumentParser(description="A simple example of argparse.")
@@ -22,9 +22,15 @@ parser.add_argument('--no_rcm', action='store_false')
 parser.add_argument('--vtk', action='store_true')
 args = parser.parse_args()
 
+device = torch.device(f"cuda:{args.cuda}" if torch.cuda.is_available() else "cpu")
+dtype = torch.float64
+torch.cuda.set_device(device)
+torch.cuda.reset_peak_memory_stats()
+print(f"Using {device}")
+
 # Step 1: Define problem parameters
 T0 = 100  # Initial temperature on the boundary
-alpha = 0.001  # Thermal diffusivity
+sigma = torch.eye(3, device=device, dtype=dtype) * 0.001  # Thermal diffusivity
 dt = 0.0015  # Time step size
 nt = 1000  # Number of time steps
 ts_per_frame = 10  # Frames per output time step
@@ -33,11 +39,7 @@ apply_rcm = args.no_rcm
 mesh_size = args.mesh_size
 save_frames = args.vtk
 
-device = torch.device(f"cuda:{args.cuda}" if torch.cuda.is_available() else "cpu")
-dtype = torch.float64
-torch.cuda.set_device(device)
-torch.cuda.reset_peak_memory_stats()
-print(f"Using {device}")
+
 
 start = time.time()
 print("Constructing mesh: ", end="")
@@ -67,7 +69,7 @@ else:
 matrices = Matrices3D(rcm_vertices,
                       rcm_tetrahedrons,
                       device=device, dtype=dtype)
-K, M = matrices.assemble_matrices(alpha)
+K, M = matrices.assemble_matrices(sigma)
 assemble_matrix_time = time.time() - start
 print(f"done in: {assemble_matrix_time} seconds")
 
