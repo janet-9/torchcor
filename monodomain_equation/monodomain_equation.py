@@ -124,15 +124,17 @@ if __name__ == "__main__":
     cg = ConjugateGradient(pcd)
     cg.initialize(x=u)
     
-    start_time = time.time()
+ 
     stable_list = deque(maxlen=10)
     max_iter = 1000
-    nt = int(T // dt)
+    nt = 1 # int(T // dt)
     ts_per_frame = 1000
     ctime = 0
     frames = [(0, u)]
     visualization = VTK3DSurface(vertices, triangles)
+    start_time = time.time()
     for n in range(nt):
+        
         ctime += dt
         du, dh = ionic_model.differentiate(u, h)
         b = u + dt * du
@@ -140,14 +142,14 @@ if __name__ == "__main__":
             I0 = stimulus.stimApp(ctime)
             b = b + dt * I0
         b = M @ b
-
+        
+        solve_time = time.time()
         u, total_iter = cg.solve(A, b, a_tol=1e-5, r_tol=1e-5, max_iter=max_iter)
         h = h + dt * dh
-
-        stable_list.append(total_iter)
-        if sum(stable_list) == stable_list.maxlen:
-            break
-
+        print(f"solve time: {time.time() - solve_time}")
+        # stable_list.append(total_iter)
+        # if sum(stable_list) == stable_list.maxlen:
+        #     break
         if total_iter == max_iter:
             print(f"The solution did not converge at {n} iteration")
         else:

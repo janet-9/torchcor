@@ -25,5 +25,5 @@ class Preconditioner:
 
     def apply(self, r):
         z = (1 / self.PC) * r
-        # z = torch.linalg.solve(PC, r)
+        
         return z
