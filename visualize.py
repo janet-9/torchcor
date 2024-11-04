@@ -91,7 +91,28 @@ class Visualization3DSurface:
         anim.save(filepath)  
 
 
-class Visualization3D:
+class VTK3DSurface:
+    def __init__(self, vertices, triangles):
+        self.vertices = vertices
+        self.triangles = triangles
+        self.n_triangles = triangles.shape[0]
+
+    def save_frame(self, color_values, frame_path):
+        # Cells array indicating triangles (3 vertices per triangle)
+        cells = np.hstack((np.full((self.n_triangles, 1), 3, dtype=int), self.triangles)).flatten().astype(int)
+        # Cell type for triangles
+        cell_type = np.full(self.n_triangles, 5, dtype=int)
+        # Create the unstructured grid
+        grid = pv.UnstructuredGrid(cells, cell_type, self.vertices.numpy())
+        grid.point_data["colors"] = color_values
+
+        # Save the grid to the specified file path
+        file_path = Path(frame_path)
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        grid.save(frame_path)
+
+
+class VTK3D:
     def __init__(self, vertices, tetrahedrons):
         self.vertices = vertices
         self.tetrahedrons = tetrahedrons

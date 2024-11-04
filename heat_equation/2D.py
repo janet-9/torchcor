@@ -11,11 +11,15 @@ import numpy as np
 from assemble import Matrices2D
 from preconditioner import Preconditioner
 from solver import ConjugateGradient
-from utils import Visualization
+from visualize import Visualization2D
 from boundary import apply_dirichlet_boundary_conditions
 import time
 from scipy.spatial import Delaunay
 from reorder import RCM
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+dtype = torch.float64
+print(device)
 
 # Step 1: Define problem parameters
 L = 1  # Length of domain in x and y directions
@@ -23,18 +27,14 @@ Nx = 100
 Ny = 100  # Number of grid points in x and y
 T0 = 100
 
-alpha = 0.001  # Thermal diffusivity
+sigma = torch.tensor([[0.001 * 0.5, -0.001 * 0.5],
+                           [-0.001 * 0.5, 0.001 * 0.5]], device=device, dtype=dtype)  # Thermal diffusivity
 # h = 0.5206164
 # print(h ** 2 / (2 * alpha))
 dt = 0.0125  # Time step size
-
-nt = 1000  # Number of time steps
+nt = 10000  # Number of time steps
 ts_per_frame = 10
 max_iter = 100
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-dtype = torch.float64
-print(device)
 
 # Step 2: Generate grid (structured triangular mesh)
 x = np.linspace(0, L, Nx)
@@ -58,7 +58,7 @@ rcm = RCM(device=device, dtype=dtype)
 rcm_vertices, rcm_triangles = rcm.calculate_rcm_order(vertices, triangles)
 
 matrices = Matrices2D(rcm_vertices, rcm_triangles, device=device, dtype=dtype)
-K, M = matrices.assemble_matrices(alpha)
+K, M = matrices.assemble_matrices(sigma)
 print(f"assembled in: {time.time() - start} seconds")
 
 
@@ -109,7 +109,7 @@ for n in range(0, nt):
 print(f"solved in: {time.time() - start} seconds")
 
 print("saving gif file")
-visualization = Visualization(frames, vertices, triangles, dt, ts_per_frame)
+visualization = Visualization2D(frames, vertices, triangles, dt, ts_per_frame)
 visualization.save_gif("./2D Heat Equation.gif")
 
 

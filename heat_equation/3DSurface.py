@@ -24,25 +24,27 @@ parser.add_argument('--no_rcm', action='store_false')
 parser.add_argument('--vtk', action='store_true')
 args = parser.parse_args()
 
-# Step 1: Define problem parameters
-T0 = 100
-L = 1  # Length of domain in x and y directions
-Nx = args.n_grid
-Ny = args.n_grid  # Number of grid points in x and y
-alpha = 0.001  # Thermal diffusivity
-dt = 0.0015  # Time step size
-nt = 1000  # Number of time steps
-ts_per_frame = 10
-max_iter = 100
-apply_rcm = args.no_rcm
-save_frames = args.vtk
-
 device = torch.device(f"cuda:{args.cuda}" if torch.cuda.is_available() else "cpu")
 dtype = torch.float64
 if device.type != "cpu":
     torch.cuda.set_device(device)
     torch.cuda.reset_peak_memory_stats()
 print(f"Using {device}")
+
+# Step 1: Define problem parameters
+T0 = 100
+L = 1  # Length of domain in x and y directions
+Nx = args.n_grid
+Ny = args.n_grid  # Number of grid points in x and y
+sigma = torch.tensor([[0.001, 0, 0],
+                           [0, 0.001, 0],
+                           [0, 0, 0.001]], device=device, dtype=dtype)  # Thermal diffusivity
+dt = 0.0015  # Time step size
+nt = 1000  # Number of time steps
+ts_per_frame = 10
+max_iter = 100
+apply_rcm = args.no_rcm
+save_frames = args.vtk
 
 
 start = time.time()
@@ -69,9 +71,14 @@ print(f"Vertices (Nodes): {n_vertices}, Triangles: {n_triangles}", end=" ")
 print("Assembling matrices: ", end="")
 start = time.time()
 rcm = RCM(device=device, dtype=dtype)
-rcm_vertices, rcm_triangles = rcm.calculate_rcm_order(vertices, triangles)
+if apply_rcm:
+    rcm_vertices, rcm_triangles = rcm.calculate_rcm_order(vertices, triangles)
+else:
+    rcm_vertices = torch.from_numpy(vertices).to(dtype=dtype, device=device)
+    rcm_triangles = torch.from_numpy(triangles).to(dtype=torch.long, device=device)
+
 matrices = Matrices3DSurface(rcm_vertices, rcm_triangles, device=device, dtype=dtype)
-K, M = matrices.assemble_matrices(alpha)
+K, M = matrices.assemble_matrices(sigma)
 assemble_matrix_time = time.time() - start
 print(f"done in: {assemble_matrix_time} seconds")
 
@@ -97,8 +104,10 @@ cg = ConjugateGradient(pcd)
 cg.initialize(x=u)
 
 # LU, pivots = torch.linalg.lu_factor(A.to_dense())
-
-frames = rcm.inverse(u0).reshape((1, Nx, Ny))
+if apply_rcm:
+    frames = rcm.inverse(u0).reshape((1, Nx, Ny))
+else:
+    frames = u0.reshape((1, Nx, Ny))
 start = time.time()
 for n in range(nt):
     b = M_dt @ u
@@ -111,7 +120,11 @@ for n in range(nt):
         print(f"{n} / {nt}: {total_iter}")
 
     if n % ts_per_frame == 0 and save_frames:
-        frames = torch.cat((frames, rcm.inverse(u).reshape((1, Nx, Ny))))
+        if apply_rcm:
+            frames = torch.cat((frames, rcm.inverse(u).reshape((1, Nx, Ny))))
+        else:
+            frames = torch.cat((frames, u.reshape((1, Nx, Ny))))
+
 solving_time = time.time() - start
 
 max_memory_used = torch.cuda.max_memory_allocated(device=device.index) / 1024 ** 3
@@ -126,7 +139,7 @@ print(f"Solved {n_vertices} nodes ({Nx}) for {nt} timesteps in {solving_time} se
 if save_frames:
     print("Saving frames: ", end="")
     visualization = Visualization3DSurface(frames, vertices, triangles, dt, ts_per_frame)
-    visualization.save_gif(f"./(Z = np.sqrt(X**2 + Y**2)) 3D surface L={L}, alpha={alpha}, dx=dy={L/Nx}.gif")
+    visualization.save_gif(f"./(Z = np.sqrt(X**2 + Y**2)) 3D surface L={L}, dx=dy={L/Nx}.gif")
     print("Done")
 
 

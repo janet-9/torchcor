@@ -73,8 +73,8 @@ class Stimulus:
         set_stimregion(streg): sets to 1 the points/voxels where the forcing term is applied (takes a boolean mask streg as input)
         """
         region = torch.squeeze(streg)
-        if region.ndim==1:
-            region = region.unsqueeze(1)
+        # if region.ndim==1:
+        #     region = region.unsqueeze(1)
         self.__stim = region
 
     def get_stimregion(self):
