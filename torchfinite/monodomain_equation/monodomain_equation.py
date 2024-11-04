@@ -6,13 +6,13 @@ sys.path.append(parent_dir)
 import torch
 from collections import deque
 import numpy as np
-from assemble import Matrices3DSurface
-from preconditioner import Preconditioner
-from solver import ConjugateGradient
-from visualize import VTK3DSurface
-from boundary import apply_dirichlet_boundary_conditions
+from torchfinite.assemble import Matrices3DSurface
+from torchfinite.preconditioner import Preconditioner
+from torchfinite.solver import ConjugateGradient
+from torchfinite.visualize import VTK3DSurface
+from torchfinite.boundary import apply_dirichlet_boundary_conditions
 import time
-from ionic import ModifiedMS2v
+from torchfinite.ionic import ModifiedMS2v
 from mesh.triangulation import Triangulation
 from mesh.materialproperties import MaterialProperties
 from mesh.stimulus import Stimulus

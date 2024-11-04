@@ -1,5 +1,5 @@
 import torch
-from preconditioner import Preconditioner
+from torchfinite.preconditioner import Preconditioner
 import time
 
 class ConjugateGradient:

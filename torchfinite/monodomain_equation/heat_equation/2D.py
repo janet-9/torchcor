@@ -8,14 +8,14 @@ sys.path.append(parent_dir)
 
 import torch
 import numpy as np
-from assemble import Matrices2D
-from preconditioner import Preconditioner
-from solver import ConjugateGradient
-from visualize import Visualization2D
-from boundary import apply_dirichlet_boundary_conditions
+from torchfinite.assemble import Matrices2D
+from torchfinite.preconditioner import Preconditioner
+from torchfinite.solver import ConjugateGradient
+from torchfinite.visualize import Visualization2D
+from torchfinite.boundary import apply_dirichlet_boundary_conditions
 import time
 from scipy.spatial import Delaunay
-from reorder import RCM
+from torchfinite.reorder import RCM
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dtype = torch.float64
