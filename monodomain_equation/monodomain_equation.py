@@ -150,18 +150,18 @@ if __name__ == "__main__":
         u, total_iter = cg.solve(A, b, a_tol=1e-5, r_tol=1e-5, max_iter=max_iter)
         h = h + dt * dh
         # print(f"solve time: {time.time() - solve_time}")
-        # stable_list.append(total_iter)
-        # if sum(stable_list) == stable_list.maxlen:
-        #     break
+        stable_list.append(total_iter)
+        if sum(stable_list) == stable_list.maxlen:
+            break
         if total_iter == max_iter:
             print(f"The solution did not converge at {n} iteration")
         else:
             print(f"{n} / {nt}: {total_iter}; {round(time.time() - start_time, 2)}")
 
-        # if n % ts_per_frame == 0:
-        #     # frames.append((n, u))
+        if n % ts_per_frame == 0:
+            # frames.append((n, u))
 
-        #     visualization.save_frame(color_values=u.cpu().numpy(),
-        #                              frame_path=f"./vtk_files_{len(vertices)}/frame_{n}.vtk")
+            visualization.save_frame(color_values=u.cpu().numpy(),
+                                     frame_path=f"./vtk_files_{len(vertices)}/frame_{n}.vtk")
 
 
