@@ -1,5 +1,5 @@
 import torch
-from torchfinite.preconditioner import Preconditioner
+from preconditioner import Preconditioner
 import time
 
 class ConjugateGradient:
@@ -15,32 +15,28 @@ class ConjugateGradient:
 
         
         r = b - A @ self.x # Initial residual
-        
-        
         z = self.preconditioner.apply(r)  # Preconditioned residual
         
         p = z.clone()  # Initial search direction
 
         r_norm = torch.linalg.vector_norm(r)
-        for i in range(1):
+        for i in range(max_iter):
             total_iter += 1
             
-            ap_time = time.time()
+            # ap_time = time.time()
             Ap = torch.sparse.mm(A, p.view(-1, 1)).view(-1)  # Matrix-vector product A*p
-            print(f"ap time {Ap.shape} { time.time() - ap_time}")
+            # print(f"ap time {Ap.shape} { time.time() - ap_time}")
             rz_scala = torch.dot(r, z)
             alpha = rz_scala / torch.dot(p, Ap)  # Step size
             
             self.x.add_(alpha * p)
 
             r_new = r - alpha * Ap
-
             
             r_new_norm = torch.linalg.vector_norm(r_new)
             
 
-            if r_new_norm < a_tol: #  or (r_new_norm / r_norm) < r_tol
-                # print(f"Converged in {i} iterations")
+            if r_new_norm < a_tol or (r_new_norm / r_norm) < r_tol:
                 break
 
             z_new = self.preconditioner.apply(r_new)

@@ -6,13 +6,13 @@ sys.path.append(parent_dir)
 import torch
 from collections import deque
 import numpy as np
-from torchfinite.assemble import Matrices3DSurface
-from torchfinite.preconditioner import Preconditioner
-from torchfinite.solver import ConjugateGradient
-from torchfinite.visualize import VTK3DSurface
-from torchfinite.boundary import apply_dirichlet_boundary_conditions
+from assemble import Matrices3DSurface
+from preconditioner import Preconditioner
+from solver import ConjugateGradient
+from visualize import VTK3DSurface
+from boundary import apply_dirichlet_boundary_conditions
 import time
-from torchfinite.ionic import ModifiedMS2v
+from ionic import ModifiedMS2v
 from mesh.triangulation import Triangulation
 from mesh.materialproperties import MaterialProperties
 from mesh.stimulus import Stimulus
@@ -104,11 +104,14 @@ if __name__ == "__main__":
     K = K.to(device=device, dtype=dtype)
     M = M.to(device=device, dtype=dtype)
     A = M + K * dt
+
+    
     assemble_time = time.time() - start_time
     print(f"assemble time: {round(assemble_time, 2)}")
 
     pcd = Preconditioner()
     pcd.create_Jocobi(A)
+    A = A.to_sparse_csr()
 
     pointlist = load_stimulus_region('/home/bzhou6/Projects/FinitePDE/data/Case_1.vtx')  # (2168,)
     S1 = torch.zeros(size=(npt,), device=device, dtype=torch.bool)
@@ -127,7 +130,7 @@ if __name__ == "__main__":
  
     stable_list = deque(maxlen=10)
     max_iter = 1000
-    nt = 1 # int(T // dt)
+    nt = int(T // dt)
     ts_per_frame = 1000
     ctime = 0
     frames = [(0, u)]
@@ -143,10 +146,10 @@ if __name__ == "__main__":
             b = b + dt * I0
         b = M @ b
         
-        solve_time = time.time()
+        # solve_time = time.time()
         u, total_iter = cg.solve(A, b, a_tol=1e-5, r_tol=1e-5, max_iter=max_iter)
         h = h + dt * dh
-        print(f"solve time: {time.time() - solve_time}")
+        # print(f"solve time: {time.time() - solve_time}")
         # stable_list.append(total_iter)
         # if sum(stable_list) == stable_list.maxlen:
         #     break
