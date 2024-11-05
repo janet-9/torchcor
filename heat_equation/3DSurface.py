@@ -4,21 +4,22 @@ parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir)
 
 import torch
-from torchfinite.assemble import Matrices3D
-from torchfinite.preconditioner import Preconditioner
-from torchfinite.solver import ConjugateGradient
-from torchfinite.boundary import apply_dirichlet_boundary_conditions
+from preconditioner import Preconditioner
+from solver import ConjugateGradient
+from boundary import apply_dirichlet_boundary_conditions
 import time
-from torchfinite.reorder import RCM
+from reorder import RCM
 import numpy as np
-from torchfinite.utils import set_logger
-from torchfinite.visualize import Visualization3DSurface
-from torchfinite.assemble import Matrices3DSurface
+import logging
+from utils import set_logger
+from visualize import Visualization3DSurface
+from assemble import Matrices3DSurface
 from scipy.spatial import Delaunay
 import argparse
 
 parser = argparse.ArgumentParser(description="A simple example of argparse.")
 parser.add_argument("-n", '--n_grid', type=int, default=100)
+parser.add_argument("-nt", '--n_timesteps', type=int, default=1000)
 parser.add_argument("-c", '--cuda', type=int, default=0)
 parser.add_argument('--no_rcm', action='store_false')
 parser.add_argument('--vtk', action='store_true')
@@ -40,7 +41,7 @@ sigma = torch.tensor([[0.001, 0, 0],
                            [0, 0.001, 0],
                            [0, 0, 0.001]], device=device, dtype=dtype)  # Thermal diffusivity
 dt = 0.0015  # Time step size
-nt = 1000  # Number of time steps
+nt = args.n_timesteps  # Number of time steps
 ts_per_frame = 10
 max_iter = 100
 apply_rcm = args.no_rcm
@@ -87,7 +88,7 @@ M_dt = M * (1 / dt)
 A = M_dt + K
 
 # apply initial condition for A
-boundary_nodes = torch.arange(80 * Nx, 80 * Nx + Ny, device=device)
+boundary_nodes = torch.arange(40 * Nx, 40 * Nx + Ny, device=device)
 if apply_rcm:
     boundary_nodes = rcm.apply(boundary_nodes)
 boundary_values = torch.ones_like(boundary_nodes, device=device, dtype=dtype) * T0
@@ -100,6 +101,8 @@ A = apply_dirichlet_boundary_conditions(A, boundary_nodes)
 
 pcd = Preconditioner()
 pcd.create_Jocobi(A)
+A = A.to_sparse_csr()
+
 cg = ConjugateGradient(pcd)
 cg.initialize(x=u)
 
@@ -137,6 +140,7 @@ print(f"Solved {n_vertices} nodes ({Nx}) for {nt} timesteps in {solving_time} se
 
 
 if save_frames:
+    logging.getLogger('matplotlib.animation').setLevel(logging.ERROR)
     print("Saving frames: ", end="")
     visualization = Visualization3DSurface(frames, vertices, triangles, dt, ts_per_frame)
     visualization.save_gif(f"./(Z = np.sqrt(X**2 + Y**2)) 3D surface L={L}, dx=dy={L/Nx}.gif")

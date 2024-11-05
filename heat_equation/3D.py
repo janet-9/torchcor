@@ -4,19 +4,20 @@ parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir)
 
 import torch
-from torchfinite.assemble import Matrices3D
-from torchfinite.preconditioner import Preconditioner
-from torchfinite.solver import ConjugateGradient
-from torchfinite.boundary import apply_dirichlet_boundary_conditions
+from assemble import Matrices3D
+from preconditioner import Preconditioner
+from solver import ConjugateGradient
+from boundary import apply_dirichlet_boundary_conditions
 import time
-from torchfinite.reorder import RCM
+from reorder import RCM
 import pygmsh
-from torchfinite.utils import select_device, set_logger
-from torchfinite.visualize import VTK3D
+from utils import select_device, set_logger
+from visualize import VTK3D
 import argparse
 
 parser = argparse.ArgumentParser(description="A simple example of argparse.")
 parser.add_argument("-s", '--mesh_size', type=float, default=0.1)
+parser.add_argument("-nt", '--n_timesteps', type=int, default=1000)
 parser.add_argument("-c", '--cuda', type=int, default=0)
 parser.add_argument('--no_rcm', action='store_false')
 parser.add_argument('--vtk', action='store_true')
@@ -32,7 +33,7 @@ print(f"Using {device}")
 T0 = 100  # Initial temperature on the boundary
 sigma = torch.eye(3, device=device, dtype=dtype) * 0.001  # Thermal diffusivity
 dt = 0.0015  # Time step size
-nt = 1000  # Number of time steps
+nt = args.n_timesteps  # Number of time steps
 ts_per_frame = 10  # Frames per output time step
 max_iter = 100  # Max CG iterations
 apply_rcm = args.no_rcm
@@ -91,6 +92,8 @@ A = apply_dirichlet_boundary_conditions(A, boundary_nodes)
 # Step 5: Preconditioner and CG Solver Setup
 pcd = Preconditioner()
 pcd.create_Jocobi(A)
+A = A.to_sparse_csr()
+
 cg = ConjugateGradient(pcd)
 cg.initialize(x=u)
 
