@@ -32,7 +32,7 @@ sigma = torch.tensor([[0.001 * 0.5, -0.001 * 0.5],
 # h = 0.5206164
 # print(h ** 2 / (2 * alpha))
 dt = 0.0125  # Time step size
-nt = 10000  # Number of time steps
+nt = 1000  # Number of time steps
 ts_per_frame = 10
 max_iter = 100
 
