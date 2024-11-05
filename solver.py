@@ -43,7 +43,7 @@ class ConjugateGradient:
             # p = z_new + beta * p
             p.mul_(beta).add_(z)
 
-        return self.x, total_iter
+        return self.x.clone(), total_iter
 
 
 

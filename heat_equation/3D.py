@@ -25,8 +25,9 @@ args = parser.parse_args()
 
 device = torch.device(f"cuda:{args.cuda}" if torch.cuda.is_available() else "cpu")
 dtype = torch.float64
-torch.cuda.set_device(device)
-torch.cuda.reset_peak_memory_stats()
+if device.type != "cpu":
+    torch.cuda.set_device(device)
+    torch.cuda.reset_peak_memory_stats()
 print(f"Using {device}")
 
 # Step 1: Define problem parameters
@@ -34,7 +35,7 @@ T0 = 100  # Initial temperature on the boundary
 sigma = torch.eye(3, device=device, dtype=dtype) * 0.001  # Thermal diffusivity
 dt = 0.0015  # Time step size
 nt = args.n_timesteps  # Number of time steps
-ts_per_frame = 10  # Frames per output time step
+ts_per_frame = 100  # Frames per output time step
 max_iter = 100  # Max CG iterations
 apply_rcm = args.no_rcm
 mesh_size = args.mesh_size
@@ -123,8 +124,10 @@ logger.info(f"Solved {n_vertices} nodes ({mesh_size}), {n_tetrahedrons} tetrahed
             f"Memory Usage: {round(max_memory_used, 4)} GB")
 print(f"Solved {n_vertices} nodes ({mesh_size}) for {nt} timesteps in {solving_time} seconds; RCM:{apply_rcm}")
 
+
+# print(frames[0][1] == frames[1][1])
 if save_frames:
-    visualization = Visualization3D(vertices, tetrahedrons)
+    visualization = VTK3D(vertices, tetrahedrons)
     print("Saving frames: ", end="")
     for n, u in frames:
         visualization.save_frame(color_values=rcm.inverse(u).cpu().numpy() if apply_rcm else u.cpu().numpy(),
