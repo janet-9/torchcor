@@ -80,6 +80,8 @@ A = apply_dirichlet_boundary_conditions(A, dirichlet_boundary_nodes)
 
 pcd = Preconditioner()
 pcd.create_Jocobi(A)
+A = A.to_sparse_csc()
+
 cg = ConjugateGradient(pcd)
 cg.initialize(x=u)
 
