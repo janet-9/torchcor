@@ -158,10 +158,10 @@ if __name__ == "__main__":
         else:
             print(f"{n} / {nt}: {total_iter}; {round(time.time() - start_time, 2)}")
 
-        if n % ts_per_frame == 0:
-            # frames.append((n, u))
+        # if n % ts_per_frame == 0:
+        #     # frames.append((n, u))
 
-            visualization.save_frame(color_values=u.cpu().numpy(),
-                                     frame_path=f"./vtk_files_{len(vertices)}/frame_{n}.vtk")
+        #     visualization.save_frame(color_values=u.cpu().numpy(),
+        #                              frame_path=f"./vtk_files_{len(vertices)}/frame_{n}.vtk")
 
 
