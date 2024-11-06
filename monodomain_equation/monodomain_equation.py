@@ -22,7 +22,7 @@ import argparse
 parser = argparse.ArgumentParser(description="A simple example of argparse.")
 parser.add_argument("-c", '--cuda', type=int, default=0)
 parser.add_argument('--vtk', action='store_false')
-parser.add_argument('--no_rcm', action='store_false')
+parser.add_argument('--no-rcm', action='store_false')
 args = parser.parse_args()
 
 device = torch.device(f"cuda:{args.cuda}" if torch.cuda.is_available() else "cpu")
@@ -41,7 +41,7 @@ tclose = 185.0
 
 apply_rcm = args.no_rcm
 T = 2400
-
+print(apply_rcm)
 
 cfgstim1 = {'tstart': 0.0,
             'nstim': 3,
@@ -100,8 +100,8 @@ if __name__ == "__main__":
         rcm_vertices = rcm.reorder(vertices)
         rcm_triangles = rcm.map(triangles)
     else:
-        rcm_vertices = torch.from_numpy(vertices).to(dtype=dtype, device=device)
-        rcm_triangles = torch.from_numpy(triangles).to(dtype=torch.long, device=device)
+        rcm_vertices = vertices
+        rcm_triangles = triangles
 
     # sigma calculation:
     fibers = torch.from_numpy(domain.Fibres()).to(dtype=dtype, device=device)
@@ -180,7 +180,7 @@ if __name__ == "__main__":
         if n % ts_per_frame == 0 and args.vtk:
             # frames.append((n, u))
 
-            visualization.save_frame(color_values=rcm.inverse(u).cpu().numpy(),
-                                     frame_path=f"./vtk_files_{len(vertices)}/frame_{n}.vtk")
+            visualization.save_frame(color_values=rcm.inverse(u).cpu().numpy() if apply_rcm else u.cpu().numpy(),
+                                     frame_path=f"./vtk_files_{len(vertices)}_{apply_rcm}/frame_{n}.vtk")
 
 

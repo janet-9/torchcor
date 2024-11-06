@@ -21,7 +21,7 @@ parser = argparse.ArgumentParser(description="A simple example of argparse.")
 parser.add_argument("-n", '--n_grid', type=int, default=100)
 parser.add_argument("-nt", '--n_timesteps', type=int, default=1000)
 parser.add_argument("-c", '--cuda', type=int, default=0)
-parser.add_argument('--no_rcm', action='store_false')
+parser.add_argument('--no-rcm', action='store_false')
 parser.add_argument('--vtk', action='store_true')
 args = parser.parse_args()
 
