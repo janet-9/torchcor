@@ -10,7 +10,7 @@ from assemble import Matrices3DSurface
 from preconditioner import Preconditioner
 from solver import ConjugateGradient
 from visualize import VTK3DSurface
-from boundary import apply_dirichlet_boundary_conditions
+from reorder import RCM
 import time
 from ionic import ModifiedMS2v
 from mesh.triangulation import Triangulation
@@ -21,7 +21,8 @@ import argparse
 
 parser = argparse.ArgumentParser(description="A simple example of argparse.")
 parser.add_argument("-c", '--cuda', type=int, default=0)
-parser.add_argument('--vtk', action='store_true')
+parser.add_argument('--vtk', action='store_false')
+parser.add_argument('--no_rcm', action='store_false')
 args = parser.parse_args()
 
 device = torch.device(f"cuda:{args.cuda}" if torch.cuda.is_available() else "cpu")
@@ -38,7 +39,7 @@ tout = 1.5
 topen = 105.0
 tclose = 185.0
 
-use_renumbering = True
+apply_rcm = args.no_rcm
 T = 2400
 
 
@@ -89,18 +90,34 @@ if __name__ == "__main__":
             ionic_model.set_attribute(npr, values)
 
     start_time = time.time()
+
+    vertices = torch.from_numpy(domain.Pts()).to(dtype=dtype, device=device)
+    triangles = torch.from_numpy(domain.Elems()['Trias'][:, :-1]).to(dtype=torch.long, device=device)
+
+    rcm = RCM(device=device, dtype=dtype)
+    if apply_rcm:
+        rcm.calculate_rcm_order(vertices, triangles)
+        rcm_vertices = rcm.reorder(vertices)
+        rcm_triangles = rcm.map(triangles)
+    else:
+        rcm_vertices = torch.from_numpy(vertices).to(dtype=dtype, device=device)
+        rcm_triangles = torch.from_numpy(triangles).to(dtype=torch.long, device=device)
+
     # sigma calculation:
-    fibers = torch.from_numpy(domain.Fibres())
+    fibers = torch.from_numpy(domain.Fibres()).to(dtype=dtype, device=device)
+    # raise Exception(fibers.shape)
+    # if apply_rcm:
+    #     rcm_fibers = rcm.reorder(fibers)
+    # else:
+    #     rcm_fibers = fibers
     # region_ids = domain.Elems()['Trias'][:, -1]
     sigma_l = diffusl
     sigma_t = diffust
-    sigma = sigma_t * torch.eye(3).unsqueeze(0).expand(fibers.shape[0], 3, 3)
+    sigma = sigma_t * torch.eye(3, device=device, dtype=dtype).unsqueeze(0).expand(fibers.shape[0], 3, 3)
     sigma += (sigma_l - sigma_t) * fibers.unsqueeze(2) @ fibers.unsqueeze(1)
-    sigma = sigma.to(dtype=dtype, device=device)
-    # assemble matrix
-    vertices = torch.from_numpy(domain.Pts())
-    triangles = torch.from_numpy(domain.Elems()['Trias'][:, :-1])
-    matrices = Matrices3DSurface(vertices=vertices, triangles=triangles, device=device, dtype=dtype)
+
+
+    matrices = Matrices3DSurface(vertices=rcm_vertices, triangles=rcm_triangles, device=device, dtype=dtype)
     K, M = matrices.assemble_matrices(sigma)
     K = K.to(device=device, dtype=dtype)
     M = M.to(device=device, dtype=dtype)
@@ -117,6 +134,7 @@ if __name__ == "__main__":
     pointlist = load_stimulus_region('/home/bzhou6/Projects/FinitePDE/data/Case_1.vtx')  # (2168,)
     S1 = torch.zeros(size=(npt,), device=device, dtype=torch.bool)
     S1[pointlist] = True
+    S1 = rcm.reorder(S1)
     stimulus = Stimulus(cfgstim1)
     stimulus.set_stimregion(S1)
     stimuli = [stimulus]
@@ -135,7 +153,7 @@ if __name__ == "__main__":
     ts_per_frame = 1000
     ctime = 0
     frames = [(0, u)]
-    visualization = VTK3DSurface(vertices, triangles)
+    visualization = VTK3DSurface(vertices.cpu(), triangles.cpu())
     start_time = time.time()
     for n in range(nt):
         
@@ -162,7 +180,7 @@ if __name__ == "__main__":
         if n % ts_per_frame == 0 and args.vtk:
             # frames.append((n, u))
 
-            visualization.save_frame(color_values=u.cpu().numpy(),
+            visualization.save_frame(color_values=rcm.inverse(u).cpu().numpy(),
                                      frame_path=f"./vtk_files_{len(vertices)}/frame_{n}.vtk")
 
 

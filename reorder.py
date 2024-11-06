@@ -7,13 +7,14 @@ from scipy.sparse.csgraph import reverse_cuthill_mckee
 class RCM:
     def __init__(self, device, dtype):
         self.rcm_order = None
+        self.rcm_map = None
         self.inverse_rcm_order = None
         self.device = device
         self.dtype = dtype
 
     def calculate_rcm_order(self, vertices, triangles):
-        vertices = torch.from_numpy(vertices).to(dtype=self.dtype, device=self.device)
-        triangles = torch.from_numpy(triangles).to(dtype=torch.long, device=self.device)
+        # vertices = torch.from_numpy(vertices).to(dtype=self.dtype, device=self.device)
+        # triangles = torch.from_numpy(triangles).to(dtype=torch.long, device=self.device)
         n_vertices = vertices.shape[0]
 
         indices = []
@@ -30,17 +31,18 @@ class RCM:
         values = values.cpu().numpy()
         pattern_scipy = sp.csr_matrix((values, (indices[0], indices[1])), shape=(n_vertices, n_vertices))
 
-        rcm = torch.tensor(reverse_cuthill_mckee(pattern_scipy).copy(), dtype=torch.long, device=self.device)
+        self.rcm_order = torch.tensor(reverse_cuthill_mckee(pattern_scipy).copy(), dtype=torch.long, device=self.device)
 
-        self.rcm_order = torch.zeros_like(rcm, dtype=torch.long, device=self.device)
-        self.rcm_order[rcm] = torch.arange(n_vertices, dtype=torch.long, device=self.device)
+        self.rcm_map = torch.zeros_like(self.rcm_order, dtype=torch.long, device=self.device)
+        self.rcm_map[self.rcm_order] = torch.arange(n_vertices, dtype=torch.long, device=self.device)
        
-        self.inverse_rcm_order = torch.argsort(rcm)
+        self.inverse_rcm_order = torch.argsort(self.rcm_order)
 
-        return vertices[rcm], self.apply(triangles)
+    def reorder(self, tensor_any):
+        return tensor_any[self.rcm_order]
 
-    def apply(self, tensor_long):
-        return self.rcm_order[tensor_long]
+    def map(self, tensor_long):
+        return self.rcm_map[tensor_long]
 
     def inverse(self, tensor_any):
         return tensor_any[self.inverse_rcm_order]
