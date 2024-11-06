@@ -29,10 +29,10 @@ device = torch.device(f"cuda:{args.cuda}" if torch.cuda.is_available() else "cpu
 dtype = torch.float64
 print(device)
 
-T = 2400
-dt = 0.01
+T = 2400  # ms = 2.4s
+dt = 0.01  # ms
 max_iter = 1000
-nt = int(T // dt)
+nt = int(T // dt) 
 
 vg = 0.1
 diffusl = (1000 * 1000) * 0.175
@@ -158,9 +158,9 @@ if __name__ == "__main__":
         u, total_iter = cg.solve(A, b, a_tol=1e-5, r_tol=1e-5, max_iter=max_iter)
         h = h + dt * dh
 
-        stable_list.append(total_iter)
-        if sum(stable_list) == stable_list.maxlen:
-            break
+        # stable_list.append(total_iter)
+        # if sum(stable_list) == stable_list.maxlen:
+        #     break
         if total_iter == max_iter:
             print(f"The solution did not converge at {n} iteration")
         else:
