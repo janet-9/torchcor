@@ -29,8 +29,11 @@ device = torch.device(f"cuda:{args.cuda}" if torch.cuda.is_available() else "cpu
 dtype = torch.float64
 print(device)
 
-
+T = 2400
 dt = 0.01
+max_iter = 1000
+nt = int(T // dt)
+
 vg = 0.1
 diffusl = (1000 * 1000) * 0.175
 diffust = (1000 * 1000) * 0.04375
@@ -40,8 +43,7 @@ topen = 105.0
 tclose = 185.0
 
 apply_rcm = args.no_rcm
-T = 2400
-print(apply_rcm)
+print(f"Applying RCM Reordering: {apply_rcm}")
 
 cfgstim1 = {'tstart': 0.0,
             'nstim': 3,
@@ -105,17 +107,11 @@ if __name__ == "__main__":
 
     # sigma calculation:
     fibers = torch.from_numpy(domain.Fibres()).to(dtype=dtype, device=device)
-    # raise Exception(fibers.shape)
-    # if apply_rcm:
-    #     rcm_fibers = rcm.reorder(fibers)
-    # else:
-    #     rcm_fibers = fibers
     # region_ids = domain.Elems()['Trias'][:, -1]
     sigma_l = diffusl
     sigma_t = diffust
     sigma = sigma_t * torch.eye(3, device=device, dtype=dtype).unsqueeze(0).expand(fibers.shape[0], 3, 3)
     sigma += (sigma_l - sigma_t) * fibers.unsqueeze(2) @ fibers.unsqueeze(1)
-
 
     matrices = Matrices3DSurface(vertices=rcm_vertices, triangles=rcm_triangles, device=device, dtype=dtype)
     K, M = matrices.assemble_matrices(sigma)
@@ -123,7 +119,6 @@ if __name__ == "__main__":
     M = M.to(device=device, dtype=dtype)
     A = M + K * dt
 
-    
     assemble_time = time.time() - start_time
     print(f"assemble time: {round(assemble_time, 2)}")
 
@@ -145,18 +140,13 @@ if __name__ == "__main__":
 
     cg = ConjugateGradient(pcd)
     cg.initialize(x=u)
-    
- 
+
     stable_list = deque(maxlen=10)
-    max_iter = 1000
-    nt = int(T // dt)
     ts_per_frame = 1000
     ctime = 0
-    frames = [(0, u)]
     visualization = VTK3DSurface(vertices.cpu(), triangles.cpu())
     start_time = time.time()
     for n in range(nt):
-        
         ctime += dt
         du, dh = ionic_model.differentiate(u, h)
         b = u + dt * du
@@ -164,11 +154,10 @@ if __name__ == "__main__":
             I0 = stimulus.stimApp(ctime)
             b = b + dt * I0
         b = M @ b
-        
-        # solve_time = time.time()
+
         u, total_iter = cg.solve(A, b, a_tol=1e-5, r_tol=1e-5, max_iter=max_iter)
         h = h + dt * dh
-        # print(f"solve time: {time.time() - solve_time}")
+
         stable_list.append(total_iter)
         if sum(stable_list) == stable_list.maxlen:
             break
@@ -178,8 +167,6 @@ if __name__ == "__main__":
             print(f"{n} / {nt}: {total_iter}; {round(time.time() - start_time, 2)}")
 
         if n % ts_per_frame == 0 and args.vtk:
-            # frames.append((n, u))
-
             visualization.save_frame(color_values=rcm.inverse(u).cpu().numpy() if apply_rcm else u.cpu().numpy(),
                                      frame_path=f"./vtk_files_{len(vertices)}_{apply_rcm}/frame_{n}.vtk")
 
