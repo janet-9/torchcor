@@ -20,7 +20,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description="A simple example of argparse.")
 parser.add_argument("-c", '--cuda', type=int, default=0)
-parser.add_argument('--vtk', action='store_false')
+parser.add_argument('--vtk', action='store_true')
 parser.add_argument('--no-rcm', action='store_false')
 args = parser.parse_args()
 
