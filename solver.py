@@ -23,8 +23,10 @@ class ConjugateGradient:
         z = self.preconditioner.apply(r)  # Preconditioned residual
         p = z.clone()  # Initial search direction
 
-        r_norm = torch.linalg.vector_norm(r)
+        # r_norm = torch.linalg.vector_norm(r)
+        z_norm = torch.linalg.norm(z)
         for i in range(max_iter):
+
             total_iter += 1
             
             Ap = A @ p  # Matrix-vector product A*p
@@ -35,10 +37,12 @@ class ConjugateGradient:
 
             r.sub_(alpha * Ap)
             
-            r_new_norm = torch.linalg.vector_norm(r)
-            
+            # r_new_norm = torch.linalg.vector_norm(r)
+            z_new_norm = torch.linalg.vector_norm(r)
 
-            if r_new_norm < a_tol or (r_new_norm / r_norm) < r_tol:
+            # if r_new_norm < a_tol or (r_new_norm / r_norm) < r_tol:
+            #     break
+            if z_new_norm < a_tol or (z_new_norm / z_norm) < r_tol:
                 break
 
             z = self.preconditioner.apply(r)
