@@ -32,7 +32,7 @@ class ConjugateGradient:
             Ap = A @ p  # Matrix-vector product A*p
             rz_scala = torch.dot(r, z)
             alpha = rz_scala / torch.dot(p, Ap)  # Step size
-            
+            print(alpha)
             self.x.add_(alpha * p)
 
             r.sub_(alpha * Ap)
