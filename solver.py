@@ -8,7 +8,7 @@ class ConjugateGradient:
         self.x = None
 
     def initialize(self, x): # Initial guess
-        self.x = x  
+        self.x = x.clone()
 
     def solve(self, A, b, a_tol=1e-6, r_tol=1e-6, max_iter=100):
         total_iter = 0
