@@ -32,7 +32,7 @@ class ConjugateGradient:
             Ap = A @ p  # Matrix-vector product A*p
             rz_scala = torch.dot(r, z)
             alpha = rz_scala / torch.dot(p, Ap)  # Step size
-            print(alpha)
+
             self.x.add_(alpha * p)
 
             r.sub_(alpha * Ap)
@@ -48,7 +48,7 @@ class ConjugateGradient:
             z = self.preconditioner.apply(r)
 
             beta = torch.dot(r, z) / rz_scala
-
+            print(beta)
             # p = z_new + beta * p
             p.mul_(beta).add_(z)
 
