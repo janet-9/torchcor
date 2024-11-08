@@ -11,13 +11,14 @@ class ConjugateGradient:
     def initialize(self, x): # Initial guess
         self.x = x.clone()
         self.x_prev = x.clone()
+        self.x_clone = x.clone()
 
     def solve(self, A, b, a_tol=1e-6, r_tol=1e-6, max_iter=100):
         total_iter = 0
 
-        x_clone = self.x.clone()
-        self.x.mul_(2).sub_(self.x_prev)
-        self.x_prev = x_clone
+        self.x_clone.copy_(self.x)
+        self.x.mul_(2).sub_(self.x_prev)  # x = 2 * x - x_prev
+        self.x_prev.copy_(self.x_clone)
 
         r = b - A @ self.x # Initial residual
         z = self.preconditioner.apply(r)  # Preconditioned residual
