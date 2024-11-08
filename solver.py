@@ -48,7 +48,7 @@ class ConjugateGradient:
             z = self.preconditioner.apply(r)
 
             beta = torch.dot(r, z) / rz_scala
-            print(beta)
+            print(beta.item(), (r_new_norm / r_norm).item())
             # p = z_new + beta * p
             p.mul_(beta).add_(z)
 
