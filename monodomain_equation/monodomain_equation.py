@@ -9,7 +9,7 @@ from assemble import Matrices3DSurface
 from preconditioner import Preconditioner
 from solver import ConjugateGradient
 from visualize import VTK3DSurface
-from reorder import RCM
+from reorder import RCM as RCM
 import time
 from ionic import ModifiedMS2v
 from mesh.triangulation import Triangulation
@@ -24,6 +24,8 @@ parser.add_argument("-c", '--cuda', type=int, default=0)
 parser.add_argument('--vtk', action='store_true')
 parser.add_argument('--no-rcm', action='store_false')
 args = parser.parse_args()
+
+total_time = time.time()
 
 device = torch.device(f"cuda:{args.cuda}" if torch.cuda.is_available() else "cpu")
 dtype = torch.float64
@@ -144,7 +146,7 @@ if __name__ == "__main__":
     ts_per_frame = 1000
     ctime = 0
     visualization = VTK3DSurface(vertices.cpu(), triangles.cpu())
-    start_time = time.time()
+    solving_time = time.time()
     for n in range(nt):
         ctime += dt
         du, dh = ionic_model.differentiate(u, h)
@@ -165,5 +167,5 @@ if __name__ == "__main__":
         if n % ts_per_frame == 0 and args.vtk:
             visualization.save_frame(color_values=rcm.inverse(u).cpu().numpy() if apply_rcm else u.cpu().numpy(),
                                      frame_path=f"./vtk_files_{len(vertices)}_{apply_rcm}/frame_{n}.vtk")
-
-    print(time.time() - start_time)
+    print("Solving time: ", time.time() - solving_time)
+    print("Total time: ", time.time() - total_time)
