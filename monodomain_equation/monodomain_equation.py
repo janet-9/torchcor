@@ -151,11 +151,11 @@ if __name__ == "__main__":
         b = u + dt * du
         for stimulus in stimuli:
             I0 = stimulus.stimApp(ctime)
-            b = b + dt * I0
+            b += dt * I0
         b = M @ b
 
         u, total_iter = cg.solve(A, b, a_tol=1e-5, r_tol=1e-5, max_iter=max_iter)
-        h = h + dt * dh
+        h += dt * dh
 
         # if total_iter == max_iter:
         #     print(f"The solution did not converge at {n} iteration")
