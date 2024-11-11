@@ -7,7 +7,7 @@ import torch
 import numpy as np
 from assemble import Matrices3DSurface
 from preconditioner import Preconditioner
-from solver import ConjugateGradient
+from solver import ConjugateGradient, BiCGStab
 from visualize import VTK3DSurface
 from reorder import RCM as RCM
 import time
@@ -159,10 +159,10 @@ if __name__ == "__main__":
         u, total_iter = cg.solve(A, b, a_tol=1e-5, r_tol=1e-5, max_iter=max_iter)
         h += dt * dh
 
-        # if total_iter == max_iter:
-        #     print(f"The solution did not converge at {n} iteration")
-        # else:
-        #     print(f"{n} / {nt}: {total_iter}; {round(time.time() - start_time, 2)}")
+        if total_iter == max_iter:
+            print(f"The solution did not converge at {n} iteration")
+        else:
+            print(f"{n} / {nt}: {total_iter}; {round(time.time() - start_time, 2)}")
 
         if n % ts_per_frame == 0 and args.vtk:
             visualization.save_frame(color_values=rcm.inverse(u).cpu().numpy() if apply_rcm else u.cpu().numpy(),
