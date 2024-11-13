@@ -8,8 +8,10 @@ class Preconditioner:
     def create_Jocobi(self, A):
         device, dtype = A.device, A.dtype
 
-        sparse_indices = A._indices()
-        sparse_values = A._values()
+        A = A.coalesce()
+
+        sparse_indices = A.indices()
+        sparse_values = A.values()
 
         row_indices = sparse_indices[0, :]
         col_indices = sparse_indices[1, :]
