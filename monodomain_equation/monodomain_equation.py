@@ -28,7 +28,7 @@ args = parser.parse_args()
 total_time = time.time()
 
 device = torch.device(f"cuda:{args.cuda}" if torch.cuda.is_available() else "cpu")
-dtype = torch.float32
+dtype = torch.float64
 print(device)
 
 T = 2400  # ms = 2.4s
