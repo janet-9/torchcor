@@ -75,10 +75,12 @@ if __name__ == "__main__":
     # domain.exportCarpFormat("atrium")
     
     # assign nodal properties
-    ionic_model = ModifiedMS2v(device, dtype)
     nodal_properties = material.nodal_property_names()
     point_region_ids = domain.point_region_ids()
     npt = point_region_ids.shape[0]
+
+    ionic_model = ModifiedMS2v(device, dtype)
+    ionic_model.initialize(dt, npt)
 
     for npr in nodal_properties:
         npr_type = material.nodal_property_type(npr)
@@ -138,7 +140,7 @@ if __name__ == "__main__":
 
     # set initial conditions
     u = torch.full(size=(npt,), fill_value=0, device=device, dtype=dtype)
-    ionic_model.initialize(dt, npt)
+
 
     cg = ConjugateGradient(pcd)
     cg.initialize(x=u)
@@ -157,7 +159,6 @@ if __name__ == "__main__":
         b = M @ b
 
         u, total_iter = cg.solve(A, b, a_tol=1e-5, r_tol=1e-5, max_iter=max_iter)
-        # h += dt * dh
 
         if total_iter == max_iter:
             print(f"The solution did not converge at {n} iteration")
