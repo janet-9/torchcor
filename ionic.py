@@ -2,7 +2,7 @@ import torch
 
 
 class ModifiedMS2v:
-    def __init__(self):
+    def __init__(self, device, dtype):
         self.tau_in = 0.1
         self.tau_out = 9.0
         self.tau_open = 100.0
@@ -10,12 +10,24 @@ class ModifiedMS2v:
         self.u_gate = 0.13
         self.u_crit = 0.13
 
-    def differentiate(self, U, H):
-        J_in = -1.0 * H * U * (U - self.u_crit) * (1 - U) / self.tau_in
-        J_out = (1 - H) * U / self.tau_out
+        self.H = None
+        self.dt = None
+        self.device = device
+        self.dtype = dtype
+
+    def initialize(self, dt, npt):
+        self.H = torch.full(size=(npt,), fill_value=1.0, device=self.device, dtype=self.dtype)
+        self.dt = dt
+
+    def differentiate(self, U):
+        J_in = -1.0 * self.H * U * (U - self.u_crit) * (1 - U) / self.tau_in
+        J_out = (1 - self.H) * U / self.tau_out
         dU = - (J_in + J_out)
-        dH = torch.where(U > self.u_gate, -H / self.tau_close, (1 - H) / self.tau_open)
-        return dU, dH
+
+        dH = torch.where(U > self.u_gate, -self.H / self.tau_close, (1 - self.H) / self.tau_open)
+        self.H += self.dt * dH
+
+        return dU
 
     def set_attribute(self, name, value):
         if name in self.__dict__.keys():
