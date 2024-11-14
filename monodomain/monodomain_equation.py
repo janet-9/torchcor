@@ -5,13 +5,13 @@ sys.path.append(parent_dir)
 
 import torch
 import numpy as np
-from assemble import Matrices3DSurface
-from preconditioner import Preconditioner
-from solver import ConjugateGradient, BiCGStab
-from visualize import VTK3DSurface
-from reorder import RCM as RCM
+from core.assemble import Matrices3DSurface
+from core.preconditioner import Preconditioner
+from core.solver import ConjugateGradient
+from core.visualize import VTK3DSurface
+from core.reorder import RCM as RCM
 import time
-from ionic import ModifiedMS2v
+from ionic.models import ModifiedMS2v
 from mesh.triangulation import Triangulation
 from mesh.materialproperties import MaterialProperties
 from mesh.stimulus import Stimulus
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     material.add_ud_function('stiffness', sigmaTens)
 
     domain = Triangulation()
-    domain.readMesh("/home/bzhou6/Projects/FinitePDE/data/Case_1")
+    domain.readMesh("/Users/bei/Project/FinitePDE/data/Case_1")
     # domain.exportCarpFormat("atrium")
     
     # assign nodal properties
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     pcd.create_Jocobi(A)
     A = A.to_sparse_csr()
 
-    pointlist = load_stimulus_region('/home/bzhou6/Projects/FinitePDE/data/Case_1.vtx')  # (2168,)
+    pointlist = load_stimulus_region('/Users/bei/Project/FinitePDE/data/Case_1.vtx')  # (2168,)
     S1 = torch.zeros(size=(npt,), device=device, dtype=torch.bool)
     S1[pointlist] = True
     S1 = rcm.reorder(S1)
@@ -163,7 +163,7 @@ if __name__ == "__main__":
         if total_iter == max_iter:
             print(f"The solution did not converge at {n} iteration")
         else:
-            print(f"{n} / {nt}: {total_iter}; {round(time.time() - start_time, 2)}")
+            print(f"{n} / {nt}: {total_iter}; {round(time.time() - solving_time, 2)}")
 
         if n % ts_per_frame == 0 and args.vtk:
             visualization.save_frame(color_values=rcm.inverse(u).cpu().numpy() if apply_rcm else u.cpu().numpy(),

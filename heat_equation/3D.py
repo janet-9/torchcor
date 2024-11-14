@@ -4,15 +4,15 @@ parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir)
 
 import torch
-from assemble import Matrices3D
-from preconditioner import Preconditioner
-from solver import ConjugateGradient
-from boundary import apply_dirichlet_boundary_conditions
+from core.assemble import Matrices3D
+from core.preconditioner import Preconditioner
+from core.solver import ConjugateGradient
+from core.boundary import apply_dirichlet_boundary_conditions
 import time
-from reorder import RCM
+from core.reorder import RCM
 import pygmsh
-from utils import select_device, set_logger
-from visualize import VTK3D
+from core.utils import set_logger
+from core.visualize import VTK3D
 import argparse
 
 parser = argparse.ArgumentParser(description="A simple example of argparse.")

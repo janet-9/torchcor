@@ -4,16 +4,16 @@ parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir)
 
 import torch
-from preconditioner import Preconditioner
-from solver import ConjugateGradient
-from boundary import apply_dirichlet_boundary_conditions
+from core.preconditioner import Preconditioner
+from core.solver import ConjugateGradient
+from core.boundary import apply_dirichlet_boundary_conditions
 import time
-from reorder import RCM
+from core.reorder import RCM
 import numpy as np
 import logging
-from utils import set_logger
-from visualize import Visualization3DSurface
-from assemble import Matrices3DSurface
+from core.utils import set_logger
+from core.visualize import Visualization3DSurface
+from core.assemble import Matrices3DSurface
 from scipy.spatial import Delaunay
 import argparse
 

@@ -1,5 +1,5 @@
 import torch
-from preconditioner import Preconditioner
+from core.preconditioner import Preconditioner
 import time
 
 class ConjugateGradient:
@@ -23,7 +23,6 @@ class ConjugateGradient:
         z = self.preconditioner.apply(r)  # Preconditioned residual
         p = z.clone()  # Initial search direction
 
-        # r_norm = torch.linalg.vector_norm(r)
         z_norm = torch.linalg.norm(z)
         for i in range(max_iter):
 
@@ -36,20 +35,16 @@ class ConjugateGradient:
             self.x.add_(alpha * p)
 
             r.sub_(alpha * Ap)
-            
-            # r_new_norm = torch.linalg.vector_norm(r)
+
             z_new_norm = torch.linalg.vector_norm(z)
 
-            # if r_new_norm < a_tol or (r_new_norm / r_norm) < r_tol:
-            #     break
             if z_new_norm < a_tol or (z_new_norm / z_norm) < r_tol:
                 break
 
             z = self.preconditioner.apply(r)
 
             beta = torch.dot(r, z) / rz_scala
-            # print(beta.item(), (r_new_norm / r_norm).item())
-            # p = z_new + beta * p
+
             p.mul_(beta).add_(z)
 
         return self.x.clone(), total_iter

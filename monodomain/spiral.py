@@ -5,17 +5,17 @@ sys.path.append(parent_dir)
 
 import torch
 import numpy as np
-from assemble import Matrices3DSurface
-from preconditioner import Preconditioner
-from solver import ConjugateGradient, BiCGStab
-from visualize import VTK3DSurface
-from reorder import RCM as RCM
+from core.assemble import Matrices3DSurface
+from core.preconditioner import Preconditioner
+from core.solver import ConjugateGradient
+from core.visualize import VTK3DSurface
+from core.reorder import RCM as RCM
 import time
 from ionic import ModifiedMS2v
 from mesh.triangulation import Triangulation
 from mesh.materialproperties import MaterialProperties
 from mesh.stimulus import Stimulus
-from tools import load_stimulus_region, dfmass, sigmaTens
+from tools import dfmass, sigmaTens
 import argparse
 
 
