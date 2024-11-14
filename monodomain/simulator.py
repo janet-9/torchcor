@@ -57,6 +57,9 @@ class AtrialSimulator:
         self.triangles = torch.from_numpy(mesh.Elems()['Trias'][:, :-1]).to(dtype=torch.long, device=self.device)
         self.fibers = torch.from_numpy(mesh.Fibres()).to(dtype=self.dtype, device=self.device)
 
+        if self.rcm is not None:
+            self.rcm.calculate_rcm_order(self.vertices, self.triangles)
+
     def add_material_property(self, material_config):
         self.material_config = material_config
 
@@ -103,7 +106,6 @@ class AtrialSimulator:
 
     def assemble(self):
         if self.rcm is not None:
-            self.rcm.calculate_rcm_order(self.vertices, self.triangles)
             rcm_vertices = self.rcm.reorder(self.vertices)
             rcm_triangles = self.rcm.map(self.triangles)
         else:
