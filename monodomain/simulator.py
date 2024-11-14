@@ -136,7 +136,7 @@ class AtrialSimulator:
         ctime = 0
         visualization = VTK3DSurface(self.vertices.cpu(), self.triangles.cpu())
         solving_time = time.time()
-        for n in range(self.nt):
+        for n in range(1, self.nt + 1):
             ctime += self.dt
             du = self.ionic_model.differentiate(u)
             b = u + self.dt * du
