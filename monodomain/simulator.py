@@ -157,7 +157,7 @@ class AtrialSimulator:
                 visualization.save_frame(color_values=self.rcm.inverse(u).cpu().numpy() if self.rcm is not None else u.cpu().numpy(),
                                          frame_path=f"./vtk_files_{self.n_nodes}_{self.rcm is not None}/frame_{n}.vtk")
 
-        print(time.time() - solving_time)
+        print(f"Solved in {round(time.time() - solving_time, 2)} seconds")
 
 
 
