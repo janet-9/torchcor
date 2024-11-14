@@ -23,3 +23,4 @@ simulator.assemble()
 simulator.set_stimulus_region(path="/home/bzhou6/Projects/FinitePDE/data/Case_1.vtx")
 simulator.add_stimulus(stim_config)
 simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=1000, plot_interval=10, verbose=True)
+
