@@ -18,7 +18,7 @@ from monodomain.tools import load_stimulus_region
 
 
 class AtrialSimulator:
-    def __init__(self, T, dt, apply_rcm, save_solution, device=None, dtype=None):
+    def __init__(self, T, dt, apply_rcm, device=None, dtype=None):
         self.device = torch.device(device) if device is not None else "cuda:0" \
             if torch.cuda.is_available() else "cpu"
         self.dtype = dtype if dtype is not None else torch.float64
@@ -27,7 +27,6 @@ class AtrialSimulator:
         self.dt = dt  # ms
         self.nt = int(T // dt)
         self.rcm = RCM(device=device, dtype=dtype) if apply_rcm else None
-        self.save_solution = save_solution
 
         self.ionic_model = None
         self.pcd = None
@@ -127,13 +126,13 @@ class AtrialSimulator:
         self.pcd.create_Jocobi(A)
         self.A = A.to_sparse_csr()
 
-    def solve(self, a_tol, r_tol, max_iter, verbose=True):
+    def solve(self, a_tol, r_tol, max_iter, plot_interval=10, verbose=True):
         u = torch.full(size=(self.n_nodes,), fill_value=0, device=self.device, dtype=self.dtype)
 
         cg = ConjugateGradient(self.pcd)
         cg.initialize(x=u)
 
-        ts_per_frame = 1000
+        ts_per_frame = int(plot_interval / self.dt)
         ctime = 0
         visualization = VTK3DSurface(self.vertices.cpu(), self.triangles.cpu())
         solving_time = time.time()
@@ -154,7 +153,7 @@ class AtrialSimulator:
                 else:
                     print(f"{n} / {self.nt}: {total_iter}; {round(time.time() - solving_time, 2)}")
 
-            if self.save_solution and n % ts_per_frame == 0:
+            if n % ts_per_frame == 0:
                 visualization.save_frame(color_values=self.rcm.inverse(u).cpu().numpy() if self.rcm is not None else u.cpu().numpy(),
                                          frame_path=f"./vtk_files_{self.n_nodes}_{self.rcm is not None}/frame_{n}.vtk")
 
