@@ -19,8 +19,8 @@ material_config = {"vg": 0.1,
 simulator = AtrialSimulator(T=simulation_time, dt=dt, apply_rcm=True, device="cuda:0")
 simulator.load_mesh(path="/home/bzhou6/Projects/FinitePDE/data/Case_1")
 simulator.add_material_property(material_config)
-simulator.assemble()
 simulator.set_stimulus_region(path="/home/bzhou6/Projects/FinitePDE/data/Case_1.vtx")
 simulator.add_stimulus(stim_config)
+simulator.assemble()
 simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=1000, plot_interval=10, verbose=True)
 
