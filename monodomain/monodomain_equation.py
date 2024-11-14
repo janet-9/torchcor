@@ -170,3 +170,5 @@ if __name__ == "__main__":
                                      frame_path=f"./vtk_files_{len(vertices)}_{apply_rcm}/frame_{n}.vtk")
     print("Solving time: ", time.time() - solving_time)
     print("Total time: ", time.time() - total_time)
+
+
