@@ -4,7 +4,6 @@ parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir)
 
 import torch
-import numpy as np
 from core.assemble import Matrices3DSurface
 from core.preconditioner import Preconditioner
 from core.solver import ConjugateGradient
@@ -19,9 +18,10 @@ from monodomain.tools import load_stimulus_region
 
 
 class AtrialSimulator:
-    def __init__(self, T, dt, apply_rcm, device, dtype):
-        self.device = device
-        self.dtype = dtype
+    def __init__(self, T, dt, apply_rcm, device=None, dtype=None):
+        self.device = torch.device(device) if device is not None else "cuda:0" \
+            if torch.cuda.is_available() else "cpu"
+        self.dtype = dtype if dtype is not None else torch.float64
 
         self.T = T  # ms = 2.4s
         self.dt = dt  # ms
