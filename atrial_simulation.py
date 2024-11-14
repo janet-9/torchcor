@@ -16,10 +16,7 @@ material_config = {"vg": 0.1,
                    "topen": 105.0,
                    "tclose": 185.0}
 
-simulator = AtrialSimulator(T=simulation_time, 
-                            dt=dt, 
-                            apply_rcm=True,
-                            device="cuda:0")
+simulator = AtrialSimulator(T=simulation_time, dt=dt, apply_rcm=True, device="cuda:0")
 simulator.load_mesh(path="/home/bzhou6/Projects/FinitePDE/data/Case_1")
 simulator.add_material_property(material_config)
 simulator.assemble()
