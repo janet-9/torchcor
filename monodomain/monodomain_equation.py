@@ -141,7 +141,6 @@ if __name__ == "__main__":
     # set initial conditions
     u = torch.full(size=(npt,), fill_value=0, device=device, dtype=dtype)
 
-
     cg = ConjugateGradient(pcd)
     cg.initialize(x=u)
 
