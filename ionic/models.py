@@ -71,3 +71,5 @@ class TenTusscher:
 
     def get_attribute(self, name: str):
         return getattr(self, name, None)
+
+
