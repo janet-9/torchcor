@@ -348,3 +348,5 @@ def custom_piecewise(cases):
     """Compute result of a piecewise function"""
     return select(cases[0::2],cases[1::2])
 
+
+
