@@ -1,0 +1,88 @@
+
+*** GIT tag:            v16.0
+*** GIT hash:           ab1a4043a6fbab167f9f890c08ecef370b6d69cb
+*** GIT repo:           https://gitlab-ci-token:glcbt-64_gS47YMyyszWxrc7ywXbg@git.opencarp.org/openCARP/openCARP.git
+*** dependency commits: 
+
+L2 : Output directory exists: leftAtrium
+
+
+    *** Processing meshes ***
+
+Reading reference mesh: Case_1.*
+L4 : Warning: No physics region defined! Please set phys_region parameters to correctly define physics.
+L4 : IntraElec and ExtraElec domains will be derived from fibers.
+
+L1 : Warning: Legacy stimuli defined. Please consider switching to stimulus definition "stim[]"!
+Done in 1.210781 sec.
+Done in 0.000215 sec.
+Processing submeshes
+All done in 1.774388 sec.
+
+    *** Initializing physics ***
+
+Initializing Electrics ..
+
+Setting up ionic models and plugins
+-----------------------------------
+
+Assigning IMPS to tagged regions:
+	Ionic model: mMS to tag region(s) [1], [2], [3], [4], [5], [6],.
+Ionic model: mMS
+	V_gate               modifier: =0.1            value: 0.1
+	a_crit               modifier: =0.1            value: 0.1
+	tau_in               modifier: =0.15           value: 0.15
+	tau_out              modifier: =1.5            value: 1.5
+	tau_open             modifier: =105            value: 105
+	tau_close            modifier: =185            value: 185
+
+L3 : Warning: openCARP requires input vtx indices to be of from the input mesh, i.e. of type "extra".
+
+    *** Launching simulation ***
+
+PROG	----- 	----	-------	-------|
+time	%%comp	time	 ctime 	  ETA  |
+0.00	0.0	0.0	0:00:00	0:00:00
+100.00	4.2	51.4	0:00:51	0:19:41
+200.00	8.3	38.0	0:01:29	0:16:23
+300.00	12.5	32.1	0:02:01	0:14:10
+400.00	16.7	33.9	0:02:35	0:12:56
+500.00	20.8	29.9	0:03:05	0:11:43
+600.00	25.0	31.4	0:03:36	0:10:49
+700.00	29.2	29.9	0:04:06	0:09:58
+800.00	33.3	28.2	0:04:34	0:09:09
+900.00	37.5	40.0	0:05:14	0:08:44
+1000.00	41.7	38.0	0:05:52	0:08:13
+1100.00	45.8	32.0	0:06:24	0:07:34
+1200.00	50.0	33.9	0:06:58	0:06:58
+1300.00	54.2	30.2	0:07:28	0:06:19
+1400.00	58.3	29.2	0:07:58	0:05:41
+1500.00	62.5	30.0	0:08:28	0:05:04
+1600.00	66.7	28.3	0:08:56	0:04:28
+1700.00	70.8	41.3	0:09:37	0:03:57
+1800.00	75.0	38.7	0:10:16	0:03:25
+1900.00	79.2	34.3	0:10:50	0:02:51
+2000.00	83.3	35.2	0:11:25	0:02:17
+2100.00	87.5	30.5	0:11:56	0:01:42
+2200.00	91.7	28.5	0:12:24	0:01:07
+2300.00	95.8	28.5	0:12:53	0:00:33
+2400.00	100.0	28.7	0:13:22	0:00:00
+
+
+Timings of individual physics:
+------------------------------
+
+Electrics:
+  Init:    0.16 sec
+  Compute: 666.04 sec
+  Output:  0.01 sec
+
+Myocard Ionics:
+  Init:    0.00 sec
+  Compute: 135.83 sec
+  Output:  0.00 sec
+
+
+    *** Destroying physics ***
+
+Destroying Electrics ..
