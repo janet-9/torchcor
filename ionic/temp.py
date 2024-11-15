@@ -50,7 +50,7 @@ if __name__ == "__main__":
    U = tt.initialize(dt=dt)
    Istim=100
 
-   for jj in range(int(60000)):
+   for jj in range(int(600000)):
        if(jj>100):
            Istim=0
        dU = tt.differentiate(U)

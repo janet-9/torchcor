@@ -11,7 +11,7 @@ class TenTusscher:
         (_, _, _, legend_constants) = createLegends()
 
         init_states, init_constants = initConsts()
-        self.states = torch.tensor(init_states, device=device, dtype=dtype).repeat(npt, 1)
+        self.states = torch.tensor(init_states, device=device, dtype=dtype)
         self.constants = torch.tensor(init_constants, device=device, dtype=dtype)
 
         for legend_constant, init_constant in zip(legend_constants, init_constants):
@@ -19,7 +19,9 @@ class TenTusscher:
             if not constant_name.startswith("stim"):
                 setattr(self, constant_name, init_constant)
 
-    def initialize(self, dt):
+    def initialize(self, dt, npt):
+        self.states = self.states.repeat(npt, 1)
+
         U = self.states[:, 0].clone()
         self.H = self.states[:, 1:].clone()
         self.dt = dt
@@ -28,17 +30,13 @@ class TenTusscher:
 
     def differentiate(self, U):
         self.states[:, 0] = U
-        # self.states[:, 1:] = self.H
-        # print(self.states.numpy().tolist())
 
         rates = self.compute_rates(states=self.states, constants=self.constants)
-        # print(rates)
         dU = rates[:, 0]
-        dH = rates[:, 1:]
+        # dH = rates[:, 1:]
 
-        self.H += self.dt * dH
+        # self.H += self.dt * dH
 
-        # print(dU)
         return dU
 
     def compute_rates(self, states, constants):
@@ -143,30 +141,24 @@ class TenTusscher:
         algebraic[:, 69] = 1.00000/(1.00000+(constants[49]*constants[50])/(torch.pow(states[:, 10]+constants[50], 2.00000)))
         rates[:, 10] = algebraic[:, 69]*(((-1.00000*algebraic[:, 52]*constants[3])/(2.00000*1.00000*constants[52]*constants[2])+(algebraic[:, 67]*constants[51])/constants[52])-(algebraic[:, 61]*constants[4])/constants[52])
 
-
-
         return rates
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import numpy as np
-    # tt = TenTusscher(None, None)
-    # U = tt.initialize(dt=0.01, npt=1)
-    # tt.differentiate(U)
+
     URES=[]
     tt = TenTusscher("cpu", torch.float64, npt=1)
     dt=0.01
     U = tt.initialize(dt=dt)
     Istim=100
 
-    for jj in range(int(6000)):
+    for jj in range(int(60000)):
         if(jj>100):
             Istim=0
         dU = tt.differentiate(U)
         U += dt*(dU+Istim)
-        # print(U)
-        # print(dU)
-        # tt.states[0] = U
+
         if jj%100==0:
             URES.append(U.item())
     print(np.array(URES))
