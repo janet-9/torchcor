@@ -1,47 +1,15 @@
-from cellml.ten_tusscher_model_2006_IK1Ko_endo_units import computeRates, sizeAlgebraic, createLegends, initConsts
 import torch
+import cellml.ten_tusscher_model_2006_IK1Ko_endo_units as cell_model
+from base import BaseCellModel
 
-class TenTusscher:
-    def __init__(self, device, dtype, npt):
-        self.H = None
-        self.dt = None
-        self.device = device
-        self.dtype = dtype
 
-        (_, _, _, legend_constants) = createLegends()
-
-        init_states, init_constants = initConsts()
-        self.states = torch.tensor(init_states, device=device, dtype=dtype)
-        self.constants = torch.tensor(init_constants, device=device, dtype=dtype)
-
-        for legend_constant, init_constant in zip(legend_constants, init_constants):
-            constant_name = legend_constant.split()[0]
-            if not constant_name.startswith("stim"):
-                setattr(self, constant_name, init_constant)
-
-    def initialize(self, dt, npt):
-        self.states = self.states.repeat(npt, 1)
-
-        U = self.states[:, 0].clone()
-        self.H = self.states[:, 1:].clone()
-        self.dt = dt
-
-        return U
-
-    def differentiate(self, U):
-        self.states[:, 0] = U
-
-        rates = self.compute_rates(states=self.states, constants=self.constants)
-        dU = rates[:, 0]
-        # dH = rates[:, 1:]
-
-        # self.H += self.dt * dH
-
-        return dU
+class TenTusscher(BaseCellModel):
+    def __init__(self, cell_model, device, dtype):
+        super().__init__(cell_model, device, dtype)
 
     def compute_rates(self, states, constants):
         rates = torch.zeros_like(states)
-        algebraic = torch.zeros((states.shape[0], sizeAlgebraic), device=self.device, dtype=self.dtype)
+        algebraic = torch.zeros((states.shape[0], self.cell_model.sizeAlgebraic), device=self.device, dtype=self.dtype)
 
         algebraic[:, 7] = 1.00000/(1.00000+torch.exp((states[:, 0]+20.0000)/7.00000))
         algebraic[:, 20] = 1102.50*torch.exp(-(torch.pow(states[:, 0]+27.0000, 2.00000))/225.000)+200.000/(1.00000+torch.exp((13.0000-states[:, 0])/10.0000))+180.000/(1.00000+torch.exp((states[:, 0]+30.0000)/10.0000))+20.0000
@@ -148,9 +116,10 @@ if __name__ == "__main__":
     import numpy as np
 
     URES=[]
-    tt = TenTusscher("cpu", torch.float64, npt=1)
+    tt = TenTusscher(cell_model, "cpu", torch.float64)
+    # print(tt.default_constants())
     dt=0.01
-    U = tt.initialize(dt=dt)
+    U = tt.initialize(n_nodes=1, dt=dt)
     Istim=100
 
     for jj in range(int(60000)):
@@ -161,7 +130,7 @@ if __name__ == "__main__":
 
         if jj%100==0:
             URES.append(U.item())
-    print(np.array(URES))
+    # print(np.array(URES))
     plt.plot(np.array(URES))
     plt.show()
 
