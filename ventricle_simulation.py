@@ -37,8 +37,8 @@ stim_config_stim_RV_mod = {'tstart': 5.0,
                           'name': 'RV_mod'}
 
 
-material_config = {"diffusl": {0: 0.5272, 1: 0.9074},
-                   "diffust": {0: 0.2076, 1: 0.3332}}
+material_config = {"diffusl": {34: 0.5272, 35: 0.5272, 44: 0.9074, 45: 0.9074, 46: 0.9074},
+                   "diffust": {34: 0.2076, 35: 0.2076, 44: 0.3332, 45: 0.3332, 46: 0.3332}}
 
 
 device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")

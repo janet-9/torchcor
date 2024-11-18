@@ -53,8 +53,7 @@ class VentricleSimulator:
         mesh = Triangulation()
         mesh.readMesh(path)
 
-        self.region_ids = mesh.Elems()['Tetras'][:, -1]
-        raise Exception(np.unique(self.region_ids))
+        self.region_ids = torch.from_numpy(mesh.Elems()['Tetras'][:, -1]).to(dtype=torch.long, device=self.device)
         self.point_region_ids = mesh.point_region_ids()
         self.n_nodes = self.point_region_ids.shape[0]
 
@@ -104,8 +103,20 @@ class VentricleSimulator:
             rcm_vertices = self.vertices
             rcm_triangles = self.triangles
 
-        sigma_l = self.material_config["diffusl"]
-        sigma_t = self.material_config["diffust"]
+        sigma_l = torch.zeros_like(self.region_ids, dtype=self.dtype)
+        sigma_t = torch.zeros_like(self.region_ids, dtype=self.dtype)
+
+        # Iterate through the mapping and replace values using torch.where
+        for region_id, value in self.material_config['diffusl'].items():
+            sigma_l = torch.where(self.region_ids == region_id,
+                                  torch.tensor(value, device=self.device, dtype=self.dtype),
+                                  sigma_l)
+
+        for region_id, value in self.material_config['diffust'].items():
+            sigma_t = torch.where(self.region_ids == region_id,
+                                  torch.tensor(value, device=self.device, dtype=self.dtype),
+                                  sigma_t)
+
         sigma = sigma_t * torch.eye(3, device=self.device, dtype=self.dtype).unsqueeze(0).expand(self.fibers.shape[0], 3, 3)
         sigma += (sigma_l - sigma_t) * self.fibers.unsqueeze(2) @ self.fibers.unsqueeze(1)
 
