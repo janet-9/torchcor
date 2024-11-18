@@ -1,4 +1,6 @@
 from monodomain.simulator import AtrialSimulator
+from ionic import ModifiedMS2v, TenTusscher
+import torch
 
 simulation_time = 2400
 dt = 0.01
@@ -16,11 +18,14 @@ material_config = {"vg": 0.1,
                    "topen": 105.0,
                    "tclose": 185.0}
 
-simulator = AtrialSimulator(T=simulation_time, dt=dt, apply_rcm=True, device="cuda:0")
+device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
+
+ionic_model = TenTusscher(device=device)
+simulator = AtrialSimulator(ionic_model, T=simulation_time, dt=dt, apply_rcm=True, device=device)
 simulator.load_mesh(path="./data/atrium/Case_1")
 simulator.add_material_property(material_config)
 simulator.set_stimulus_region(path="./data/atrium/Case_1.vtx")
 simulator.add_stimulus(stim_config)
 simulator.assemble()
-simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=1000, plot_interval=simulation_time, verbose=False)
+simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=1000, plot_interval=10, verbose=True)
 

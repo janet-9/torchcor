@@ -29,37 +29,38 @@ class TenTusscher:
 
     def differentiate(self, U):
         self.states[0] = U
-        # self.states[1:] = self.H
-        # print(self.states.tolist())
+        self.states[1:] = self.H
+
         rates = computeRates(None, states=self.states.tolist(), constants=self.constants)
 
         dU = rates[0]
         dH = rates[1:]
 
-
         self.H += self.dt * np.array(dH)
-        # print(dU)
+
         return dU
 
 
 
 if __name__ == "__main__":
-   URES=[]
-   tt = TenTusscher(None, None, npt=100)
-   dt=0.01
-   U = tt.initialize(dt=dt)
-   Istim=100
-
-   for jj in range(int(600000)):
-       if(jj>100):
-           Istim=0
-       dU = tt.differentiate(U)
-       U += dt*(dU+Istim)
-       # print(dU)
-       # print(U)
+    TEND   = 1000   # final time (in ms)
+    dt     = 0.001  # time step
+    dt_out = 1.0    # writes the output every dt_out ms
+    Istim  = 60    # intensity of the stimulus
+    tstim  = 1.0    # duration of the stimulus (in ms)
+    tt     = TenTusscher(None, None, npt=100)
+    U      = tt.initialize(dt=dt)
+    plot_freq = int(dt_out/dt)  # writes the solution every plot_freq time steps
+    URES      = []
+    for jj in range(int(TEND/dt)):
+        dU = tt.differentiate(U)
+        if(jj<=int(tstim/dt)):
+            U += dt*(dU+Istim)
+        else:
+            U += dt*dU
        # tt.states[0]=U
-       if jj%100==0:
-        URES.append(U)
+        if jj%plot_freq==0:
+            URES.append(U)
 import matplotlib.pyplot as plt
 plt.plot(np.array(URES))
 plt.show()

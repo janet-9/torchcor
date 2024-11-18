@@ -10,7 +10,7 @@ from core.solver import ConjugateGradient
 from core.visualize import VTK3DSurface
 from core.reorder import RCM as RCM
 import time
-from ionic.models import ModifiedMS2v
+from ionic import ModifiedMS2v
 from mesh.triangulation import Triangulation
 from mesh.materialproperties import MaterialProperties
 from mesh.stimulus import Stimulus
@@ -18,7 +18,7 @@ from monodomain.tools import load_stimulus_region
 
 
 class AtrialSimulator:
-    def __init__(self, T, dt, apply_rcm, device=None, dtype=None):
+    def __init__(self, ionic_model, T, dt, apply_rcm, device=None, dtype=None):
         self.device = torch.device(device) if device is not None else "cuda:0" \
             if torch.cuda.is_available() else "cpu"
         self.dtype = dtype if dtype is not None else torch.float64
@@ -28,7 +28,8 @@ class AtrialSimulator:
         self.nt = int(T // dt)
         self.rcm = RCM(device=device, dtype=dtype) if apply_rcm else None
 
-        self.ionic_model = None
+        self.ionic_model = ionic_model
+
         self.pcd = None
 
         self.point_region_ids = None
@@ -60,6 +61,8 @@ class AtrialSimulator:
         if self.rcm is not None:
             self.rcm.calculate_rcm_order(self.vertices, self.triangles)
 
+        self.ionic_model.initialize(self.n_nodes, self.dt)
+
     def add_material_property(self, material_config):
         self.material_config = material_config
 
@@ -73,9 +76,6 @@ class AtrialSimulator:
         material.add_nodal_property('u_crit', 'uniform', material_config["vg"])
 
         nodal_properties = material.nodal_property_names()
-
-        self.ionic_model = ModifiedMS2v(self.device, self.dtype)
-        self.ionic_model.initialize(self.dt, self.n_nodes)
 
         for npr in nodal_properties:
             npr_type = material.nodal_property_type(npr)

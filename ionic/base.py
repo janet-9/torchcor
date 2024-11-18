@@ -1,8 +1,9 @@
 import torch
 from collections import OrderedDict
 
+
 class BaseCellModel:
-    def __init__(self, cell_model, device, dtype):
+    def __init__(self, cell_model, device, dtype=torch.float64):
         self.cell_model = cell_model
         self.device = device
         self.dtype = dtype
@@ -38,12 +39,13 @@ class BaseCellModel:
 
     def differentiate(self, U):
         self.states[:, 0] = U
+        self.states[:, 1:] = self.H
 
         rates = self.compute_rates(states=self.states, constants=self.constants)
         dU = rates[:, 0]
-        # dH = rates[:, 1:]
+        dH = rates[:, 1:]
 
-        # self.H += self.dt * dH
+        self.H += self.dt * dH
 
         return dU
 
@@ -53,3 +55,9 @@ class BaseCellModel:
 
 
         return rates
+
+    def set_attribute(self, name, value):
+        setattr(self, name, value)
+
+    def get_attribute(self, name: str):
+        return getattr(self, name, None)

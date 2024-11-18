@@ -11,7 +11,7 @@ from core.solver import ConjugateGradient
 from core.visualize import VTK3DSurface
 from core.reorder import RCM as RCM
 import time
-from ionic.models import ModifiedMS2v
+from ionic import ModifiedMS2v
 from mesh.triangulation import Triangulation
 from mesh.materialproperties import MaterialProperties
 from mesh.stimulus import Stimulus
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     material.add_ud_function('stiffness', sigmaTens)
 
     domain = Triangulation()
-    domain.readMesh("/Users/bei/Project/FinitePDE/data/Case_1")
+    domain.readMesh("../data/atrium/Case_1")
     # domain.exportCarpFormat("atrium")
     
     # assign nodal properties
@@ -80,7 +80,7 @@ if __name__ == "__main__":
     npt = point_region_ids.shape[0]
 
     ionic_model = ModifiedMS2v(device, dtype)
-    ionic_model.initialize(dt, npt)
+    ionic_model.initialize(npt, dt)
 
     for npr in nodal_properties:
         npr_type = material.nodal_property_type(npr)
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     pcd.create_Jocobi(A)
     A = A.to_sparse_csr()
 
-    pointlist = load_stimulus_region('/Users/bei/Project/FinitePDE/data/Case_1.vtx')  # (2168,)
+    pointlist = load_stimulus_region('../data/atrium/Case_1.vtx')  # (2168,)
     S1 = torch.zeros(size=(npt,), device=device, dtype=torch.bool)
     S1[pointlist] = True
     S1 = rcm.reorder(S1)

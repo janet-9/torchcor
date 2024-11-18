@@ -1,11 +1,11 @@
 import torch
-import cellml.ten_tusscher_model_2006_IK1Ko_endo_units as cell_model
-from base import BaseCellModel
+from ionic.cellml import ten_tusscher_model_2006_IK1Ko_endo_units
+from ionic.base import BaseCellModel
 
 
 class TenTusscher(BaseCellModel):
-    def __init__(self, cell_model, device, dtype):
-        super().__init__(cell_model, device, dtype)
+    def __init__(self, device, dtype=torch.float64):
+        super().__init__(cell_model=ten_tusscher_model_2006_IK1Ko_endo_units, device=device, dtype=dtype)
 
     def compute_rates(self, states, constants):
         rates = torch.zeros_like(states)
@@ -112,32 +112,24 @@ class TenTusscher(BaseCellModel):
         return rates
 
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-    import numpy as np
-
-    URES=[]
-    tt = TenTusscher(cell_model, "cpu", torch.float64)
-    # print(tt.default_constants())
-    dt=0.01
-    U = tt.initialize(n_nodes=1, dt=dt)
-    Istim=100
-
-    for jj in range(int(60000)):
-        if(jj>100):
-            Istim=0
+    TEND   = 1000   # final time (in ms)
+    dt     = 0.001  # time step
+    dt_out = 1.0    # writes the output every dt_out ms
+    Istim  = 100    # intensity of the stimulus
+    tstim  = 1.0    # duration of the stimulus (in ms)
+    tt     = TenTusscher(device=None, dtype=torch.float64)
+    U      = tt.initialize(n_nodes=1, dt=dt)
+    plot_freq = int(dt_out/dt)  # writes the solution every plot_freq time steps
+    URES      = []
+    for jj in range(int(TEND/dt)):
         dU = tt.differentiate(U)
-        U += dt*(dU+Istim)
-
-        if jj%100==0:
+        if(jj<=int(tstim/dt)):
+            U += dt*(dU+Istim)
+        else:
+            U += dt*dU
+       # tt.states[0]=U
+        if jj%plot_freq==0:
             URES.append(U.item())
-    # print(np.array(URES))
-    plt.plot(np.array(URES))
+    import matplotlib.pyplot as plt
+    plt.plot(URES)
     plt.show()
-
-# 0.2557799338534495
-# -0.0005820993186588484
-# -0.1797664021371198
-# -0.32453295203186705
-# -0.45517011520109435
-# -0.5803122656948434
-
