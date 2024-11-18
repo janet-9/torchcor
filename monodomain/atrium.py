@@ -150,7 +150,7 @@ class AtriumSimulator:
                 if total_iter == max_iter:
                     print(f"The solution did not converge at {n} iteration")
                 else:
-                    print(f"{n} / {self.nt}: {total_iter}; {round(time.time() - solving_time, 2)}")
+                    print(f"{n} / {self.nt + 1}: {total_iter}; {round(time.time() - solving_time, 2)}")
 
             if n % ts_per_frame == 0:
                 visualization.save_frame(color_values=self.rcm.inverse(u).cpu().numpy() if self.rcm is not None else u.cpu().numpy(),
