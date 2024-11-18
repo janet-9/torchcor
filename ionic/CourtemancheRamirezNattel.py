@@ -43,11 +43,11 @@ class CourtemancheRamirezNattel(BaseCellModel):
         algebraic[:, 42] = 1.00000/(algebraic[:, 2]+algebraic[:, 19])
         rates[:, 3] = (algebraic[:, 32]-states[:, 3])/algebraic[:, 42]
         algebraic[:, 3] = torch.where(states[:, 0] < -40.0000,
-                                   ((-127140.*torch.exp(0.244400*states[:, 0])-3.47400e-05*torch.exp(-0.0439100*states[:, 0]))*(states[:, 0]+37.7800))/(1.00000+torch.exp(0.311000*(states[:, 0]+79.2300))),
-                                   0.00000)
+                                     ((-127140.*torch.exp(0.244400*states[:, 0])-3.47400e-05*torch.exp(-0.0439100*states[:, 0]))*(states[:, 0]+37.7800))/(1.00000+torch.exp(0.311000*(states[:, 0]+79.2300))),
+                                     0.00000)
         algebraic[:, 20] = torch.where(states[:, 0] < -40.0000,
-                                    (0.121200*torch.exp(-0.0105200*states[:, 0]))/(1.00000+torch.exp(-0.137800*(states[:, 0]+40.1400))),
-                                    (0.300000*torch.exp(-2.53500e-07*states[:, 0]))/(1.00000+torch.exp(-0.100000*(states[:, 0]+32.0000))))
+                                      (0.121200*torch.exp(-0.0105200*states[:, 0]))/(1.00000+torch.exp(-0.137800*(states[:, 0]+40.1400))),
+                                      (0.300000*torch.exp(-2.53500e-07*states[:, 0]))/(1.00000+torch.exp(-0.100000*(states[:, 0]+32.0000))))
         algebraic[:, 33] = algebraic[:, 3]/(algebraic[:, 3]+algebraic[:, 20])
         algebraic[:, 43] = 1.00000/(algebraic[:, 3]+algebraic[:, 20])
         rates[:, 4] = (algebraic[:, 33]-states[:, 4])/algebraic[:, 43]
