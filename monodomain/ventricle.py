@@ -15,6 +15,8 @@ from mesh.materialproperties import MaterialProperties
 from mesh.stimulus import Stimulus
 from monodomain.tools import load_stimulus_region
 
+import numpy as np
+
 
 class VentricleSimulator:
     def __init__(self, ionic_model, T, dt, apply_rcm, device=None, dtype=None):
@@ -36,6 +38,7 @@ class VentricleSimulator:
         self.vertices = None
         self.triangles = None
         self.fibers = None
+        self.region_ids = None
 
         self.material_config = None
 
@@ -50,6 +53,8 @@ class VentricleSimulator:
         mesh = Triangulation()
         mesh.readMesh(path)
 
+        self.region_ids = mesh.Elems()['Tetras'][:, -1]
+        raise Exception(np.unique(self.region_ids))
         self.point_region_ids = mesh.point_region_ids()
         self.n_nodes = self.point_region_ids.shape[0]
 
@@ -79,10 +84,8 @@ class VentricleSimulator:
         #                 values[point_id] = material.NodalProperty(npr, point_id, region_id)
         #         self.ionic_model.set_attribute(npr, values)
 
-    def set_stimulus_region(self, path="/Users/bei/Project/FinitePDE/data/Case_1.vtx"):
-        self.stimulus_region = load_stimulus_region(path)  # (2168,)
-
-    def add_stimulus(self, stim_config):
+    def add_stimulus(self, stim_region_path, stim_config):
+        self.stimulus_region = load_stimulus_region(stim_region_path)
         S = torch.zeros(size=(self.n_nodes,), device=self.device, dtype=torch.bool)
         S[self.stimulus_region] = True
         if self.rcm is not None:
@@ -101,7 +104,6 @@ class VentricleSimulator:
             rcm_vertices = self.vertices
             rcm_triangles = self.triangles
 
-        # region_ids = domain.Elems()['Trias'][:, -1]
         sigma_l = self.material_config["diffusl"]
         sigma_t = self.material_config["diffust"]
         sigma = sigma_t * torch.eye(3, device=self.device, dtype=self.dtype).unsqueeze(0).expand(self.fibers.shape[0], 3, 3)

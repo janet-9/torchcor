@@ -48,8 +48,8 @@ gregion[0].g_et          = 0.4227 # [S/m] Conductivity transverse to the fibre d
 
 gregion[1].num_IDs       = 3
 gregion[1].ID[0]         = 44 #RV_subendo
-gregion[1].ID[0]         = 45 #LV_subendo
-gregion[1].ID[0]         = 46 #RVseptum_subendo
+gregion[1].ID[1]         = 45 #LV_subendo
+gregion[1].ID[2]         = 46 #RVseptum_subendo
 gregion[1].g_il          = 0.9074
 gregion[1].g_el          = 0.9074
 gregion[1].g_it          = 0.3332
@@ -109,15 +109,3 @@ tend                     = 500             # Defines the point in time when the 
 timedt                   = 10             # Defines the temporal interval between progress updates made to the terminal. (For informational purposes only).
 spacedt                  = 1              # Defines the temporal interval to output data to files.
 gridout_i                = 0
-
-#===================================
-# LAT
-#===================================
-num_LATs                 = 2              # Number of events to detect
-
-# Event 1: activation
-lats[0].ID               = ACT
-lats[0].measurand        = 0              # Defines the quantity to measure, e.g. the signal (0: Vm, 1: Phi_e) to use the thresholds on.
-lats[0].all              = 0
-lats[0].threshold        = -10            # Defines the crossing threshold (for method 1) or maximum derivative threshold (for method 2).
-lats[0].mode             = 0              # Detect 0: max derivative or +slope threshold crossing, 1: min derivative or -slope threshold crossing
