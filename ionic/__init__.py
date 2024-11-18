@@ -1,3 +1,4 @@
 from ionic.TenTusscher import TenTusscher
 from ionic.ModifiedMS2v import ModifiedMS2v
 from ionic.CourtemancheRamirezNattel import CourtemancheRamirezNattel
+from ionic.MitchellSchaeffer import MitchellSchaeffer

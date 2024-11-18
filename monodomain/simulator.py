@@ -60,8 +60,6 @@ class AtrialSimulator:
         if self.rcm is not None:
             self.rcm.calculate_rcm_order(self.vertices, self.triangles)
 
-        self.ionic_model.initialize(self.n_nodes, self.dt)
-
     def add_material_property(self, material_config):
         self.material_config = material_config
 
@@ -128,7 +126,7 @@ class AtrialSimulator:
         self.A = A.to_sparse_csr()
 
     def solve(self, a_tol, r_tol, max_iter, plot_interval=10, verbose=True):
-        u = torch.full(size=(self.n_nodes,), fill_value=0, device=self.device, dtype=self.dtype)
+        u = self.ionic_model.initialize(self.n_nodes, self.dt)
 
         cg = ConjugateGradient(self.pcd)
         cg.initialize(x=u)

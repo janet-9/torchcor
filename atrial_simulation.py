@@ -1,5 +1,5 @@
 from monodomain.simulator import AtrialSimulator
-from ionic import ModifiedMS2v, CourtemancheRamirezNattel
+from ionic import ModifiedMS2v, CourtemancheRamirezNattel, MitchellSchaeffer
 import torch
 
 simulation_time = 2400
