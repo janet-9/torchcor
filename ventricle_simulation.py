@@ -4,7 +4,7 @@ import torch
 from pathlib import Path
 
 simulation_time = 500
-dt = 0.05
+dt = 0.005
 stim_config_stim_LV_sf = {'tstart': 0.0,
                           'nstim': 1,
                           'period': 800,
@@ -45,7 +45,7 @@ device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
 
 home_directory = Path.home()
 
-ionic_model = MitchellSchaeffer(device=device)
+ionic_model = TenTusscher(device=device)
 simulator = VentricleSimulator(ionic_model, T=simulation_time, dt=dt, apply_rcm=True, device=device)
 simulator.load_mesh(path=f"{home_directory}/Data/ventricle/biv")
 simulator.add_material_property(material_config)

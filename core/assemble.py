@@ -245,4 +245,4 @@ class Matrices3D:
         K = K.to(device=self.device, dtype=self.dtype)
         M = M.to(device=self.device, dtype=self.dtype)
 
-        return K, M
+        return K.coalesce(), M.coalesce()

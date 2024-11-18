@@ -7,15 +7,13 @@ import torch
 from core.assemble import Matrices3D
 from core.preconditioner import Preconditioner
 from core.solver import ConjugateGradient
-from core.visualize import VTK3DSurface
+from core.visualize import VTK3D
 from core.reorder import RCM as RCM
 import time
 from mesh.triangulation import Triangulation
 from mesh.materialproperties import MaterialProperties
 from mesh.stimulus import Stimulus
 from monodomain.tools import load_stimulus_region
-
-import numpy as np
 
 
 class VentricleSimulator:
@@ -116,7 +114,8 @@ class VentricleSimulator:
             sigma_t = torch.where(self.region_ids == region_id,
                                   torch.tensor(value, device=self.device, dtype=self.dtype),
                                   sigma_t)
-
+        sigma_l = sigma_l.view(sigma_l.shape[0], 1, 1)
+        sigma_t = sigma_t.view(sigma_t.shape[0], 1, 1)
         sigma = sigma_t * torch.eye(3, device=self.device, dtype=self.dtype).unsqueeze(0).expand(self.fibers.shape[0], 3, 3)
         sigma += (sigma_l - sigma_t) * self.fibers.unsqueeze(2) @ self.fibers.unsqueeze(1)
 
@@ -138,7 +137,7 @@ class VentricleSimulator:
 
         ts_per_frame = int(plot_interval / self.dt)
         ctime = 0
-        visualization = VTK3DSurface(self.vertices.cpu(), self.triangles.cpu())
+        visualization = VTK3D(self.vertices.cpu(), self.triangles.cpu())
         solving_time = time.time()
         for n in range(1, self.nt + 1):
             ctime += self.dt
