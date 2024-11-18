@@ -18,11 +18,11 @@ DESKTOP=1
 if [ $DESKTOP -eq 1 ]
 then
   export WORKDIR=$PWD
-  NPROCS=10 #64
+  NPROCS=20 #64
   GROUPBASE='/usr/local/lib/opencarp'
   CARPDIR=${GROUPBASE}'/bin'
-  EXTIMP=${WORKDIR}'/ionic_model/mMS.so'
-  EXTIMPSTR="-num_external_imp 1 -external_imp ${EXTIMP}"
+#  EXTIMP=${WORKDIR}'/ionic_model/mMS.so'
+#  EXTIMPSTR="-num_external_imp 1 -external_imp ${EXTIMP}"
   CARPBIN="openCARP ${EXTIMPSTR}"
   MPIEX=${GROUPBASE}'/lib/petsc/bin/mpirun'
   echo "running on Desktop; exec is $CARPBIN; NPROCS: $NPROCS "
@@ -52,9 +52,11 @@ fi
 ####################################
 cd $WORKDIR
 
+MESHFNAME="/home/bzhou6/Data/ventricle/biv"
+
 LOPTF=${WORKDIR}'/petsc_cg_opts'
 CGSTR="-parab_use_pt 0 -cg_precond 1 -cg_maxit_parab 100 -cg_tol_parab 1e-5 -cg_norm_parab 1 -parab_options_file ${LOPTF}"
-CARPSTR="${CARPDIR}/${CARPBIN} +F parameters.par -meshname Case_1 ${CGSTR}"
+CARPSTR="${CARPDIR}/${CARPBIN} +F parameters.par -meshname ${MESHFNAME} ${CGSTR}"
 
 
 if [ $DESKTOP -eq 1 ]

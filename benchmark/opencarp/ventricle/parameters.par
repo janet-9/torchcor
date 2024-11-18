@@ -66,35 +66,35 @@ stimulus[0].stimtype = 0
 stimulus[0].duration = 1.0
 stimulus[0].strength = 100
 stimulus[0].start    = 0.0
-stimulus[0].vtx_file = /path/to/LV_sf
+stimulus[0].vtx_file = /home/bzhou6/Data/ventricle/LV_sf
 
 stimulus[1].name     = LV_pf
 stimulus[1].stimtype = 0
 stimulus[1].duration = 1.0
 stimulus[1].strength = 100
 stimulus[1].start    = 0.0
-stimulus[1].vtx_file = /path/to/LV_pf
+stimulus[1].vtx_file = /home/bzhou6/Data/ventricle/LV_pf
 
 stimulus[2].name     = LV_af
 stimulus[2].stimtype = 0
 stimulus[2].duration = 1.0
 stimulus[2].strength = 100
 stimulus[2].start    = 0.0
-stimulus[2].vtx_file = /path/to/LV_af
+stimulus[2].vtx_file = /home/bzhou6/Data/ventricle/LV_af
 
 stimulus[3].name     = RV_sf
 stimulus[3].stimtype = 0
 stimulus[3].duration = 1.0
 stimulus[3].strength = 100
 stimulus[3].start    = 5.0
-stimulus[3].vtx_file = /path/to/RV_sf
+stimulus[3].vtx_file = /home/bzhou6/Data/ventricle/RV_sf
 
 stimulus[4].name     = RV_mod
 stimulus[4].stimtype = 0
 stimulus[4].duration = 1.0
 stimulus[4].strength = 100
 stimulus[4].start    = 5.0
-stimulus[4].vtx_file = /path/to/RV_mod
+stimulus[4].vtx_file = /home/bzhou6/Data/ventricle/RV_mod
 
 
 #===================================
