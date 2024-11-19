@@ -1,3 +1,12 @@
+# CARP GIT commit hash: ab1a4043a6fbab167f9f890c08ecef370b6d69cb
+# dependency hashes:    
+
+# /usr/local/lib/opencarp/bin/openCARP +F parameters.par -meshname /home/bzhou6/Data/ventricle/biv -parab_use_pt 0 -cg_precond 1 -cg_maxit_parab
+# 100 -cg_tol_parab 1e-5 -cg_norm_parab 1 -parab_options_file /home/bzhou6/Projects/FinitePDE/benchmark/opencarp/ventricle/petsc_cg_opts
+# 
+
+#=======================================================>>
+## parameters.par ##
 #===================================
 # Source (EP) Model
 #===================================
@@ -109,3 +118,27 @@ tend                     = 500             # Defines the point in time when the 
 timedt                   = 10             # Defines the temporal interval between progress updates made to the terminal. (For informational purposes only).
 spacedt                  = 500              # Defines the temporal interval to output data to files.
 gridout_i                = 0
+
+##END of parameters.par
+#=======================================================<<
+
+meshname                                = /home/bzhou6/Data/ventricle/biv
+parab_use_pt                            = 0
+cg_precond                              = 1
+cg_maxit_parab                          = 100
+cg_tol_parab                            = 1e-5
+cg_norm_parab                           = 1
+parab_options_file = /home/bzhou6/Projects/FinitePDE/benchmark/opencarp/ventricle/petsc_cg_opts
+#=======================================================>>
+## /home/bzhou6/Projects/FinitePDE/benchmark/opencarp/ventricle/petsc_cg_opts ##
+#-ksp_type cg
+#-ksp_max_it 100
+#-ksp_atol 1e-5
+#-ksp_rtol 1e-5
+#-pc_type jacobi
+#-pc_jacobi_type diagonal
+#-options_left
+
+##END of /home/bzhou6/Projects/FinitePDE/benchmark/opencarp/ventricle/petsc_cg_opts
+#=======================================================<<
+

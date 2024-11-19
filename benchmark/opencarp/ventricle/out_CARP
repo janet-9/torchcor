@@ -1,0 +1,105 @@
+
+*** GIT tag:            v16.0
+*** GIT hash:           ab1a4043a6fbab167f9f890c08ecef370b6d69cb
+*** GIT repo:           https://gitlab-ci-token:glcbt-64_gS47YMyyszWxrc7ywXbg@git.opencarp.org/openCARP/openCARP.git
+*** dependency commits: 
+
+L4 : Warning: No physics region defined! Please set phys_region parameters to correctly define physics.
+L4 : IntraElec and ExtraElec domains will be derived from fibers.
+
+L1 : Warning: Legacy stimuli defined. Please consider switching to stimulus definition "stim[]"!
+
+    *** Processing meshes ***
+
+Reading reference mesh: /home/bzhou6/Data/ventricle/biv.*
+Done in 2.043432 sec.
+Done in 0.000905 sec.
+Processing submeshes
+All done in 2.988035 sec.
+
+    *** Initializing physics ***
+
+Initializing Electrics ..
+
+Setting up ionic models and plugins
+-----------------------------------
+
+Assigning IMPS to tagged regions:
+	Ionic model: tenTusscherPanfilov to tag region(s) [34], [35], [44], [45], [46],.
+Ionic model: tenTusscherPanfilov
+
+
+    *** Launching simulation ***
+
+PROG	----- 	----	-------	-------|
+time	%%comp	time	 ctime 	  ETA  |
+0.00	0.0	0.0	0:00:00	0:00:00
+10.00	2.0	22.4	0:00:22	0:18:17
+20.00	4.0	22.9	0:00:45	0:18:06
+30.00	6.0	23.3	0:01:08	0:17:54
+40.00	8.0	23.8	0:01:32	0:17:42
+50.00	10.0	24.3	0:01:56	0:17:30
+60.00	12.0	24.7	0:02:21	0:17:17
+70.00	14.0	24.7	0:02:46	0:17:00
+80.00	16.0	24.4	0:03:10	0:16:40
+90.00	18.0	24.1	0:03:34	0:16:17
+100.00	20.0	23.8	0:03:58	0:15:53
+110.00	22.0	23.1	0:04:21	0:15:27
+120.00	24.0	18.4	0:04:39	0:14:46
+130.00	26.0	17.9	0:04:57	0:14:07
+140.00	28.0	17.6	0:05:15	0:13:31
+150.00	30.0	17.5	0:05:32	0:12:56
+160.00	32.0	17.4	0:05:50	0:12:24
+170.00	34.0	17.3	0:06:07	0:11:53
+180.00	36.0	17.3	0:06:24	0:11:24
+190.00	38.0	17.3	0:06:42	0:10:56
+200.00	40.0	17.3	0:06:59	0:10:29
+210.00	42.0	17.4	0:07:16	0:10:03
+220.00	44.0	17.4	0:07:34	0:09:38
+230.00	46.0	17.5	0:07:51	0:09:14
+240.00	48.0	17.7	0:08:09	0:08:50
+250.00	50.0	18.2	0:08:27	0:08:27
+260.00	52.0	19.4	0:08:47	0:08:06
+270.00	54.0	21.7	0:09:08	0:07:47
+280.00	56.0	22.0	0:09:30	0:07:28
+290.00	58.0	22.1	0:09:52	0:07:09
+300.00	60.0	22.2	0:10:15	0:06:50
+310.00	62.0	22.4	0:10:37	0:06:30
+320.00	64.0	23.6	0:11:01	0:06:11
+330.00	66.0	18.8	0:11:19	0:05:50
+340.00	68.0	18.0	0:11:37	0:05:28
+350.00	70.0	17.8	0:11:55	0:05:06
+360.00	72.0	17.8	0:12:13	0:04:45
+370.00	74.0	17.8	0:12:31	0:04:23
+380.00	76.0	17.7	0:12:48	0:04:02
+390.00	78.0	17.6	0:13:06	0:03:41
+400.00	80.0	17.5	0:13:24	0:03:21
+410.00	82.0	17.5	0:13:41	0:03:00
+420.00	84.0	17.5	0:13:59	0:02:39
+430.00	86.0	17.5	0:14:16	0:02:19
+440.00	88.0	17.5	0:14:34	0:01:59
+450.00	90.0	17.5	0:14:51	0:01:39
+460.00	92.0	17.5	0:15:09	0:01:19
+470.00	94.0	17.5	0:15:26	0:00:59
+480.00	96.0	17.5	0:15:44	0:00:39
+490.00	98.0	17.5	0:16:01	0:00:19
+500.00	100.0	17.5	0:16:19	0:00:00
+
+
+Timings of individual physics:
+------------------------------
+
+Electrics:
+  Init:    0.44 sec
+  Compute: 647.42 sec
+  Output:  0.01 sec
+
+Myocard Ionics:
+  Init:    0.08 sec
+  Compute: 331.48 sec
+  Output:  0.00 sec
+
+
+    *** Destroying physics ***
+
+Destroying Electrics ..
