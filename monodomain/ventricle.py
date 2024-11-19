@@ -1,3 +1,4 @@
+import pickle
 import sys
 import os
 
@@ -17,6 +18,7 @@ from mesh.triangulation import Triangulation
 from mesh.materialproperties import MaterialProperties
 from mesh.stimulus import Stimulus
 from monodomain.tools import load_stimulus_region
+import pickle
 
 
 class VentricleSimulator:
@@ -87,6 +89,7 @@ class VentricleSimulator:
 
     def add_stimulus(self, stim_region_path, stim_config):
         self.stimulus_region = load_stimulus_region(stim_region_path)
+
         S = torch.zeros(size=(self.n_nodes,), device=self.device, dtype=torch.bool)
         S[self.stimulus_region] = True
         if self.rcm is not None:
@@ -125,6 +128,7 @@ class VentricleSimulator:
 
         matrices = Matrices3D(vertices=rcm_vertices, tetrahedrons=rcm_triangles, device=self.device, dtype=self.dtype)
         K, M = matrices.assemble_matrices(sigma)
+
         self.K = K.to(device=self.device, dtype=self.dtype)
         self.M = M.to(device=self.device, dtype=self.dtype)
         A = self.M + self.K * self.dt
