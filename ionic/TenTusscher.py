@@ -118,18 +118,19 @@ if __name__ == "__main__":
     Istim  = 100    # intensity of the stimulus
     tstim  = 1.0    # duration of the stimulus (in ms)
     tt     = TenTusscher(device=None, dtype=torch.float64)
-    U      = tt.initialize(n_nodes=1, dt=dt)
-    plot_freq = int(dt_out/dt)  # writes the solution every plot_freq time steps
-    URES      = []
-    for jj in range(int(TEND/dt)):
-        dU = tt.differentiate(U)
-        if(jj<=int(tstim/dt)):
-            U += dt*(dU+Istim)
-        else:
-            U += dt*dU
-       # tt.states[0]=U
-        if jj%plot_freq==0:
-            URES.append(U.item())
-    import matplotlib.pyplot as plt
-    plt.plot(URES)
-    plt.show()
+    print(tt.default_constants())
+    # U      = tt.initialize(n_nodes=1, dt=dt)
+    # plot_freq = int(dt_out/dt)  # writes the solution every plot_freq time steps
+    # URES      = []
+    # for jj in range(int(TEND/dt)):
+    #     dU = tt.differentiate(U)
+    #     if(jj<=int(tstim/dt)):
+    #         U += dt*(dU+Istim)
+    #     else:
+    #         U += dt*dU
+    #    # tt.states[0]=U
+    #     if jj%plot_freq==0:
+    #         URES.append(U.item())
+    # import matplotlib.pyplot as plt
+    # plt.plot(URES)
+    # plt.show()

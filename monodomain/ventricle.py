@@ -1,5 +1,8 @@
 import sys
 import os
+
+import numpy as np
+
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir)
 
@@ -52,6 +55,7 @@ class VentricleSimulator:
         mesh.readMesh(path)
 
         self.region_ids = torch.from_numpy(mesh.Elems()['Tetras'][:, -1]).to(dtype=torch.long, device=self.device)
+        raise Exception(np.unique(mesh.Elems()['Tetras'][:, -1]))
         self.point_region_ids = mesh.point_region_ids()
         self.n_nodes = self.point_region_ids.shape[0]
 
