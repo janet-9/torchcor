@@ -119,19 +119,15 @@ class VTK3D:
         self.n_tetrahedrons = tetrahedrons.shape[0]
 
     def save_frame(self, color_values, frame_path):
-        # Construct the VTK cell array for tetrahedrons
         cells = np.hstack((np.full((self.n_tetrahedrons, 1), 4, dtype=int), self.tetrahedrons)).flatten().astype(int)
-        
-        # Assign cell types for tetrahedrons
-        cell_type = np.full(self.n_tetrahedrons, 10, dtype=int)  # VTK_TETRA = 10
-        
-        # Create the unstructured grid
+        cell_type = np.full(self.n_tetrahedrons, 10, dtype=int)
         grid = pv.UnstructuredGrid(cells, cell_type, self.vertices)
-        
-        # Add color data
         grid.point_data["colors"] = color_values
-        
-        # Save the mesh to file
+
+        # Plot the mesh
+        # plotter = pv.Plotter()
+        # plotter.add_mesh(grid, scalars="colors", cmap="viridis", show_edges=True)
+        # plotter.show()
         file_path = Path(frame_path)
         file_path.parent.mkdir(parents=True, exist_ok=True)
         grid.save(frame_path)

@@ -138,6 +138,11 @@ class VentricleSimulator:
         ts_per_frame = int(plot_interval / self.dt)
         ctime = 0
         visualization = VTK3D(self.vertices.cpu().numpy(), self.triangles.cpu().numpy())
+        visualization.save_frame(
+            color_values=self.rcm.inverse(u).cpu().numpy() if self.rcm is not None else u.cpu().numpy(),
+            frame_path=f"./vtk_files_{self.n_nodes}_{self.rcm is not None}/frame_{0}.vtk")
+
+        raise Exception()
         solving_time = time.time()
         for n in range(1, self.nt + 1):
             ctime += self.dt
