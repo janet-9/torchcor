@@ -19,6 +19,9 @@ class ModifiedMS2v:
         self.H = torch.full(size=(n_nodes,), fill_value=1.0, device=self.device, dtype=self.dtype)
         self.dt = dt
 
+        u = torch.full(size=(n_nodes,), fill_value=0.0, device=self.device, dtype=self.dtype)
+        return u
+
     def differentiate(self, U):
         J_in = -1.0 * self.H * U * (U - self.u_crit) * (1 - U) / self.tau_in
         J_out = (1 - self.H) * U / self.tau_out
