@@ -50,23 +50,11 @@ def initConsts():
 def computeRates(voi, states, constants):
     rates = [0.0] * sizeStates; algebraic = [0.0] * sizeAlgebraic
     rates[1] = custom_piecewise([less(states[0] , constants[8]), (1.00000-states[1])/constants[6] , True, -states[1]/constants[7]])
-    algebraic[0] = custom_piecewise([greater_equal(voi , constants[0]) & less_equal(voi , constants[1]) & less_equal((voi-constants[0])-floor((voi-constants[0])/constants[3])*constants[3] , constants[4]), constants[2] , True, 0.00000])
+    algebraic[0] = 0 # custom_piecewise([greater_equal(voi , constants[0]) & less_equal(voi , constants[1]) & less_equal((voi-constants[0])-floor((voi-constants[0])/constants[3])*constants[3] , constants[4]), constants[2] , True, 0.00000])
     algebraic[1] = (states[1]*((power(states[0], 2.00000))*(1.00000-states[0])))/constants[5]
     algebraic[2] = -(states[0]/constants[9])
     rates[0] = algebraic[1]+algebraic[2]+algebraic[0]
     return(rates)
 
-def computeAlgebraic(constants, states, voi):
-    algebraic = array([[0.0] * len(voi)] * sizeAlgebraic)
-    states = array(states)
-    voi = array(voi)
-    algebraic[0] = custom_piecewise([greater_equal(voi , constants[0]) & less_equal(voi , constants[1]) & less_equal((voi-constants[0])-floor((voi-constants[0])/constants[3])*constants[3] , constants[4]), constants[2] , True, 0.00000])
-    algebraic[1] = (states[1]*((power(states[0], 2.00000))*(1.00000-states[0])))/constants[5]
-    algebraic[2] = -(states[0]/constants[9])
-    return algebraic
-
-def custom_piecewise(cases):
-    """Compute result of a piecewise function"""
-    return select(cases[0::2],cases[1::2])
 
 
