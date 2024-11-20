@@ -64,5 +64,5 @@ simulator.add_stimulus(f"{home_dir}/Data/ventricle/LV_af.vtx", stim_LV_af)
 simulator.add_stimulus(f"{home_dir}/Data/ventricle/RV_sf.vtx", stim_RV_sf)
 simulator.add_stimulus(f"{home_dir}/Data/ventricle/RV_mod.vtx", stim_RV_mod)
 simulator.assemble()
-simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=1000, plot_interval=2 * dt, verbose=True)
+simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=1000, plot_interval=10, verbose=True)
 
