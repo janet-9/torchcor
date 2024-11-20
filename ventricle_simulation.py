@@ -37,16 +37,16 @@ stim_RV_mod = {'tstart': 5.0,
               'name': 'RV_mod'}
 
 
-material_config = {"diffusl": {34: 0.0*0.5272 * 1000,
-                               35: 0.0*0.5272 * 1000,
-                               44: 0.0*0.9074 * 1000,
-                               45: 0.0*0.9074 * 1000,
-                               46: 0.0*0.9074 * 1000},
-                   "diffust": {34: 0.0*0.2076 * 1000,
-                               35: 0.0*0.2076 * 1000,
-                               44: 0.0*0.3332 * 1000,
-                               45: 0.0*0.3332 * 1000,
-                               46: 0.0*0.3332 * 1000}}
+material_config = {"diffusl": {34: 0.5272 * 1000 * 1000,
+                               35: 0.5272 * 1000 * 1000,
+                               44: 0.9074 * 1000 * 1000,
+                               45: 0.9074 * 1000 * 1000,
+                               46: 0.9074 * 1000 * 1000},
+                   "diffust": {34: 0.2076 * 1000 * 1000,
+                               35: 0.2076 * 1000 * 1000,
+                               44: 0.3332 * 1000 * 1000,
+                               45: 0.3332 * 1000 * 1000,
+                               46: 0.3332 * 1000 * 1000}}
 
 
 device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
@@ -64,5 +64,5 @@ simulator.add_stimulus(f"{home_dir}/Data/ventricle/LV_af.vtx", stim_LV_af)
 simulator.add_stimulus(f"{home_dir}/Data/ventricle/RV_sf.vtx", stim_RV_sf)
 simulator.add_stimulus(f"{home_dir}/Data/ventricle/RV_mod.vtx", stim_RV_mod)
 simulator.assemble()
-simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=1000, plot_interval=dt, verbose=True)
+simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=1000, plot_interval=2 * dt, verbose=True)
 

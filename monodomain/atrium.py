@@ -149,7 +149,7 @@ class AtriumSimulator:
             u, total_iter = cg.solve(self.A, b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
 
             if total_iter == max_iter:
-                raise Exception(f"The solution did not converge at {n} iteration")
+                raise Exception(f"The solution did not converge at {n}th timestep")
             if verbose:
                 print(f"{n} / {self.nt + 1}: {total_iter}; {round(time.time() - solving_time, 2)}")
 

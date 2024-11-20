@@ -43,9 +43,13 @@ class BaseCellModel:
 
         rates = self.compute_rates(states=self.states, constants=self.constants)
         dU = rates[:, 0]
-        dH = rates[:, 1:]
-
-        self.H += self.dt * dH
+        
+        self.dt_ionic = self.dt / 10
+        for _ in range(10):
+            dH = rates[:, 1:]
+            self.H += self.dt_ionic * dH
+            self.states[:, 1:] = self.H
+            rates = self.compute_rates(states=self.states, constants=self.constants)
 
         return dU
 
