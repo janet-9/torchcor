@@ -20,7 +20,7 @@ material_config = {"vg": 0.1,
                    "topen": 105.0,
                    "tclose": 185.0}
 
-device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device(f"cuda:1" if torch.cuda.is_available() else "cpu")
 home_directory = Path.home()
 
 ionic_model = MitchellSchaefferRL(device=device)
