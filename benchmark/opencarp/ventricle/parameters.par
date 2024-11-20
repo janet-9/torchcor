@@ -107,5 +107,5 @@ tend                     = 500             # Defines the point in time when the 
 # Output
 #===================================
 timedt                   = 10             # Defines the temporal interval between progress updates made to the terminal. (For informational purposes only).
-spacedt                  = 500              # Defines the temporal interval to output data to files.
+spacedt                  = 10              # Defines the temporal interval to output data to files.
 gridout_i                = 0
