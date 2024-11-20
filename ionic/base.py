@@ -42,14 +42,14 @@ class BaseCellModel:
         self.states[:, 1:] = self.H
 
         rates = self.compute_rates(states=self.states, constants=self.constants)
-        dU = rates[:, 0]
-        
         self.dt_ionic = self.dt / 20
         for _ in range(20):
             dH = rates[:, 1:]
             self.H += self.dt_ionic * dH
             self.states[:, 1:] = self.H
             rates = self.compute_rates(states=self.states, constants=self.constants)
+
+        dU = rates[:, 0]
 
         return dU
 
