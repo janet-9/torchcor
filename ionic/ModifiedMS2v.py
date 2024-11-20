@@ -39,3 +39,19 @@ class ModifiedMS2v:
         return getattr(self, name, None)
 
 
+class ModifiedMS2vRL(ModifiedMS2v):
+    def __init__(self, device=None, dtype=torch.float64):
+        super().__init__(device, dtype)
+
+    def differentiate(self, U):
+        # Compute ionic currents
+        J_in = -1.0 * self.H * U * (U - self.u_crit) * (1 - U) / self.tau_in
+        J_out = (1 - self.H) * U / self.tau_out
+        dU = - (J_in + J_out)  # Membrane potential derivative
+
+        # Rush–Larsen update for H
+        H_inf = torch.where(U > self.u_gate, 0.0, 1.0)  # Steady-state gating variable
+        tau_H = torch.where(U > self.u_gate, self.tau_close, self.tau_open)  # Time constant
+        self.H = H_inf + (self.H - H_inf) * torch.exp(-self.dt / tau_H)
+
+        return dU
