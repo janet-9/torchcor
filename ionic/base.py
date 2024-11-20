@@ -42,16 +42,28 @@ class BaseCellModel:
         self.states[:, 1:] = self.H
 
         rates = self.compute_rates(states=self.states, constants=self.constants)
-        self.dt_ionic = self.dt / 100
-        for _ in range(100):
-            dH = rates[:, 1:]
-            self.H += self.dt_ionic * dH
-            self.states[:, 1:] = self.H
-            rates = self.compute_rates(states=self.states, constants=self.constants)
+
+        dH = rates[:, 1:]
+        self.H += self.dt * dH
 
         dU = rates[:, 0]
-
         return dU
+
+    # def differentiate(self, U):
+    #     self.states[:, 0] = U
+    #     self.states[:, 1:] = self.H
+    #
+    #     rates = self.compute_rates(states=self.states, constants=self.constants)
+    #     self.dt_ionic = self.dt / 100
+    #     for _ in range(100):
+    #         dH = rates[:, 1:]
+    #         self.H += self.dt_ionic * dH
+    #         self.states[:, 1:] = self.H
+    #         rates = self.compute_rates(states=self.states, constants=self.constants)
+    #
+    #     dU = rates[:, 0]
+    #
+    #     return dU
 
     def compute_rates(self, states, constants):
         rates = torch.zeros_like(states)
