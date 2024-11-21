@@ -1,6 +1,6 @@
 import torch
 from ionic.cellml import mitchell_schaeffer_2003
-from ionic.base import BaseCellModel
+from ionic.base import BaseCellModel, BaseCellModelRL
 
 class MitchellSchaeffer(BaseCellModel):
     def __init__(self, device, dtype=torch.float64):

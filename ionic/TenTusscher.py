@@ -1,6 +1,6 @@
 import torch
 from ionic.cellml import ten_tusscher_model_2006_IK1Ko_endo_units
-from ionic.base import BaseCellModel
+from ionic.base import BaseCellModel, BaseCellModelRL
 
 
 class TenTusscher(BaseCellModel):
@@ -216,7 +216,7 @@ def compute_rates(states, constants):
 
     return rates, algebraic
 
-class TenTusscherRL(BaseCellModel):
+class TenTusscherRL(BaseCellModelRL):
     def __init__(self, device, dtype=torch.float64):
         super().__init__(cell_model=ten_tusscher_model_2006_IK1Ko_endo_units, device=device, dtype=dtype)
 
