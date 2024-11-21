@@ -349,4 +349,30 @@ def custom_piecewise(cases):
     return select(cases[0::2],cases[1::2])
 
 
+if __name__ == "__main__":
+    legend_states, legend_algebraics, _, legend_constants = createLegends()
+    gate_dict = {}
+    for i, legend_state in enumerate(legend_states):
+        legend_state = legend_state.lower()
+        if "gate" in legend_state:
+            state_name = legend_state.split()[0]
+            gate_dict[state_name] = i
+
+    print(gate_dict)
+
+    tau_dict = {}
+    inf_dict = {}
+    for i, legend_algebraic in enumerate(legend_algebraics):
+        legend_algebraic = legend_algebraic.lower()
+        algebraic_name = legend_algebraic.split()[0]
+        if algebraic_name.startswith("tau"):
+            tau_dict[algebraic_name.split("_")[1]] = i
+        if algebraic_name.endswith("inf") or algebraic_name.endswith("infinity"):
+            inf_dict[algebraic_name.split("_")[0]] = i
+    gating_variables = set(tau_dict.keys()).intersection(set(inf_dict.keys()))
+    tau_dict = {key: tau_dict[key] for key in list(gate_dict.keys())}
+    inf_dict = {key: inf_dict[key] for key in list(gate_dict.keys())}
+
+    print(tau_dict)
+    print(inf_dict)
 

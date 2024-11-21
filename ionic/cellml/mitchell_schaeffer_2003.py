@@ -57,4 +57,24 @@ def computeRates(voi, states, constants):
     return(rates)
 
 
+if __name__ == "__main__":
+    legend_states, legend_algebraics, _, legend_constants = createLegends()
+    for legend_state in legend_states:
+        state_name = legend_state.split()[0]
+        print(state_name)
 
+    tau_list = []
+    inf_list = []
+    alpha_list = []
+    beta_list = []
+    for legend_algebraic in legend_algebraics:
+        algebraic_name = legend_algebraic.split()[0]
+        if algebraic_name.startswith("tau"):
+            tau_list.append(algebraic_name)
+        if algebraic_name.endswith("inf"):
+            inf_list.append(algebraic_name)
+        if algebraic_name.startswith("alpha"):
+            alpha_list.append(algebraic_name)
+        if algebraic_name.startswith("beta"):
+            beta_list.append(algebraic_name)
+    print(len(tau_list), len(inf_list), len(alpha_list), len(beta_list))

@@ -355,3 +355,14 @@ def computeRates(voi, states, constants):
 def custom_piecewise(cases):
     """Compute result of a piecewise function"""
     return select(cases[0::2],cases[1::2])
+
+
+if __name__ == "__main__":
+    legend_states, legend_algebraics, _, legend_constants = createLegends()
+    gate_dict = {}
+    for i, legend_state in enumerate(legend_states):
+        if "gate" in legend_state:
+            state_name = legend_state.split()[0]
+            gate_dict[state_name] = i
+
+    print(gate_dict)
