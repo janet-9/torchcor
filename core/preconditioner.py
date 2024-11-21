@@ -1,9 +1,10 @@
 import torch
 
 
+@torch.jit.script
 class Preconditioner:
     def __init__(self):
-        self.PC = None
+        self.PC = torch.tensor([1.0])
 
     def create_Jocobi(self, A):
         device, dtype = A.device, A.dtype
@@ -25,13 +26,13 @@ class Preconditioner:
 
         self.PC = PC
 
-    def create_scaled_Jacobi(self, A):
-        self.create_Jocobi(A)
-
-        row_norms = torch.sqrt(torch.sparse.sum(A ** 2, dim=1).to_dense())
-        row_norms[row_norms == 0] = 1.0
-
-        self.PC = self.PC / row_norms
+    # def create_scaled_Jacobi(self, A):
+    #     self.create_Jocobi(A)
+    #
+    #     row_norms = torch.sqrt(torch.sparse.sum(A ** 2, dim=1).to_dense())
+    #     row_norms[row_norms == 0] = 1.0
+    #
+    #     self.PC = self.PC / row_norms
 
 
     def apply(self, r):
@@ -40,17 +41,17 @@ class Preconditioner:
         return z
     
 
-    def create_diagonal_matrix(self, A):
-        device, dtype = A.device, A.dtype
-
-        sparse_indices = A._indices()
-        sparse_values = A._values()
-
-        diagonal_mask = sparse_indices[0, :] == sparse_indices[1, :]
-
-        diagonal_values = sparse_values[diagonal_mask]
-        diagonal_indices = sparse_indices[:, diagonal_mask]
-
-        D = torch.sparse_coo_tensor(diagonal_indices, diagonal_values, A.shape).to(device=device, dtype=dtype)
-
-        return D
+    # def create_diagonal_matrix(self, A):
+    #     device, dtype = A.device, A.dtype
+    #
+    #     sparse_indices = A._indices()
+    #     sparse_values = A._values()
+    #
+    #     diagonal_mask = sparse_indices[0, :] == sparse_indices[1, :]
+    #
+    #     diagonal_values = sparse_values[diagonal_mask]
+    #     diagonal_indices = sparse_indices[:, diagonal_mask]
+    #
+    #     D = torch.sparse_coo_tensor(diagonal_indices, diagonal_values, A.shape).to(device=device, dtype=dtype)
+    #
+    #     return D
