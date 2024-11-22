@@ -33,7 +33,7 @@ imp_region[0].ID[3]            = 4
 imp_region[0].ID[4]            = 5   
 imp_region[0].ID[5]            = 6   
 imp_region[0].cellSurfVolRatio = 1.0
-imp_region[0].im               = "mMS"
+imp_region[0].im               = "MitchellSchaeffer"
 imp_region[0].im_param         = "V_gate=0.1,a_crit=0.1,tau_in=0.15,tau_out=1.5,tau_open=105,tau_close=185"
 #######################################
 

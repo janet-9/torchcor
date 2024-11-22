@@ -24,7 +24,7 @@ imp_region[0].ID[2]      = 44  #RV_subendo
 imp_region[0].ID[3]      = 45  #LV_subendo
 imp_region[0].ID[4]      = 46  #RVseptum_subendo
 imp_region[0].im         = tenTusscherPanfilov
-imp_region[0].im_param   = "flags=EPI"
+imp_region[0].im_param   = "flags=ENDO"
 
 #===================================
 # Conductivities

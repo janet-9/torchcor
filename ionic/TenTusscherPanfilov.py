@@ -3,7 +3,7 @@ from ionic.cellml import ten_tusscher_model_2006_IK1Ko_endo_units
 from ionic.base import BaseCellModel, BaseCellModelRL
 
 
-class TenTusscher(BaseCellModel):
+class TenTusscherPanfilov(BaseCellModel):
     def __init__(self, device, dtype=torch.float64):
         super().__init__(cell_model=ten_tusscher_model_2006_IK1Ko_endo_units, device=device, dtype=dtype)
 
@@ -216,7 +216,8 @@ def compute_rates(states, constants):
 
     return rates, algebraic
 
-class TenTusscherRL(BaseCellModelRL):
+
+class TenTusscherPanfilovRL(BaseCellModelRL):
     def __init__(self, device, dtype=torch.float64):
         super().__init__(cell_model=ten_tusscher_model_2006_IK1Ko_endo_units, device=device, dtype=dtype)
 
@@ -225,14 +226,16 @@ class TenTusscherRL(BaseCellModelRL):
 
         return rates, algebraic
 
+
 if __name__ == "__main__":
     TEND   = 1000   # final time (in ms)
     dt     = 0.001  # time step
     dt_out = 1.0    # writes the output every dt_out ms
     Istim  = 100    # intensity of the stimulus
     tstim  = 1.0    # duration of the stimulus (in ms)
-    tt     = TenTusscher(device=None, dtype=torch.float64)
+    tt     = TenTusscherRL(device=None, dtype=torch.float64)
     print(tt.default_constants())
+    # print(tt.)
     # U      = tt.initialize(n_nodes=1, dt=dt)
     # plot_freq = int(dt_out/dt)  # writes the solution every plot_freq time steps
     # URES      = []

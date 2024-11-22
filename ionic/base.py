@@ -73,14 +73,19 @@ class BaseCellModelRL:
         self.sizeConstants = cell_model.sizeConstants
 
         init_states, init_constants = self.cell_model.initConsts()
+        print(init_states)
         self.states = torch.tensor(init_states, device=device, dtype=dtype)
         self.constants = None
 
-        self.name_constant_dict = OrderedDict()
         (legend_states, legend_algebraics, _, legend_constants) = self.cell_model.createLegends()
+
+        self.name_constant_dict = OrderedDict()
         for legend_constant, init_constant in zip(legend_constants, init_constants):
             constant_name = legend_constant.split()[0]
-            self.name_constant_dict[constant_name] = init_constant
+            if "stim" in constant_name:
+                self.name_constant_dict[constant_name] = 0
+            else:
+                self.name_constant_dict[constant_name] = init_constant
 
         gate_dict = {}
         for i, legend_state in enumerate(legend_states):
@@ -110,12 +115,6 @@ class BaseCellModelRL:
 
         self.H = None
         self.dt = None
-
-    def default_constants(self):
-        return dict(self.name_constant_dict)
-
-    def reset_constant(self, name, value):
-        self.name_constant_dict[name] = value
 
     def initialize(self, n_nodes, dt):
         self.states = self.states.repeat(n_nodes, 1).clone()
@@ -160,8 +159,7 @@ class BaseCellModelRL:
         time_constants = algebraic[:, self.tau_indices]
 
         # Update gating variables using Rush-Larsen method
-        self.states[:, self.gate_indices]  = steady_states + (self.states[:, self.gate_indices] - steady_states) * torch.exp(-dt / time_constants)
-
+        self.states[:, self.gate_indices] = steady_states + (self.states[:, self.gate_indices] - steady_states) * torch.exp(-dt / time_constants)
 
     def compute_rates(self, states, constants):
         rates = torch.zeros_like(states)
@@ -169,8 +167,16 @@ class BaseCellModelRL:
 
         return rates, algebraic
 
+    def default_constants(self):
+        return dict(self.name_constant_dict)
+
+    def reset_constant(self, name, value):
+        self.name_constant_dict[name] = value
+
     def set_attribute(self, name, value):
         setattr(self, name, value)
 
     def get_attribute(self, name: str):
         return getattr(self, name, None)
+
+

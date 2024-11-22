@@ -21,8 +21,8 @@ then
   NPROCS=10 #64
   GROUPBASE='/usr/local/lib/opencarp'
   CARPDIR=${GROUPBASE}'/bin'
-  EXTIMP=${WORKDIR}'/ionic_model/mMS.so'
-  EXTIMPSTR="-num_external_imp 1 -external_imp ${EXTIMP}"
+#  EXTIMP=${WORKDIR}'/ionic_model/mMS.so'
+#  EXTIMPSTR="-num_external_imp 1 -external_imp ${EXTIMP}"
   CARPBIN="openCARP ${EXTIMPSTR}"
   MPIEX=${GROUPBASE}'/lib/petsc/bin/mpirun'
   echo "running on Desktop; exec is $CARPBIN; NPROCS: $NPROCS "

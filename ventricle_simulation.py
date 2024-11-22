@@ -1,5 +1,5 @@
 from monodomain import VentricleSimulator
-from ionic import TenTusscher, TenTusscherRL
+from ionic import TenTusscherPanfilov, TenTusscherPanfilovRL
 import torch
 from pathlib import Path
 
