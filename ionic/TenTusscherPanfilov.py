@@ -1,12 +1,12 @@
 import torch
-from ionic.cellml.ten_tusscher_model_2006_IK1Ko_endo_units import sizeAlgebraic, sizeStates, sizeConstants, initConsts, createLegends
+from ionic.cellml.ten_tusscher_model_2006_IK1Ko_endo_units import sizeAlgebraic, sizeStates, initConsts, createLegends
 from collections import OrderedDict
 
 
 @torch.jit.script
 def compute_rates(states, constants):
     rates = torch.zeros_like(states)
-    algebraic = torch.zeros((states.shape[0], 70), device=states.device, dtype=states.dtype)
+    algebraic = torch.zeros((states.shape[0], sizeAlgebraic), device=states.device, dtype=states.dtype)
 
     algebraic[:, 7] = 1.00000/(1.00000+torch.exp((states[:, 0]+20.0000)/7.00000))
     algebraic[:, 20] = 1102.50*torch.exp(-(torch.pow(states[:, 0]+27.0000, 2.00000))/225.000)+200.000/(1.00000+torch.exp((13.0000-states[:, 0])/10.0000))+180.000/(1.00000+torch.exp((states[:, 0]+30.0000)/10.0000))+20.0000
