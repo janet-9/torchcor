@@ -71,44 +71,13 @@ def compute_algebraic(states, constants, V_LUT):
     weights = (V - V1) / (V2 - V1)
     V_ROW = (1 - weights).unsqueeze(1) * V_LUT[lower_indices] + weights.unsqueeze(1) * V_LUT[upper_indices] # [637480, 36]
 
-    algebraic[:, 7] = V_ROW[:, 0]
-    algebraic[:, 20] = V_ROW[:, 1]
-    algebraic[:, 8] = V_ROW[:, 2]
-    algebraic[:, 21] = V_ROW[:, 3]
+    V_indices = [7, 20, 8, 21, 10, 23, 11, 24, 0, 13, 26, 34, 1, 14, 27, 35, 2, 15,
+                 28, 36, 3, 16, 29, 37, 4, 17, 30, 38, 5, 18, 31, 39, 6, 19, 32, 40]
+    algebraic[:, V_indices] = V_ROW
+
     algebraic[:, 9] = 0.600000/(1.00000+torch.pow(states[:, 10]/0.0500000, 2.00000))+0.400000
     algebraic[:, 22] = 80.0000/(1.00000+torch.pow(states[:, 10]/0.0500000, 2.00000))+2.00000
-    algebraic[:, 10] = V_ROW[:, 4]
-    algebraic[:, 23] = V_ROW[:, 5]
-    algebraic[:, 11] = V_ROW[:, 6]
-    algebraic[:, 24] = V_ROW[:, 7]
-    algebraic[:, 0] = V_ROW[:, 8]
-    algebraic[:, 13] = V_ROW[:, 9]
-    algebraic[:, 26] = V_ROW[:, 10]
-    algebraic[:, 34] = V_ROW[:, 11]
-    algebraic[:, 1] = V_ROW[:, 12]
-    algebraic[:, 14] = V_ROW[:, 13]
-    algebraic[:, 27] = V_ROW[:, 14]
-    algebraic[:, 35] = V_ROW[:, 15]
-    algebraic[:, 2] = V_ROW[:, 16]
-    algebraic[:, 15] = V_ROW[:, 17]
-    algebraic[:, 28] = V_ROW[:, 18]
-    algebraic[:, 36] = V_ROW[:, 19]
-    algebraic[:, 3] = V_ROW[:, 20]
-    algebraic[:, 16] = V_ROW[:, 21]
-    algebraic[:, 29] = V_ROW[:, 22]
-    algebraic[:, 37] = V_ROW[:, 23]
-    algebraic[:, 4] = V_ROW[:, 24]
-    algebraic[:, 17] = V_ROW[:, 25]
-    algebraic[:, 30] = V_ROW[:, 26]
-    algebraic[:, 38] = V_ROW[:, 27]
-    algebraic[:, 5] = V_ROW[:, 28]
-    algebraic[:, 18] = V_ROW[:, 29]
-    algebraic[:, 31] = V_ROW[:, 30]
-    algebraic[:, 39] = V_ROW[:, 31]
-    algebraic[:, 6] = V_ROW[:, 32]
-    algebraic[:, 19] = V_ROW[:, 33]
-    algebraic[:, 32] = V_ROW[:, 34]
-    algebraic[:, 40] = V_ROW[:, 35]
+
     algebraic[:, 42] = 1.00000*algebraic[:, 19]*algebraic[:, 32]+algebraic[:, 40]
     algebraic[:, 55] = ((((constants[21]*constants[10])/(constants[10]+constants[22]))*states[:, 2])/(states[:, 2]+constants[23]))/(1.00000+0.124500*torch.exp((-0.100000*states[:, 0]*constants[2])/(constants[0]*constants[1]))+0.0353000*torch.exp((-states[:, 0]*constants[2])/(constants[0]*constants[1])))
     algebraic[:, 25] = ((constants[0]*constants[1])/constants[2])*torch.log(constants[11]/states[:, 2])
