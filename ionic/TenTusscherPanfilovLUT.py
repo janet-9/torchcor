@@ -3,7 +3,7 @@ from ionic.cellml.ten_tusscher_model_2006_IK1Ko_endo_units import sizeStates, in
 from collections import OrderedDict
 
 
-def construct_LUT(device):
+def construct_V_LUT(device):
     V = torch.arange(-800, 800, 0.05).to(device)
 
     a7 = 1.00000/(1.00000+torch.exp((V + 20.0000)/7.00000))
@@ -219,7 +219,7 @@ class TenTusscherPanfilov:
         self.H = None
         self.dt = None
 
-        self.LUT = construct_LUT(device)
+        self.V_LUT = construct_V_LUT(device)
 
     def initialize(self, n_nodes, dt):
         self.states = self.states.repeat(n_nodes, 1).clone()
