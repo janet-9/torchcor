@@ -2,56 +2,60 @@ import torch
 from ionic.cellml.ten_tusscher_model_2006_IK1Ko_endo_units import sizeStates, initConsts, createLegends
 from collections import OrderedDict
 
-V = torch.arange(-800, 800, 0.05)
 
-a7 = 1.00000/(1.00000+torch.exp((V + 20.0000)/7.00000))
-a20 = 1102.50*torch.exp(-(torch.pow(V+27.0000, 2.00000))/225.000)+200.000/(1.00000+torch.exp((13.0000-V)/10.0000))+180.000/(1.00000+torch.exp((V+30.0000)/10.0000))+20.0000
-a8 = 0.670000/(1.00000+torch.exp((V+35.0000)/7.00000))+0.330000
-a21 = 562.000*torch.exp(-(torch.pow(V+27.0000, 2.00000))/240.000)+31.0000/(1.00000+torch.exp((25.0000-V)/10.0000))+80.0000/(1.00000+torch.exp((V+30.0000)/10.0000))
-a10 = 1.00000/(1.00000+torch.exp((V+28.0000)/5.00000))
-a23 = 1000.00*torch.exp(-(torch.pow(V+67.0000, 2.00000))/1000.00)+8.00000
-a11 = 1.00000/(1.00000+torch.exp((20.0000-V)/6.00000))
-a24 = 9.50000*torch.exp(-(torch.pow(V+40.0000, 2.00000))/1800.00)+0.800000
-a0 = 1.00000/(1.00000+torch.exp((-26.0000-V)/7.00000))
-a13 = 450.000/(1.00000+torch.exp((-45.0000-V)/10.0000))
-a26 = 6.00000/(1.00000+torch.exp((V+30.0000)/11.5000))
-a34 = 1.00000*a13*a26
-a1 = 1.00000/(1.00000+torch.exp((V+88.0000)/24.0000))
-a14 = 3.00000/(1.00000+torch.exp((-60.0000-V)/20.0000))
-a27 = 1.12000/(1.00000+torch.exp((V-60.0000)/20.0000))
-a35 = 1.00000*a14*a27
-a2 = 1.00000/(1.00000+torch.exp((-5.00000-V)/14.0000))
-a15 = 1400.00/(torch.pow(1.00000+torch.exp((5.00000-V)/6.00000), 1.0/2))
-a28 = 1.00000/(1.00000+torch.exp((V-35.0000)/15.0000))
-a36 = 1.00000*a15*a28+80.0000
-a3 = 1.00000/(torch.pow(1.00000+torch.exp((-56.8600-V)/9.03000), 2.00000))
-a16 = 1.00000/(1.00000+torch.exp((-60.0000-V)/5.00000))
-a29 = 0.100000/(1.00000+torch.exp((V+35.0000)/5.00000))+0.100000/(1.00000+torch.exp((V-50.0000)/200.000))
-a37 = 1.00000*a16*a29
-a4 = 1.00000/(torch.pow(1.00000+torch.exp((V+71.5500)/7.43000), 2.00000))
-a17 = torch.where(V < -40.0000,
-                  0.0570000*torch.exp(-(V+80.0000)/6.80000),
-                  0.00000)
-a30 = torch.where(V < -40.0000,
-                 2.70000*torch.exp(0.0790000*V)+310000.*torch.exp(0.348500*V),
-                 0.770000/(0.130000*(1.00000+torch.exp((V+10.6600)/-11.1000))))
-a38 = 1.00000/(a17+a30)
-a5 = 1.00000/(torch.pow(1.00000+torch.exp((V+71.5500)/7.43000), 2.00000))
-a18 = torch.where(V < -40.0000,
-                 (((-25428.0*torch.exp(0.244400*V)-6.94800e-06*torch.exp(-0.0439100*V))*(V+37.7800))/1.00000)/(1.00000+torch.exp(0.311000*(V+79.2300))),
-                 0.00000)
-a31 = torch.where(V < -40.0000,
-                 (0.0242400*torch.exp(-0.0105200*V))/(1.00000+torch.exp(-0.137800*(V+40.1400))),
-                 (0.600000*torch.exp(0.0570000*V))/(1.00000+torch.exp(-0.100000*(V+32.0000))))
-a39 = 1.00000/(a18+a31)
-a6 = 1.00000/(1.00000+torch.exp((-8.00000-V)/7.50000))
-a19 = 1.40000/(1.00000+torch.exp((-35.0000-V)/13.0000))+0.250000
-a32 = 1.40000/(1.00000+torch.exp((V+5.00000)/5.00000))
-a40 = 1.00000/(1.00000+torch.exp((50.0000-V)/20.0000))
+def construct_LUT(device):
+    V = torch.arange(-800, 800, 0.05).to(device)
 
-# [32000, 36]
-V_LUT = torch.stack([a7, a20, a8, a21, a10, a23, a11, a24, a0, a13, a26, a34, a1, a14, a27, a35, a2, a15,
-                     a28, a36, a3, a16, a29, a37, a4, a17, a30, a38, a5, a18, a31, a39, a6, a19, a32, a40], dim=1)
+    a7 = 1.00000/(1.00000+torch.exp((V + 20.0000)/7.00000))
+    a20 = 1102.50*torch.exp(-(torch.pow(V+27.0000, 2.00000))/225.000)+200.000/(1.00000+torch.exp((13.0000-V)/10.0000))+180.000/(1.00000+torch.exp((V+30.0000)/10.0000))+20.0000
+    a8 = 0.670000/(1.00000+torch.exp((V+35.0000)/7.00000))+0.330000
+    a21 = 562.000*torch.exp(-(torch.pow(V+27.0000, 2.00000))/240.000)+31.0000/(1.00000+torch.exp((25.0000-V)/10.0000))+80.0000/(1.00000+torch.exp((V+30.0000)/10.0000))
+    a10 = 1.00000/(1.00000+torch.exp((V+28.0000)/5.00000))
+    a23 = 1000.00*torch.exp(-(torch.pow(V+67.0000, 2.00000))/1000.00)+8.00000
+    a11 = 1.00000/(1.00000+torch.exp((20.0000-V)/6.00000))
+    a24 = 9.50000*torch.exp(-(torch.pow(V+40.0000, 2.00000))/1800.00)+0.800000
+    a0 = 1.00000/(1.00000+torch.exp((-26.0000-V)/7.00000))
+    a13 = 450.000/(1.00000+torch.exp((-45.0000-V)/10.0000))
+    a26 = 6.00000/(1.00000+torch.exp((V+30.0000)/11.5000))
+    a34 = 1.00000*a13*a26
+    a1 = 1.00000/(1.00000+torch.exp((V+88.0000)/24.0000))
+    a14 = 3.00000/(1.00000+torch.exp((-60.0000-V)/20.0000))
+    a27 = 1.12000/(1.00000+torch.exp((V-60.0000)/20.0000))
+    a35 = 1.00000*a14*a27
+    a2 = 1.00000/(1.00000+torch.exp((-5.00000-V)/14.0000))
+    a15 = 1400.00/(torch.pow(1.00000+torch.exp((5.00000-V)/6.00000), 1.0/2))
+    a28 = 1.00000/(1.00000+torch.exp((V-35.0000)/15.0000))
+    a36 = 1.00000*a15*a28+80.0000
+    a3 = 1.00000/(torch.pow(1.00000+torch.exp((-56.8600-V)/9.03000), 2.00000))
+    a16 = 1.00000/(1.00000+torch.exp((-60.0000-V)/5.00000))
+    a29 = 0.100000/(1.00000+torch.exp((V+35.0000)/5.00000))+0.100000/(1.00000+torch.exp((V-50.0000)/200.000))
+    a37 = 1.00000*a16*a29
+    a4 = 1.00000/(torch.pow(1.00000+torch.exp((V+71.5500)/7.43000), 2.00000))
+    a17 = torch.where(V < -40.0000,
+                      0.0570000*torch.exp(-(V+80.0000)/6.80000),
+                      0.00000)
+    a30 = torch.where(V < -40.0000,
+                     2.70000*torch.exp(0.0790000*V)+310000.*torch.exp(0.348500*V),
+                     0.770000/(0.130000*(1.00000+torch.exp((V+10.6600)/-11.1000))))
+    a38 = 1.00000/(a17+a30)
+    a5 = 1.00000/(torch.pow(1.00000+torch.exp((V+71.5500)/7.43000), 2.00000))
+    a18 = torch.where(V < -40.0000,
+                     (((-25428.0*torch.exp(0.244400*V)-6.94800e-06*torch.exp(-0.0439100*V))*(V+37.7800))/1.00000)/(1.00000+torch.exp(0.311000*(V+79.2300))),
+                     0.00000)
+    a31 = torch.where(V < -40.0000,
+                     (0.0242400*torch.exp(-0.0105200*V))/(1.00000+torch.exp(-0.137800*(V+40.1400))),
+                     (0.600000*torch.exp(0.0570000*V))/(1.00000+torch.exp(-0.100000*(V+32.0000))))
+    a39 = 1.00000/(a18+a31)
+    a6 = 1.00000/(1.00000+torch.exp((-8.00000-V)/7.50000))
+    a19 = 1.40000/(1.00000+torch.exp((-35.0000-V)/13.0000))+0.250000
+    a32 = 1.40000/(1.00000+torch.exp((V+5.00000)/5.00000))
+    a40 = 1.00000/(1.00000+torch.exp((50.0000-V)/20.0000))
+
+    # [32000, 36]
+    V_LUT = torch.stack([a7, a20, a8, a21, a10, a23, a11, a24, a0, a13, a26, a34, a1, a14, a27, a35, a2, a15,
+                         a28, a36, a3, a16, a29, a37, a4, a17, a30, a38, a5, a18, a31, a39, a6, a19, a32, a40], dim=1)
+
+    return V_LUT
 
 @torch.jit.script
 def compute_algebraic(states, constants, V_LUT):
@@ -172,7 +176,7 @@ class TenTusscherPanfilov:
         self.dtype = dtype
 
         init_states, init_constants = initConsts()
-        print(init_states)
+
         self.states = torch.tensor(init_states, device=device, dtype=dtype)
         self.constants = None
 
@@ -215,6 +219,8 @@ class TenTusscherPanfilov:
         self.H = None
         self.dt = None
 
+        self.LUT = construct_LUT(device)
+
     def initialize(self, n_nodes, dt):
         self.states = self.states.repeat(n_nodes, 1).clone()
 
@@ -238,7 +244,7 @@ class TenTusscherPanfilov:
         return dU
 
     def compute_rates(self, states, constants):
-        algebraic = compute_algebraic(states, constants, V_LUT)
+        algebraic = compute_algebraic(states, constants, self.V_LUT)
         rates = compute_rates(algebraic, states, constants)
 
         return rates, algebraic
