@@ -117,18 +117,11 @@ def compute_algebraic(states, constants, V_LUT):
 def compute_rates(algebraic, states, constants):
     rates = torch.zeros_like(states)
 
-    rates[:, 12] = (algebraic[:, 7]-states[:, 12])/algebraic[:, 20]
-    rates[:, 13] = (algebraic[:, 8]-states[:, 13])/algebraic[:, 21]
-    rates[:, 14] = (algebraic[:, 9]-states[:, 14])/algebraic[:, 22]
-    rates[:, 15] = (algebraic[:, 10]-states[:, 15])/algebraic[:, 23]
-    rates[:, 16] = (algebraic[:, 11]-states[:, 16])/algebraic[:, 24]
-    rates[:, 4] = (algebraic[:, 0]-states[:, 4])/algebraic[:, 34]
-    rates[:, 5] = (algebraic[:, 1]-states[:, 5])/algebraic[:, 35]
-    rates[:, 6] = (algebraic[:, 2]-states[:, 6])/algebraic[:, 36]
-    rates[:, 7] = (algebraic[:, 3]-states[:, 7])/algebraic[:, 37]
-    rates[:, 8] = (algebraic[:, 4]-states[:, 8])/algebraic[:, 38]
-    rates[:, 9] = (algebraic[:, 5]-states[:, 9])/algebraic[:, 39]
-    rates[:, 11] = (algebraic[:, 6]-states[:, 11])/algebraic[:, 42]
+    r_index = [4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16]
+    a1_index = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    a2_index = [34, 35, 36, 37, 38, 39, 42, 20, 21, 22, 23, 24]
+    rates[:, r_index] = (algebraic[:, a1_index]-states[:, r_index])/algebraic[:, a2_index]
+
     rates[:, 2] = ((-1.00000*(algebraic[:, 50]+algebraic[:, 51]+3.00000*algebraic[:, 55]+3.00000*algebraic[:, 56]))/(1.00000*constants[4]*constants[2]))*constants[3]
     rates[:, 0] = (-1.00000/1.00000)*(algebraic[:, 47]+algebraic[:, 54]+algebraic[:, 48]+algebraic[:, 49]+algebraic[:, 52]+algebraic[:, 55]+algebraic[:, 50]+algebraic[:, 51]+algebraic[:, 56]+algebraic[:, 53]+algebraic[:, 58]+algebraic[:, 57]+algebraic[:, 12])
     rates[:, 1] = ((-1.00000*((algebraic[:, 47]+algebraic[:, 54]+algebraic[:, 48]+algebraic[:, 49]+algebraic[:, 58]+algebraic[:, 12])-2.00000*algebraic[:, 55]))/(1.00000*constants[4]*constants[2]))*constants[3]
