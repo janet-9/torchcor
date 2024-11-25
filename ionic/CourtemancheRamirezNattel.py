@@ -1,245 +1,443 @@
 import torch
-from ionic.cellml.courtemanche_ramirez_nattel_1998 import sizeAlgebraic, sizeStates, sizeConstants, initConsts, createLegends
-from collections import OrderedDict
+from dataclasses import dataclass
+from math import log, exp, expm1
+
+
+C_B1a = 3.79138232501097e-05
+C_B1b = 0.0811764705882353
+C_B1c = 0.00705882352941176
+C_B1d = 0.00537112496043221
+C_B1e = 11.5
+C_Fn1 = 9.648e-13
+C_Fn2 = 2.5910306809e-13
+C_dCa_rel = 8.
+C_dCaup = 0.0869565217391304
+Ca_rel_init = 1.49
+Ca_up_init = 1.49
+Cai_init = 1.02e-1
+F = 96.4867
+K_Q10 = 3.
+K_up = 0.00092
+Ki_init = 139.0
+KmCa = 1.38
+KmCmdn = 0.00238
+KmCsqn = 0.8
+KmKo = 1.5
+KmNa = 87.5
+KmNa3 = 669921.875
+KmNai = 10.
+KmTrpn = 0.0005
+Nai = 11.2
+R = 8.3143
+T = 310.
+V_init = -81.2
+Volcell = 20100.
+Voli = 13668.
+Volrel = 96.48
+Volup = 1109.52
+d_init = 1.37e-4
+f_Ca_init = 0.775
+f_init = 0.999
+gamma = 0.35
+h_init = 0.965
+j_init = 0.978
+k_rel = 30.
+k_sat = 0.1
+m_init = 2.91e-3
+maxCmdn = 0.05
+maxCsqn = 10.
+maxTrpn = 0.07
+oa_init = 3.04e-2
+oi_init = 0.999
+tau_f_Ca = 2.
+tau_tr = 180.
+tau_u = 8.
+u_init = 0.
+ua_init = 4.96e-3
+ui_init = 0.999
+v_init = 1.
+w_init = 0.999
+xr_init = 3.29e-5
+xs_init = 1.87e-2
+
+
+@dataclass
+class Parameters:
+    ACh = 0.000001
+    Cao = 1.8
+    Cm = 100.
+    GACh = 0.
+    GCaL = 0.1238
+    GK1 = 0.09
+    GKr = 0.0294
+    GKs = 0.129
+    GNa = 7.8
+    GbCa = 0.00113
+    GbNa = 0.000674
+    Gto = 0.1652
+    Ko = 5.4
+    Nao = 140.
+    factorGKur = 1.
+    factorGrel = 1.
+    factorGtr = 1.
+    factorGup = 1.
+    factorhGate = 0.
+    factormGate = 0.
+    factoroaGate = 0.
+    factorxrGate = 1.
+    maxCaup = 15.
+    maxINaCa = 1600.
+    maxINaK = 0.60
+    maxIpCa = 0.275
+    maxIup = 0.005
+
+
+@dataclass(frozen=True)
+class Cai_TableIndex:
+    carow_1_idx = 0
+    carow_2_idx = 1
+    carow_3_idx = 2
+    conCa_idx = 3
+    f_Ca_rush_larsen_A_idx = 4
+    NROWS = 5
+
+
+@dataclass(frozen=True)
+class V_TableIndex:
+  GKur_idx = 0
+  INaK_idx = 1
+  IbNa_idx = 2
+  d_rush_larsen_A_idx = 3
+  d_rush_larsen_B_idx = 4
+  f_rush_larsen_A_idx = 5
+  f_rush_larsen_B_idx = 6
+  h_rush_larsen_A_idx = 7
+  h_rush_larsen_B_idx = 8
+  j_rush_larsen_A_idx = 9
+  j_rush_larsen_B_idx = 10
+  m_rush_larsen_A_idx = 11
+  m_rush_larsen_B_idx = 12
+  oa_rush_larsen_A_idx = 13
+  oa_rush_larsen_B_idx = 14
+  oi_rush_larsen_A_idx = 15
+  oi_rush_larsen_B_idx = 16
+  ua_rush_larsen_A_idx = 17
+  ua_rush_larsen_B_idx = 18
+  ui_rush_larsen_A_idx = 19
+  ui_rush_larsen_B_idx = 20
+  vrow_29_idx = 21
+  vrow_31_idx = 22
+  vrow_32_idx = 23
+  vrow_36_idx = 24
+  vrow_7_idx = 25
+  w_rush_larsen_A_idx = 26
+  w_rush_larsen_B_idx = 27
+  xr_rush_larsen_A_idx = 28
+  xr_rush_larsen_B_idx = 29
+  xs_rush_larsen_A_idx = 30
+  xs_rush_larsen_B_idx = 31
+  NROWS = 32
+
+
+@dataclass(frozen=True)
+class fn_TableIndex:
+  u_rush_larsen_A_idx = 0
+  v_rush_larsen_A_idx = 1
+  v_rush_larsen_B_idx = 2
+  NROWS = 3
+
+Cai_min, Cai_max, Cai_res = 3e-4, 30.0, 3e-4
+V_min, V_max, V_res = -200, 200, 0.1
+fn_min, fn_max, fn_res = -2e-11, 10.0e-11, 2e-15
 
 
 class CourtemancheRamirezNattel:
-    def __init__(self, device, dtype=torch.float64):
+    def __init__(self, dt, device, dtype=torch.float64):
+        self.Cai_tab = None
+        self.V_tab = None
+        self.fn_tab = None
+
+        self.Cai_ti = Cai_TableIndex()
+        self.V_ti = V_TableIndex()
+        self.fn_ti = fn_TableIndex()
+
+        self.dt = dt
         self.device = device
         self.dtype = dtype
 
-        init_states, init_constants = initConsts()
-        print(init_states)
-        self.states = torch.tensor(init_states, device=device, dtype=dtype)
-        self.constants = None
 
-        (legend_states, legend_algebraics, _, legend_constants) = createLegends()
+    def construct_tables(self):
+        p = Parameters()
 
-        self.name_constant_dict = OrderedDict()
-        for legend_constant, init_constant in zip(legend_constants, init_constants):
-            constant_name = legend_constant.split()[0]
-            if "stim" in constant_name:
-                self.name_constant_dict[constant_name] = 0
-            else:
-                self.name_constant_dict[constant_name] = init_constant
+        # Define the constants that depend on the parameters.
+        E_Na = ((R*T)/F)*(log((p.Nao/Nai)))
+        f_Ca_rush_larsen_C = expm1(((-self.dt)/tau_f_Ca))
+        sigma = ((exp((p.Nao/67.3)))-1.)/7.
+        u_rush_larsen_C = expm1(((-self.dt)/tau_u))
 
-        gate_dict = {}
-        for i, legend_state in enumerate(legend_states):
-            # legend_state = legend_state.lower()
-            # if "gate" in legend_state:
-            state_name = legend_state.split()[0]
-            gate_dict[state_name] = i
-        self.gate_indices = list(gate_dict.values())
-        self.non_gate_indices = [i for i in range(1, sizeStates) if i not in self.gate_indices]
+        # construct Cai Lookup Table
+        Cai = torch.arange(Cai_min, Cai_max, Cai_res).to(self.device).to(self.dtype)
+        Cai_tab = torch.zeros((Cai.shape[0], self.Cai_ti.NROWS)).to(self.device).to(self.dtype)
 
-        tau_dict = {}
-        inf_dict = {}
-        for i, legend_algebraic in enumerate(legend_algebraics):
-            legend_algebraic = legend_algebraic.lower()
-            algebraic_name = legend_algebraic.split()[0]
-            if algebraic_name.startswith("tau"):
-                tau_dict[algebraic_name.split("_")[1]] = i
-            if algebraic_name.endswith("inf") or algebraic_name.endswith("infinity"):
-                inf_dict[algebraic_name.split("_")[0]] = i
+        Cai_tab[:, self.Cai_ti.conCa_idx] = Cai / 1000
+        Cai_tab[:, self.Cai_ti.carow_1_idx] = (p.factorGup*p.maxIup)/(1.+(K_up/Cai_tab[:, self.Cai_ti.conCa_idx]))
+        Cai_tab[:, self.Cai_ti.carow_2_idx] = (((((((maxTrpn*KmTrpn)/(Cai_tab[:, self.Cai_ti.conCa_idx]+KmTrpn))/(Cai_tab[:, self.Cai_ti.conCa_idx]+KmTrpn))+(((maxCmdn*KmCmdn)/(Cai_tab[:, self.Cai_ti.conCa_idx]+KmCmdn))/(Cai_tab[:, self.Cai_ti.conCa_idx]+KmCmdn)))+1.)/C_B1c)/1000.)
+        Cai_tab[:, self.Cai_ti.carow_3_idx] = (((p.maxIpCa*Cai_tab[:, self.Cai_ti.conCa_idx])/(0.0005+Cai_tab[:, self.Cai_ti.conCa_idx]))-(((((p.GbCa*R)*T)/2.)/F)*(torch.log((p.Cao/Cai_tab[:, self.Cai_ti.conCa_idx])))))
+        f_Ca_inf = 1./(1.+(Cai_tab[:, self.Cai_ti.conCa_idx]/0.00035))
+        Cai_tab[:, self.Cai_ti.f_Ca_rush_larsen_A_idx] = (-f_Ca_inf)*f_Ca_rush_larsen_C
 
-        # gating_variables = set(tau_dict.keys()).intersection(set(inf_dict.keys()))
-        print(gate_dict, len(gate_dict))
-        print(tau_dict, len(tau_dict))
-        print(inf_dict, len(inf_dict))
-        raise Exception()
+        self.Cai_tab = Cai_tab
 
-        tau_dict = {key: tau_dict[key] for key in list(gate_dict.keys())}
-        inf_dict = {key: inf_dict[key] for key in list(gate_dict.keys())}
-        self.tau_indices = list(tau_dict.values())
-        self.inf_indices = list(inf_dict.values())
+        # construct Cai Lookup Table
+        V = torch.arange(V_min, V_max, V_res).to(self.device).to(self.dtype)
+        V_tab = torch.zeros((V.shape[0], self.V_ti.NROWS)).to(self.device).to(self.dtype)
 
-        self.H = None
-        self.dt = None
+        V_tab[:, self.V_ti.GKur_idx] = (0.005+(0.05/(1.+(torch.exp(((15.-(V))/13.))))))
+        V_tab[:, self.V_ti.IbNa_idx] = (p.GbNa * (V - E_Na))
+        a_h = torch.where(V>=-40., 0.0, (0.135 * (torch.exp((((V+80.) - p.factorhGate) / -6.8)))))
+        a_j = torch.where(V<-40., ((((-127140.*(torch.exp((0.2444*V))))-((3.474e-5*(torch.exp((-0.04391*V))))))*(V+37.78))/(1.+(torch.exp((0.311*(V+79.23)))))), 0.)
+        a_m = torch.where(V==-47.13, 3.2, ((0.32*(V+47.13))/(1.-((torch.exp((-0.1*(V+47.13))))))))
+        aa_oa = (0.65 / ((torch.exp(((V+10.)/-8.5))) + (torch.exp(((30. - V) / 59.0)))))
+        aa_oi = (1./(18.53+(torch.exp(((V+113.7)/10.95)))))
+        aa_ua = (0.65/((torch.exp(((V+10.)/-8.5)))+(torch.exp(((V-(30.))/-59.0)))))
+        aa_ui = (1. / (21. + (torch.exp(((V - 185.) / -28.)))))
+        aa_xr = (p.factorxrGate*((0.0003*(V+14.1))/(1.-((torch.exp(((V+14.1)/-5.)))))))
+        aa_xs = ((4.e-5*(V-(19.9)))/(1.-((torch.exp(((19.9-(V))/17.))))))
+        b_h = torch.where((V>=-40.), ((1./0.13)/(1.+(torch.exp(((-(V+10.66))/11.1))))), ((3.56*(torch.exp((0.079*V))))+(3.1e5*(torch.exp((0.35*V))))))
+        b_j = torch.where((V>=-40.), ((0.3*(torch.exp((-2.535e-7*V))))/(1.+(torch.exp((-0.1*(V+32.)))))), ((0.1212*(torch.exp((-0.01052*V))))/(1.+(torch.exp((-0.1378*(V+40.14)))))))
+        b_m = (0.08 * (torch.exp(((-(V - p.factormGate)) / 11.))))
+        bb_oa = (0.65/(2.5+(torch.exp(((V+82.)/17.)))))
+        bb_oi = (1./(35.56+(torch.exp(((-(V+1.26))/7.44)))))
+        bb_ua = (0.65/(2.5+(torch.exp(((V+82.)/17.)))))
+        bb_ui = (torch.exp(((V - 158.) / 16.)))
+        bb_xr = ((1.0/p.factorxrGate) * ((7.3898e-5 * (V - 3.3328)) / ((torch.exp(((V - 3.3328) / 5.1237))) - (1.))))
+        bb_xs = ((3.5e-5 * (V - 19.9)) / ((torch.exp(((V - 19.9) / 9.))) - 1.))
+        d_inf = (1./(1.+(torch.exp(((-(V+10.))/8.)))))
+        f_NaK = (1./((1.+(0.1245*(torch.exp(((((-0.1*F)*V)/R)/T)))))+((0.0365*sigma)*(torch.exp(((((-F)*V)/R)/T))))))
+        f_inf = (1./(1.+(torch.exp(((V+28.)/6.9)))))
+        oa_inf = (1. / (1. + (torch.exp(((-((V+20.47) - p.factoroaGate)) / 17.54)))))
+        oi_inf = (1./(1.+(torch.exp(((V+43.1)/5.3)))))
+        tau_d = torch.where((V==-10.), (((1./6.24)/0.035)/2.), ((((1.-((torch.exp(((-(V+10.))/6.24)))))/0.035)/(V+10.))/(1.+(torch.exp(((-(V+10.))/6.24))))))
+        tau_f = (9./((0.0197*(torch.exp((((-0.0337*0.0337)*(V+10.))*(V+10.)))))+0.02))
+        tau_w = (((6.*(1.-((torch.exp(((7.9-(V))/5.))))))/(1.+(0.3*(torch.exp(((7.9-(V))/5.))))))/(V-(7.9)))
+        ua_inf = (1./(1.+(torch.exp(((V+30.3)/-9.6)))))
+        ui_inf = (1./(1.+(torch.exp(((V-(99.45))/27.48)))))
+        V_tab[:, self.V_ti.vrow_29_idx] = (p.GCaL*(V-(65.)))
+        V_tab[:, self.V_ti.vrow_31_idx] = ((((((((p.maxINaCa*(torch.exp(((((gamma*F)*V)/R)/T))))*Nai)*Nai)*Nai)*p.Cao)/(KmNa3+((p.Nao*p.Nao)*p.Nao)))/(KmCa+p.Cao))/(1.+(k_sat*(torch.exp((((((gamma-(1.))*F)*V)/R)/T))))))
+        V_tab[:, self.V_ti.vrow_32_idx] = ((((((((p.maxINaCa*(torch.exp((((((gamma-(1.))*F)*V)/R)/T))))*p.Nao)*p.Nao)*p.Nao)/(KmNa3+((p.Nao*p.Nao)*p.Nao)))/(KmCa+p.Cao))/(1.+(k_sat*(torch.exp((((((gamma-(1.))*F)*V)/R)/T))))))/1000.)
+        V_tab[:, self.V_ti.vrow_36_idx] = (V*p.GbCa)
+        V_tab[:, self.V_ti.vrow_7_idx] = (p.GNa * (V - E_Na))
+        w_inf = (1. - (1. / (1. + (torch.exp(((40. - V) / 17.))))))
+        xr_inf = (1./(1.+(torch.exp(((V+14.1)/-6.5)))))
+        xs_inf = (1. / (torch.sqrt((1. + (torch.exp(((V - 19.9) / -12.7)))))))
+        V_tab[:, self.V_ti.INaK_idx] = ((((p.maxINaK*f_NaK)/(1.+(pow((KmNai/Nai),1.5))))*p.Ko)/(p.Ko+KmKo))
+        V_tab[:, self.V_ti.d_rush_larsen_B_idx] = (torch.exp(((-self.dt)/tau_d)))
+        d_rush_larsen_C = (torch.expm1(((-self.dt)/tau_d)))
+        V_tab[:, self.V_ti.f_rush_larsen_B_idx] = (torch.exp(((-self.dt)/tau_f)))
+        f_rush_larsen_C = (torch.expm1(((-self.dt)/tau_f)))
+        V_tab[:, self.V_ti.h_rush_larsen_A_idx] = (((-a_h)/(a_h+b_h))*(torch.expm1(((-self.dt)*(a_h+b_h)))))
+        V_tab[:, self.V_ti.h_rush_larsen_B_idx] = (torch.exp(((-self.dt)*(a_h+b_h))))
+        V_tab[:, self.V_ti.j_rush_larsen_A_idx] = (((-a_j)/(a_j+b_j))*(torch.expm1(((-self.dt)*(a_j+b_j)))))
+        V_tab[:, self.V_ti.j_rush_larsen_B_idx] = (torch.exp(((-self.dt)*(a_j+b_j))))
+        V_tab[:, self.V_ti.m_rush_larsen_A_idx] = (((-a_m)/(a_m+b_m))*(torch.expm1(((-self.dt)*(a_m+b_m)))))
+        V_tab[:, self.V_ti.m_rush_larsen_B_idx] = (torch.exp(((-self.dt)*(a_m+b_m))))
+        tau_oa = ((1./(aa_oa+bb_oa))/K_Q10)
+        tau_oi = ((1./(aa_oi+bb_oi))/K_Q10)
+        tau_ua = ((1./(aa_ua+bb_ua))/K_Q10)
+        tau_ui = ((1./(aa_ui+bb_ui))/K_Q10)
+        tau_xr = (1./(aa_xr+bb_xr))
+        tau_xs = (0.5/(aa_xs+bb_xs))
+        V_tab[:, self.V_ti.w_rush_larsen_B_idx] = (torch.exp(((-self.dt)/tau_w)))
+        w_rush_larsen_C = (torch.expm1(((-self.dt)/tau_w)))
+        V_tab[:, self.V_ti.d_rush_larsen_A_idx] = ((-d_inf)*d_rush_larsen_C)
+        V_tab[:, self.V_ti.f_rush_larsen_A_idx] = ((-f_inf)*f_rush_larsen_C)
+        V_tab[:, self.V_ti.oa_rush_larsen_B_idx] = (torch.exp(((-self.dt)/tau_oa)))
+        oa_rush_larsen_C = (torch.expm1(((-self.dt)/tau_oa)))
+        V_tab[:, self.V_ti.oi_rush_larsen_B_idx] = (torch.exp(((-self.dt)/tau_oi)))
+        oi_rush_larsen_C = (torch.expm1(((-self.dt)/tau_oi)))
+        V_tab[:, self.V_ti.ua_rush_larsen_B_idx] = (torch.exp(((-self.dt)/tau_ua)))
+        ua_rush_larsen_C = (torch.expm1(((-self.dt)/tau_ua)))
+        V_tab[:, self.V_ti.ui_rush_larsen_B_idx] = (torch.exp(((-self.dt)/tau_ui)))
+        ui_rush_larsen_C = (torch.expm1(((-self.dt)/tau_ui)))
+        V_tab[:, self.V_ti.w_rush_larsen_A_idx] = ((-w_inf)*w_rush_larsen_C)
+        V_tab[:, self.V_ti.xr_rush_larsen_B_idx] = (torch.exp(((-self.dt)/tau_xr)))
+        xr_rush_larsen_C = (torch.expm1(((-self.dt)/tau_xr)))
+        V_tab[:, self.V_ti.xs_rush_larsen_B_idx] = (torch.exp(((-self.dt)/tau_xs)))
+        xs_rush_larsen_C = (torch.expm1(((-self.dt)/tau_xs)))
+        V_tab[:, self.V_ti.oa_rush_larsen_A_idx] = ((-oa_inf)*oa_rush_larsen_C)
+        V_tab[:, self.V_ti.oi_rush_larsen_A_idx] = ((-oi_inf)*oi_rush_larsen_C)
+        V_tab[:, self.V_ti.ua_rush_larsen_A_idx] = ((-ua_inf)*ua_rush_larsen_C)
+        V_tab[:, self.V_ti.ui_rush_larsen_A_idx] = ((-ui_inf)*ui_rush_larsen_C)
+        V_tab[:, self.V_ti.xr_rush_larsen_A_idx] = ((-xr_inf)*xr_rush_larsen_C)
+        V_tab[:, self.V_ti.xs_rush_larsen_A_idx] = ((-xs_inf)*xs_rush_larsen_C)
 
-    def compute_rates(self, states, constants):
-        rates = torch.zeros_like(states)
-        algebraic = torch.zeros((states.shape[0], sizeAlgebraic), device=self.device, dtype=self.dtype)
+        self.V_tab = V_tab
 
-        algebraic[:, 12] = torch.pow(1.00000+states[:, 12]/0.000350000, -1.00000)
-        rates[:, 15] = (algebraic[:, 12]-states[:, 15])/constants[44]
-        algebraic[:, 10] = torch.pow(1.00000+torch.exp((states[:, 0]+10.0000)/-8.00000), -1.00000)
-        algebraic[:, 27] = torch.where(torch.abs(states[:, 0]+10.0000) < 1.00000e-10,
-                                    4.57900/(1.00000+torch.exp((states[:, 0]+10.0000)/-6.24000)),
-                                    (1.00000-torch.exp((states[:, 0]+10.0000)/-6.24000))/(0.0350000*(states[:, 0]+10.0000)*(1.00000+torch.exp((states[:, 0]+10.0000)/-6.24000))))
-        rates[:, 13] = (algebraic[:, 10]-states[:, 13])/algebraic[:, 27]
-        algebraic[:, 11] = torch.exp(-(states[:, 0]+28.0000)/6.90000)/(1.00000+torch.exp(-(states[:, 0]+28.0000)/6.90000))
-        algebraic[:, 28] = 9.00000*(torch.pow(0.0197000*torch.exp(-(0.0337000 ** 2.00000)*(torch.pow(states[:, 0]+10.0000, 2.00000)))+0.0200000, -1.00000))
-        rates[:, 14] = (algebraic[:, 11]-states[:, 14])/algebraic[:, 28]
-        algebraic[:, 13] = torch.where(torch.abs(states[:, 0]-7.90000) < 1.00000e-10,
-                                   (6.00000*0.200000)/1.30000,
-                                   (6.00000*(1.00000-torch.exp(-(states[:, 0]-7.90000)/5.00000)))/((1.00000+0.300000*torch.exp(-(states[:, 0]-7.90000)/5.00000))*1.00000*(states[:, 0]-7.90000)))
-        algebraic[:, 29] = 1.00000-torch.pow(1.00000+torch.exp(-(states[:, 0]-40.0000)/17.0000), -1.00000)
-        rates[:, 19] = (algebraic[:, 29]-states[:, 19])/algebraic[:, 13]
-        algebraic[:, 1] = torch.where(states[:, 0] < -47.1300,
-                                   3.20000,
-                                   (0.320000*(states[:, 0]+47.1300))/(1.00000-torch.exp(-0.100000*(states[:, 0]+47.1300))))
-        algebraic[:, 18] = 0.0800000*torch.exp(-states[:, 0]/11.0000)
-        algebraic[:, 31] = algebraic[:, 1]/(algebraic[:, 1]+algebraic[:, 18])
-        algebraic[:, 41] = 1.00000/(algebraic[:, 1]+algebraic[:, 18])
-        rates[:, 2] = (algebraic[:, 31]-states[:, 2])/algebraic[:, 41]
-        algebraic[:, 2] = torch.where(states[:, 0] < -40.0000,
-                                   0.135000*torch.exp((states[:, 0]+80.0000)/-6.80000),
-                                   0.00000)
-        algebraic[:, 19] = torch.where(states[:, 0] < -40.0000,
-                                    3.56000*torch.exp(0.0790000*states[:, 0])+310000.*torch.exp(0.350000*states[:, 0]),
-                                    1.00000/(0.130000*(1.00000+torch.exp((states[:, 0]+10.6600)/-11.1000))))
-        algebraic[:, 32] = algebraic[:, 2]/(algebraic[:, 2]+algebraic[:, 19])
-        algebraic[:, 42] = 1.00000/(algebraic[:, 2]+algebraic[:, 19])
-        rates[:, 3] = (algebraic[:, 32]-states[:, 3])/algebraic[:, 42]
-        algebraic[:, 3] = torch.where(states[:, 0] < -40.0000,
-                                     ((-127140.*torch.exp(0.244400*states[:, 0])-3.47400e-05*torch.exp(-0.0439100*states[:, 0]))*(states[:, 0]+37.7800))/(1.00000+torch.exp(0.311000*(states[:, 0]+79.2300))),
-                                     0.00000)
-        algebraic[:, 20] = torch.where(states[:, 0] < -40.0000,
-                                      (0.121200*torch.exp(-0.0105200*states[:, 0]))/(1.00000+torch.exp(-0.137800*(states[:, 0]+40.1400))),
-                                      (0.300000*torch.exp(-2.53500e-07*states[:, 0]))/(1.00000+torch.exp(-0.100000*(states[:, 0]+32.0000))))
-        algebraic[:, 33] = algebraic[:, 3]/(algebraic[:, 3]+algebraic[:, 20])
-        algebraic[:, 43] = 1.00000/(algebraic[:, 3]+algebraic[:, 20])
-        rates[:, 4] = (algebraic[:, 33]-states[:, 4])/algebraic[:, 43]
-        algebraic[:, 4] = 0.650000*(torch.pow(torch.exp((states[:, 0]--10.0000)/-8.50000)+torch.exp(((states[:, 0]--10.0000)-40.0000)/-59.0000), -1.00000))
-        algebraic[:, 21] = 0.650000*(torch.pow(2.50000+torch.exp(((states[:, 0]--10.0000)+72.0000)/17.0000), -1.00000))
-        algebraic[:, 34] = (torch.pow(algebraic[:, 4]+algebraic[:, 21], -1.00000))/constants[13]
-        algebraic[:, 44] = torch.pow(1.00000+torch.exp(((states[:, 0]--10.0000)+10.4700)/-17.5400), -1.00000)
-        rates[:, 6] = (algebraic[:, 44]-states[:, 6])/algebraic[:, 34]
-        algebraic[:, 5] = torch.pow(18.5300+1.00000*torch.exp(((states[:, 0]--10.0000)+103.700)/10.9500), -1.00000)
-        algebraic[:, 22] = torch.pow(35.5600+1.00000*torch.exp(((states[:, 0]--10.0000)-8.74000)/-7.44000), -1.00000)
-        algebraic[:, 35] = (torch.pow(algebraic[:, 5]+algebraic[:, 22], -1.00000))/constants[13]
-        algebraic[:, 45] = torch.pow(1.00000+torch.exp(((states[:, 0]--10.0000)+33.1000)/5.30000), -1.00000)
-        rates[:, 7] = (algebraic[:, 45]-states[:, 7])/algebraic[:, 35]
-        algebraic[:, 6] = 0.650000*(torch.pow(torch.exp((states[:, 0]--10.0000)/-8.50000)+torch.exp(((states[:, 0]--10.0000)-40.0000)/-59.0000), -1.00000))
-        algebraic[:, 23] = 0.650000*(torch.pow(2.50000+torch.exp(((states[:, 0]--10.0000)+72.0000)/17.0000), -1.00000))
-        algebraic[:, 36] = (torch.pow(algebraic[:, 6]+algebraic[:, 23], -1.00000))/constants[13]
-        algebraic[:, 46] = torch.pow(1.00000+torch.exp(((states[:, 0]--10.0000)+20.3000)/-9.60000), -1.00000)
-        rates[:, 8] = (algebraic[:, 46]-states[:, 8])/algebraic[:, 36]
-        algebraic[:, 7] = torch.pow(21.0000+1.00000*torch.exp(((states[:, 0]--10.0000)-195.000)/-28.0000), -1.00000)
-        algebraic[:, 24] = 1.00000/torch.exp(((states[:, 0]--10.0000)-168.000)/-16.0000)
-        algebraic[:, 37] = (torch.pow(algebraic[:, 7]+algebraic[:, 24], -1.00000))/constants[13]
-        algebraic[:, 47] = torch.pow(1.00000+torch.exp(((states[:, 0]--10.0000)-109.450)/27.4800), -1.00000)
-        rates[:, 9] = (algebraic[:, 47]-states[:, 9])/algebraic[:, 37]
-        algebraic[:, 8] = torch.where(torch.abs(states[:, 0]+14.1000) < 1.00000e-10,
-                                   0.00150000,
-                                   (0.000300000*(states[:, 0]+14.1000))/(1.00000-torch.exp((states[:, 0]+14.1000)/-5.00000)))
-        algebraic[:, 25] = torch.where(torch.abs(states[:, 0]-3.33280) < 1.00000e-10,
-                                    0.000378361,
-                                    (7.38980e-05*(states[:, 0]-3.33280))/(torch.exp((states[:, 0]-3.33280)/5.12370)-1.00000))
-        algebraic[:, 38] = torch.pow(algebraic[:, 8]+algebraic[:, 25], -1.00000)
-        algebraic[:, 48] = torch.pow(1.00000+torch.exp((states[:, 0]+14.1000)/-6.50000), -1.00000)
-        rates[:, 10] = (algebraic[:, 48]-states[:, 10])/algebraic[:, 38]
-        algebraic[:, 9] = torch.where(torch.abs(states[:, 0]-19.9000) < 1.00000e-10,
-                                   0.000680000,
-                                   (4.00000e-05*(states[:, 0]-19.9000))/(1.00000-torch.exp((states[:, 0]-19.9000)/-17.0000)))
-        algebraic[:, 26] = torch.where(torch.abs(states[:, 0]-19.9000) < 1.00000e-10,
-                                    0.000315000,
-                                    (3.50000e-05*(states[:, 0]-19.9000))/(torch.exp((states[:, 0]-19.9000)/9.00000)-1.00000))
-        algebraic[:, 39] = 0.500000*(torch.pow(algebraic[:, 9]+algebraic[:, 26], -1.00000))
-        algebraic[:, 49] = torch.pow(1.00000+torch.exp((states[:, 0]-19.9000)/-12.7000), -0.500000)
-        rates[:, 11] = (algebraic[:, 49]-states[:, 11])/algebraic[:, 39]
-        algebraic[:, 40] = ((constants[0]*constants[1])/constants[2])*torch.log(constants[12]/states[:, 5])
-        algebraic[:, 50] = (constants[3]*constants[11]*(states[:, 0]-algebraic[:, 40]))/(1.00000+torch.exp(0.0700000*(states[:, 0]+80.0000)))
-        algebraic[:, 51] = constants[3]*constants[14]*(torch.pow(states[:, 6], 3.00000))*states[:, 7]*(states[:, 0]-algebraic[:, 40])
-        algebraic[:, 52] = 0.00500000+0.0500000/(1.00000+torch.exp((states[:, 0]-15.0000)/-13.0000))
-        algebraic[:, 53] = constants[3]*algebraic[:, 52]*(torch.pow(states[:, 8], 3.00000))*states[:, 9]*(states[:, 0]-algebraic[:, 40])
-        algebraic[:, 54] = (constants[3]*constants[15]*states[:, 10]*(states[:, 0]-algebraic[:, 40]))/(1.00000+torch.exp((states[:, 0]+15.0000)/22.4000))
-        algebraic[:, 55] = constants[3]*constants[16]*(torch.pow(states[:, 11], 2.00000))*(states[:, 0]-algebraic[:, 40])
-        algebraic[:, 57] = torch.pow(1.00000+0.124500*torch.exp((-0.100000*constants[2]*states[:, 0])/(constants[0]*constants[1]))+0.0365000*constants[45]*torch.exp((-constants[2]*states[:, 0])/(constants[0]*constants[1])), -1.00000)
-        algebraic[:, 58] = (((constants[3]*constants[20]*algebraic[:, 57]*1.00000)/(1.00000+torch.pow(constants[18]/states[:, 1], 1.50000)))*constants[12])/(constants[12]+constants[19])
-        algebraic[:, 60] = constants[3]*constants[23]*(states[:, 0]-algebraic[:, 40])
-        rates[:, 5] = (2.00000*algebraic[:, 58]-(algebraic[:, 50]+algebraic[:, 51]+algebraic[:, 53]+algebraic[:, 54]+algebraic[:, 55]+algebraic[:, 60]))/(constants[43]*constants[2])
-        algebraic[:, 17] = ((constants[0]*constants[1])/constants[2])*torch.log(constants[10]/states[:, 1])
-        algebraic[:, 30] = constants[3]*constants[9]*(torch.pow(states[:, 2], 3.00000))*states[:, 3]*states[:, 4]*(states[:, 0]-algebraic[:, 17])
-        algebraic[:, 63] = (constants[3]*constants[25]*(torch.exp((constants[29]*constants[2]*states[:, 0])/(constants[0]*constants[1]))*(torch.pow(states[:, 1], 3.00000))*constants[24]-torch.exp(((constants[29]-1.00000)*constants[2]*states[:, 0])/(constants[0]*constants[1]))*(torch.pow(constants[10], 3.00000))*states[:, 12]))/((torch.pow(constants[26], 3.00000)+torch.pow(constants[10], 3.00000))*(constants[27]+constants[24])*(1.00000+constants[28]*torch.exp(((constants[29]-1.00000)*states[:, 0]*constants[2])/(constants[0]*constants[1]))))
-        algebraic[:, 61] = constants[3]*constants[21]*(states[:, 0]-algebraic[:, 17])
-        rates[:, 1] = (-3.00000*algebraic[:, 58]-(3.00000*algebraic[:, 63]+algebraic[:, 61]+algebraic[:, 30]))/(constants[43]*constants[2])
-        algebraic[:, 0] = 0.0 # custom_piecewise([greater_equal(voi , constants[4]) & less_equal(voi , constants[5]) & less_equal((voi-constants[4])-floor((voi-constants[4])/constants[6])*constants[6] , constants[7]), constants[8] , True, 0.00000])
-        algebraic[:, 56] = constants[3]*constants[17]*states[:, 13]*states[:, 14]*states[:, 15]*(states[:, 0]-65.0000)
-        algebraic[:, 64] = (constants[3]*constants[30]*states[:, 12])/(0.000500000+states[:, 12])
-        algebraic[:, 59] = ((constants[0]*constants[1])/(2.00000*constants[2]))*torch.log(constants[24]/states[:, 12])
-        algebraic[:, 62] = constants[3]*constants[22]*(states[:, 0]-algebraic[:, 59])
-        rates[:, 0] = -(algebraic[:, 30]+algebraic[:, 50]+algebraic[:, 51]+algebraic[:, 53]+algebraic[:, 54]+algebraic[:, 55]+algebraic[:, 61]+algebraic[:, 62]+algebraic[:, 58]+algebraic[:, 64]+algebraic[:, 63]+algebraic[:, 56]+algebraic[:, 0])/constants[3]
-        algebraic[:, 65] = constants[31]*(torch.pow(states[:, 17], 2.00000))*states[:, 18]*states[:, 19]*(states[:, 16]-states[:, 12])
-        algebraic[:, 67] = (states[:, 20]-states[:, 16])/constants[32]
-        rates[:, 16] = (algebraic[:, 67]-algebraic[:, 65])*(torch.pow(1.00000+(constants[38]*constants[41])/(torch.pow(states[:, 16]+constants[41], 2.00000)), -1.00000))
-        algebraic[:, 66] = 1000.00*(1.00000e-15*constants[47]*algebraic[:, 65]-(1.00000e-15/(2.00000*constants[2]))*(0.500000*algebraic[:, 56]-0.200000*algebraic[:, 63]))
-        algebraic[:, 68] = torch.pow(1.00000+torch.exp(-(algebraic[:, 66]-3.41750e-13)/1.36700e-15), -1.00000)
-        rates[:, 17] = (algebraic[:, 68]-states[:, 17])/constants[46]
-        algebraic[:, 69] = 1.91000+2.09000*(torch.pow(1.00000+torch.exp(-(algebraic[:, 66]-3.41750e-13)/1.36700e-15), -1.00000))
-        algebraic[:, 71] = 1.00000-torch.pow(1.00000+torch.exp(-(algebraic[:, 66]-6.83500e-14)/1.36700e-15), -1.00000)
-        rates[:, 18] = (algebraic[:, 71]-states[:, 18])/algebraic[:, 69]
-        algebraic[:, 70] = constants[33]/(1.00000+constants[34]/states[:, 12])
-        algebraic[:, 72] = (constants[33]*states[:, 20])/constants[35]
-        rates[:, 20] = algebraic[:, 70]-(algebraic[:, 72]+(algebraic[:, 67]*constants[47])/constants[48])
-        algebraic[:, 73] = (2.00000*algebraic[:, 63]-(algebraic[:, 64]+algebraic[:, 56]+algebraic[:, 62]))/(2.00000*constants[43]*constants[2])+(constants[48]*(algebraic[:, 72]-algebraic[:, 70])+algebraic[:, 65]*constants[47])/constants[43]
-        algebraic[:, 74] = 1.00000+(constants[37]*constants[40])/(torch.pow(states[:, 12]+constants[40], 2.00000))+(constants[36]*constants[39])/(torch.pow(states[:, 12]+constants[39], 2.00000))
-        rates[:, 12] = algebraic[:, 73]/algebraic[:, 74]
+        # Create the fn lookup table
+        fn = torch.arange(fn_min, fn_max, fn_res).to(self.device).to(self.dtype)
+        fn_tab = torch.zeros((fn.shape[0], self.fn_ti.NROWS)).to(self.device).to(self.dtype)
 
-        return rates
+        tau_v = (1.91+(2.09/(1.+(torch.exp(((3.4175e-13-fn)/13.67e-16))))))
+        u_inf = (1./(1.+(torch.exp(((3.4175e-13-fn)/13.67e-16)))))
+        v_inf = (1. - (1. / (1. + (torch.exp(((6.835e-14 - fn) / 13.67e-16))))))
+        fn_tab[:, self.fn_ti.u_rush_larsen_A_idx] = ((-u_inf)*u_rush_larsen_C)
+        fn_tab[:, self.fn_ti.v_rush_larsen_B_idx] = (torch.exp(((-self.dt)/tau_v)))
+        v_rush_larsen_C = (torch.expm1(((-self.dt)/tau_v)))
+        fn_tab[:, self.fn_ti.v_rush_larsen_A_idx] = ((-v_inf)*v_rush_larsen_C)
 
-    def initialize(self, n_nodes, dt):
-        self.states = self.states.repeat(n_nodes, 1).clone()
+        self.fn_tab = fn_tab
 
-        self.constants = torch.tensor(list(self.name_constant_dict.values()), device=self.device, dtype=self.dtype)
-        U = self.states[:, 0].clone()
-        self.H = self.states[:, 1:].clone()
-        self.dt = dt
+    def initialize(self, n_nodes):
+        V = torch.full((n_nodes,), V_init).to(self.device).to(self.dtype)
 
-        return U
+        self.Ca_rel = torch.full((n_nodes,), Ca_rel_init).to(self.device)
+        self.Ca_up = torch.full((n_nodes,), Ca_up_init).to(self.device)
+        self.Cai = torch.full((n_nodes,), Cai_init).to(self.device)
+        self.Ki = torch.full((n_nodes,), Ki_init).to(self.device)
+        self.d = torch.full((n_nodes,), d_init).to(self.device)
+        self.f = torch.full((n_nodes,), f_init).to(self.device)
+        self.f_Ca = torch.full((n_nodes,), f_Ca_init).to(self.device)
+        self.h = torch.full((n_nodes,), h_init).to(self.device)
+        self.j = torch.full((n_nodes,), j_init).to(self.device)
+        self.m = torch.full((n_nodes,), m_init).to(self.device)
+        self.oa = torch.full((n_nodes,), oa_init).to(self.device)
+        self.oi = torch.full((n_nodes,), oi_init).to(self.device)
+        self.u = torch.full((n_nodes,), u_init).to(self.device)
+        self.ua = torch.full((n_nodes,), ua_init).to(self.device)
+        self.ui = torch.full((n_nodes,), ui_init).to(self.device)
+        self.v = torch.full((n_nodes,), v_init).to(self.device)
+        self.w = torch.full((n_nodes,), w_init).to(self.device)
+        self.xr = torch.full((n_nodes,), xr_init).to(self.device)
+        self.xs = torch.full((n_nodes,), xs_init).to(self.device)
 
-    def differentiate(self, U):
-        self.states[:, 0] = U
+        return V
 
-        rates, algebraic = self.compute_rates(states=self.states, constants=self.constants)
 
-        # update states
-        self.apply_rush_larsen(algebraic, self.dt)
-        self.states[:, self.non_gate_indices] += self.dt * rates[:, self.non_gate_indices]
+    def differentiate(self, V):
+        p = Parameters()
 
-        dU = rates[:, 0]
-        return dU
+        f_Ca_rush_larsen_B = (exp(((-self.dt)/tau_f_Ca)))
+        u_rush_larsen_B = (exp(((-self.dt)/tau_u)))
 
-    def apply_rush_larsen(self, algebraic, dt):
-        steady_states = algebraic[:, self.inf_indices]
-        time_constants = algebraic[:, self.tau_indices]
+        # Compute lookup tables for things that have already been defined.
+        indices = (V - V_min) / V_res
+        lower_indices = torch.floor(indices).long()
+        upper_indices = lower_indices + 1
+        V1 = V_min + lower_indices * V_res
+        V2 = V_min + upper_indices * V_res
+        weights = (V - V1) / (V2 - V1)
+        V_row = (1 - weights).unsqueeze(1) * self.V_tab[lower_indices] + weights.unsqueeze(1) * self.V_tab[upper_indices]  # [100, 32]
 
-        # Update gating variables using Rush-Larsen method
-        self.states[:, self.gate_indices] = steady_states + (self.states[:, self.gate_indices] - steady_states) * torch.exp(-dt / time_constants)
+        indices = (self.Cai - Cai_min) / Cai_res
+        lower_indices = torch.floor(indices).long()
+        upper_indices = lower_indices + 1
+        Cai1 = Cai_min + lower_indices * Cai_res
+        Cai2 = Cai_min + upper_indices * Cai_res
+        weights = (self.Cai - Cai1) / (Cai2 - Cai1)
+        Cai_row = (1 - weights).unsqueeze(1) * self.Cai_tab[lower_indices] + weights.unsqueeze(1) * self.Cai_tab[upper_indices]  # [100, 32]
 
-    def default_constants(self):
-        return dict(self.name_constant_dict)
+        # Compute storevars and external modvars
+        E_K = (((R*T)/F)*(torch.log((p.Ko/self.Ki))))
+        ICaL = (((V_row[:, self.V_ti.vrow_29_idx]*self.d)*self.f)*self.f_Ca)
+        IKACh = (((p.GACh*(10.0/(1.0+(9.13652/(pow(p.ACh,0.477811))))))*(0.0517+(0.4516/(1.0+(torch.exp(((V+59.53)/17.18)))))))*(V-(E_K)))
+        INa = (((((V_row[:, self.V_ti.vrow_7_idx]*self.m)*self.m)*self.m)*self.h)*self.j)
+        INaCa = (V_row[:, self.V_ti.vrow_31_idx]-((self.Cai*V_row[:, self.V_ti.vrow_32_idx])))
+        vrow_13 = (p.Gto*(V-(E_K)))
+        vrow_18 = ((p.factorGKur*V_row[:, self.V_ti.GKur_idx])*(V-(E_K)))
+        vrow_21 = ((p.GKr*(V-(E_K)))/(1.+(torch.exp(((V+15.)/22.4)))))
+        vrow_24 = (p.GKs*(V-(E_K)))
+        vrow_8 = ((p.GK1*(V-(E_K)))/(1.+(torch.exp((0.07*(V+80.))))))
+        IK1 = vrow_8
+        IKr = (vrow_21*self.xr)
+        IKs = ((vrow_24*self.xs)*self.xs)
+        IKur = ((((vrow_18*self.ua)*self.ua)*self.ua)*self.ui)
+        IpCa = (Cai_row[:, self.Cai_ti.carow_3_idx]+V_row[:, self.V_ti.vrow_36_idx])
+        Ito = ((((vrow_13*self.oa)*self.oa)*self.oa)*self.oi)
+        Iion = (((((((((((INa+IK1)+Ito)+IKur)+IKr)+IKs)+ICaL)+IpCa)+INaCa)+V_row[:, self.V_ti.IbNa_idx])+V_row[:, self.V_ti.INaK_idx])+IKACh)
 
-    def reset_constant(self, name, value):
-        self.name_constant_dict[name] = value
+        # Complete Forward Euler Update
+        Itr = ((p.factorGtr*(self.Ca_up-(self.Ca_rel)))/tau_tr)
+        Irel = ((((((p.factorGrel*self.u)*self.u)*self.v)*k_rel)*self.w)*(self.Ca_rel-(Cai_row[:, self.Cai_ti.conCa_idx])))
+        dIups = (Cai_row[:, self.Cai_ti.carow_1_idx]-(((p.maxIup/p.maxCaup)*self.Ca_up)))
+        diff_Ca_rel = ((Itr-(Irel))/(1.+((C_dCa_rel/(self.Ca_rel+KmCsqn))/(self.Ca_rel+KmCsqn))))
+        diff_Ki = ((-((((((Ito+IKr)+IKur)+IKs)+IK1)+IKACh) - (2.0 * V_row[:, self.V_ti.INaK_idx]))) / (F * Voli))
+        diff_Ca_up = (dIups - (Itr * C_dCaup))
+        diff_Cai = ((((C_B1d * (((INaCa+INaCa) - IpCa) - ICaL)) - (C_B1e * dIups)) + Irel) / Cai_row[:, self.Cai_ti.carow_2_idx])
 
-    def set_attribute(self, name, value):
-        setattr(self, name, value)
+        self.Ca_rel = self.Ca_rel+diff_Ca_rel*self.dt
+        self.Ca_up = self.Ca_up+diff_Ca_up*self.dt
+        self.Cai = self.Cai+diff_Cai*self.dt
+        self.Ki = self.Ki+diff_Ki*self.dt
 
-    def get_attribute(self, name: str):
-        return getattr(self, name, None)
+
+        # Complete Rush Larsen Update
+        fn = ((C_Fn1*Irel) - (C_Fn2 * (ICaL - (0.4 * INaCa))))
+        indices = (fn - fn_min) / fn_res
+        lower_indices = torch.floor(indices).long()
+        upper_indices = lower_indices + 1
+        fn1 = fn_min + lower_indices * fn_res
+        fn2 = fn_min + upper_indices * fn_res
+        weights = (fn - fn1) / (fn2 - fn1)
+        fn_row = (1 - weights).unsqueeze(1) * self.Cai_tab[lower_indices] + weights.unsqueeze(1) * self.Cai_tab[upper_indices]  # [100, 32]
+
+        d_rush_larsen_B = V_row[:, self.V_ti.d_rush_larsen_B_idx]
+        f_rush_larsen_B = V_row[:, self.V_ti.f_rush_larsen_B_idx]
+        h_rush_larsen_A = V_row[:, self.V_ti.h_rush_larsen_A_idx]
+        h_rush_larsen_B = V_row[:, self.V_ti.h_rush_larsen_B_idx]
+        j_rush_larsen_A = V_row[:, self.V_ti.j_rush_larsen_A_idx]
+        j_rush_larsen_B = V_row[:, self.V_ti.j_rush_larsen_B_idx]
+        m_rush_larsen_A = V_row[:, self.V_ti.m_rush_larsen_A_idx]
+        m_rush_larsen_B = V_row[:, self.V_ti.m_rush_larsen_B_idx]
+        w_rush_larsen_B = V_row[:, self.V_ti.w_rush_larsen_B_idx]
+        d_rush_larsen_A = V_row[:, self.V_ti.d_rush_larsen_A_idx]
+        f_Ca_rush_larsen_A = Cai_row[:, self.Cai_ti.f_Ca_rush_larsen_A_idx]
+        f_rush_larsen_A = V_row[:, self.V_ti.f_rush_larsen_A_idx]
+        oa_rush_larsen_B = V_row[:, self.V_ti.oa_rush_larsen_B_idx]
+        oi_rush_larsen_B = V_row[:, self.V_ti.oi_rush_larsen_B_idx]
+        u_rush_larsen_A = fn_row[:, self.fn_ti.u_rush_larsen_A_idx]
+        ua_rush_larsen_B = V_row[:, self.V_ti.ua_rush_larsen_B_idx]
+        ui_rush_larsen_B = V_row[:, self.V_ti.ui_rush_larsen_B_idx]
+        v_rush_larsen_B = fn_row[:, self.fn_ti.v_rush_larsen_B_idx]
+        w_rush_larsen_A = V_row[:, self.V_ti.w_rush_larsen_A_idx]
+        xr_rush_larsen_B = V_row[:, self.V_ti.xr_rush_larsen_B_idx]
+        xs_rush_larsen_B = V_row[:, self.V_ti.xs_rush_larsen_B_idx]
+        oa_rush_larsen_A = V_row[:, self.V_ti.oa_rush_larsen_A_idx]
+        oi_rush_larsen_A = V_row[:, self.V_ti.oi_rush_larsen_A_idx]
+        ua_rush_larsen_A = V_row[:, self.V_ti.ua_rush_larsen_A_idx]
+        ui_rush_larsen_A = V_row[:, self.V_ti.ui_rush_larsen_A_idx]
+        v_rush_larsen_A = fn_row[:, self.fn_ti.v_rush_larsen_A_idx]
+        xr_rush_larsen_A = V_row[:, self.V_ti.xr_rush_larsen_A_idx]
+        xs_rush_larsen_A = V_row[:, self.V_ti.xs_rush_larsen_A_idx]
+
+        self.d = d_rush_larsen_A+d_rush_larsen_B*self.d
+        self.f_new = f_rush_larsen_A+f_rush_larsen_B*self.f
+        self.f_Ca = f_Ca_rush_larsen_A+f_Ca_rush_larsen_B*self.f_Ca
+        self.h = h_rush_larsen_A+h_rush_larsen_B*self.h
+        self.j = j_rush_larsen_A+j_rush_larsen_B*self.j
+        self.m = m_rush_larsen_A+m_rush_larsen_B*self.m
+        self.oa = oa_rush_larsen_A+oa_rush_larsen_B*self.oa
+        self.oi = oi_rush_larsen_A+oi_rush_larsen_B*self.oi
+        self.u = u_rush_larsen_A+u_rush_larsen_B*self.u
+        self.ua = ua_rush_larsen_A+ua_rush_larsen_B*self.ua
+        self.ui = ui_rush_larsen_A+ui_rush_larsen_B*self.ui
+        self.v = v_rush_larsen_A+v_rush_larsen_B*self.v
+        self.w = w_rush_larsen_A+w_rush_larsen_B*self.w
+        self.xr = xr_rush_larsen_A+xr_rush_larsen_B*self.xr
+        self.xs = xs_rush_larsen_A+xs_rush_larsen_B*self.xs
+
+        return Iion
+
+
+
+
 
 
 if __name__ == "__main__":
-    TEND   = 500   # final time (in ms)
-    dt     = 0.001  # time step
-    dt_out = 1.0    # writes the output every dt_out ms
-    Istim  = 100    # intensity of the stimulus
-    tstim  = 1.0    # duration of the stimulus (in ms)
-    tt     = CourtemancheRamirezNattel(device=None, dtype=torch.float64)
-    print(tt.name_constant_dict)
-    # U      = tt.initialize(n_nodes=1, dt=dt)
-    # plot_freq = int(dt_out/dt)  # writes the solution every plot_freq time steps
-    # URES      = []
-    # for jj in range(int(TEND/dt)):
-    #     dU = tt.differentiate(U)
-    #     if(jj<=int(tstim/dt)):
-    #         U += dt*(dU+Istim)
-    #     else:
-    #         U += dt*dU
-    #    # tt.states[0]=U
-    #     if jj%plot_freq==0:
-    #         URES.append(U.item())
-    # import matplotlib.pyplot as plt
-    # plt.plot(URES)
-    # plt.show()
+    n_nodes = 100
+    dt = 0.001
+    device = "cuda"
+    cm = Courtemanche(dt, device)
+    cm.construct_tables()
+    V = cm.initialize(n_nodes)
+    du = cm.differentiate(V)
+    print(du)
