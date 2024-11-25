@@ -323,17 +323,15 @@ class CourtemancheRamirezNattel:
         indices = (V - V_min) / V_res
         lower_indices = torch.floor(indices).long()
         weights = (indices - lower_indices).unsqueeze(1)
-        upper_indices = torch.where(lower_indices + 1 < self.V_tab.size(0),
-                                    lower_indices + 1,
-                                    lower_indices)
+        lower_indices = torch.clamp(lower_indices, 0, self.V_tab.size(0) - 1)
+        upper_indices = torch.clamp(lower_indices + 1, 0, self.V_tab.size(0) - 1)
         V_row =  (1 - weights) * self.V_tab[lower_indices] + weights * self.V_tab[upper_indices]
 
         indices = (self.Cai - Cai_min) / Cai_res
         lower_indices = torch.floor(indices).long()
         weights = (indices - lower_indices).unsqueeze(1)
-        upper_indices = torch.where(lower_indices + 1 < self.Cai_tab.size(0),
-                                    lower_indices + 1,
-                                    lower_indices)
+        lower_indices = torch.clamp(lower_indices, 0, self.Cai_tab.size(0) - 1)
+        upper_indices = torch.clamp(lower_indices + 1, 0, self.Cai_tab.size(0) - 1)
         Cai_row = (1 - weights) * self.Cai_tab[lower_indices] + weights * self.Cai_tab[upper_indices]  # [100, 32]
 
         # Compute storevars and external modvars
@@ -374,9 +372,8 @@ class CourtemancheRamirezNattel:
         indices = (fn - fn_min) / fn_res
         lower_indices = torch.floor(indices).long()
         weights = (indices - lower_indices).unsqueeze(1)
-        upper_indices = torch.where(lower_indices + 1 < self.fn_tab.size(0),
-                                    lower_indices + 1,
-                                    lower_indices)
+        lower_indices = torch.clamp(lower_indices, 0, self.fn_tab.size(0) - 1)
+        upper_indices = torch.clamp(lower_indices + 1, 0, self.fn_tab.size(0) - 1)
         fn_row = (1 - weights) * self.fn_tab[lower_indices] + weights * self.fn_tab[upper_indices]  # [100, 32]
 
         d_rush_larsen_B = V_row[:, self.V_ti.d_rush_larsen_B_idx]
