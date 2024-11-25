@@ -51,8 +51,8 @@ gregion[0].ID[2]   = 3
 gregion[0].ID[3]   = 4      
 gregion[0].ID[4]   = 5
 gregion[0].ID[5]   = 6
-gregion[0].g_il   = 1.75
-gregion[0].g_it   = 0.04375
+gregion[0].g_il   = 0.5272
+gregion[0].g_it   = 0.5272
 
 num_stim =  1
 ##############################
@@ -65,7 +65,7 @@ stimulus[0].start         = 0.0
 stimulus[0].npls          = 3
 stimulus[0].bcl           = 800
 stimulus[0].duration      = 2.0
-stimulus[0].strength      = 1.0
+stimulus[0].strength      = 100.0
 stimulus[0].vtx_file      = /home/bzhou6/Data/atrium/Case_1
 ##############################
 
