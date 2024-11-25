@@ -25,10 +25,10 @@ class CourtemancheRamirezNattel:
 
         gate_dict = {}
         for i, legend_state in enumerate(legend_states):
-            legend_state = legend_state.lower()
-            if "gate" in legend_state:
-                state_name = legend_state.split()[0]
-                gate_dict[state_name] = i
+            # legend_state = legend_state.lower()
+            # if "gate" in legend_state:
+            state_name = legend_state.split()[0]
+            gate_dict[state_name] = i
         self.gate_indices = list(gate_dict.values())
         self.non_gate_indices = [i for i in range(1, sizeStates) if i not in self.gate_indices]
 
@@ -43,6 +43,10 @@ class CourtemancheRamirezNattel:
                 inf_dict[algebraic_name.split("_")[0]] = i
 
         # gating_variables = set(tau_dict.keys()).intersection(set(inf_dict.keys()))
+        print(gate_dict, len(gate_dict))
+        print(tau_dict, len(tau_dict))
+        print(inf_dict, len(inf_dict))
+        raise Exception()
 
         tau_dict = {key: tau_dict[key] for key in list(gate_dict.keys())}
         inf_dict = {key: inf_dict[key] for key in list(gate_dict.keys())}
