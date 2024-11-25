@@ -378,7 +378,7 @@ class CourtemancheRamirezNattel:
         fn1 = fn_min + lower_indices * fn_res
         fn2 = fn_min + upper_indices * fn_res
         weights = (fn - fn1) / (fn2 - fn1)
-        fn_row = (1 - weights).unsqueeze(1) * self.Cai_tab[lower_indices] + weights.unsqueeze(1) * self.Cai_tab[upper_indices]  # [100, 32]
+        fn_row = (1 - weights).unsqueeze(1) * self.fn_tab[lower_indices] + weights.unsqueeze(1) * self.fn_tab[upper_indices]  # [100, 32]
 
         d_rush_larsen_B = V_row[:, self.V_ti.d_rush_larsen_B_idx]
         f_rush_larsen_B = V_row[:, self.V_ti.f_rush_larsen_B_idx]
