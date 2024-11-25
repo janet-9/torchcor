@@ -369,7 +369,6 @@ class CourtemancheRamirezNattel:
         self.Cai = self.Cai+diff_Cai*self.dt
         self.Ki = self.Ki+diff_Ki*self.dt
 
-
         # Complete Rush Larsen Update
         fn = ((C_Fn1*Irel) - (C_Fn2 * (ICaL - (0.4 * INaCa))))
         indices = (fn - fn_min) / fn_res
@@ -426,9 +425,6 @@ class CourtemancheRamirezNattel:
         self.xs = xs_rush_larsen_A+xs_rush_larsen_B*self.xs
 
         return Iion
-
-
-
 
 
 
