@@ -10,7 +10,7 @@ stim_config = {'tstart': 0.0,
                'nstim': 3,
                'period': 800,
                'duration': max([2.0, dt]),
-               'intensity': 50.0,
+               'intensity': 100.0,
                'name': 'S1'}
 material_config = {"vg": 0.1,
                    "diffusl": 0.4 * 1000 * 1000,
