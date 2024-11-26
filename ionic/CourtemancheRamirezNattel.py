@@ -206,7 +206,8 @@ class CourtemancheRamirezNattel:
         u_rush_larsen_C = expm1(((-self.dt)/tau_u))
 
         # construct Cai Lookup Table
-        Cai = torch.arange(Cai_min, Cai_max, Cai_res).to(self.device).to(self.dtype)
+        Cai_tp = Cai_TableParam()
+        Cai = torch.arange(Cai_tp.mn, Cai_tp.mx, Cai_tp.res).to(self.device).to(self.dtype)
         Cai_tab = torch.zeros((Cai.shape[0], self.Cai_ti.NROWS)).to(self.device).to(self.dtype)
 
         Cai_tab[:, self.Cai_ti.conCa_idx] = Cai / 1000
@@ -219,7 +220,8 @@ class CourtemancheRamirezNattel:
         self.Cai_tab = Cai_tab
 
         # construct Cai Lookup Table
-        V = torch.arange(V_min, V_max, V_res).to(self.device).to(self.dtype)
+        V_tp = V_TableParam()
+        V = torch.arange(V_tp.mn, V_tp.mx, V_tp.res).to(self.device).to(self.dtype)
         V_tab = torch.zeros((V.shape[0], self.V_ti.NROWS)).to(self.device).to(self.dtype)
 
         V_tab[:, self.V_ti.GKur_idx] = (0.005+(0.05/(1.+(torch.exp(((15.-(V))/13.))))))
@@ -304,7 +306,8 @@ class CourtemancheRamirezNattel:
         self.V_tab = V_tab
 
         # Create the fn lookup table
-        fn = torch.arange(fn_min, fn_max, fn_res).to(self.device).to(self.dtype)
+        fn_tp = fn_TableParam()
+        fn = torch.arange(fn_tp.mn, fn_tp.mx, fn_tp.res).to(self.device).to(self.dtype)
         fn_tab = torch.zeros((fn.shape[0], self.fn_ti.NROWS)).to(self.device).to(self.dtype)
 
         tau_v = (1.91+(2.09/(1.+(torch.exp(((3.4175e-13-fn)/13.67e-16))))))
