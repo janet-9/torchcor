@@ -1,5 +1,5 @@
-from monodomain import AtriumSimulator
-from ionic import ModifiedMS2v, ModifiedMS2vRL, MitchellSchaeffer, MitchellSchaefferRL, CourtemancheRamirezNattel
+from monodomain import AtriumSimulatorMitchell
+from ionic import MitchellSchaeffer
 import torch
 from pathlib import Path
 
@@ -24,7 +24,7 @@ device = torch.device(f"cuda:1" if torch.cuda.is_available() else "cpu")
 home_directory = Path.home()
 
 ionic_model = MitchellSchaeffer(device=device)
-simulator = AtriumSimulator(ionic_model, T=simulation_time, dt=dt, apply_rcm=True, device=device)
+simulator = AtriumSimulatorMitchell(ionic_model, T=simulation_time, dt=dt, apply_rcm=True, device=device)
 simulator.load_mesh(path=f"{home_directory}/Data/atrium/Case_1")
 simulator.add_material_property(material_config)
 simulator.set_stimulus_region(path=f"{home_directory}/Data/atrium/Case_1.vtx")

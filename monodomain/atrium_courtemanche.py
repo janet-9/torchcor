@@ -16,7 +16,7 @@ from mesh.stimulus import Stimulus
 from monodomain.tools import load_stimulus_region
 
 
-class AtriumSimulator:
+class AtriumSimulatorCourtemanche:
     def __init__(self, ionic_model, T, dt, apply_rcm, device=None, dtype=None):
         self.device = torch.device(device) if device is not None else "cuda:0" \
             if torch.cuda.is_available() else "cpu"
