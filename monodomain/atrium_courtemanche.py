@@ -150,7 +150,8 @@ class AtriumSimulator:
             u, total_iter = cg.solve(self.A, b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
 
             if n > 80775:
-                print(n, u)
+                print(torch.any(u >= 200))
+                print(torch.any(u <= -200))
 
             if total_iter == max_iter:
                 raise Exception(f"The solution did not converge at {n}th timestep")
