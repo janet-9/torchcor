@@ -140,8 +140,14 @@ class AtriumSimulator:
         solving_time = time.time()
         for n in range(1, self.nt + 1):
             ctime += self.dt
+            if n > 80000:
+                print(u.max().item(), u.min().item())
+
             du = self.ionic_model.differentiate(u)
-            print(du.max().item(), du.min().item())
+
+            if n > 80000:
+                print(du.max().item(), du.min().item())
+
             b = u + self.dt * du
             for stimulus in self.stimuli:
                 I0 = stimulus.stimApp(ctime)
@@ -150,12 +156,13 @@ class AtriumSimulator:
 
             u, total_iter = cg.solve(self.A, b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
 
-            print(u.max().item(), u.min().item())
+
 
             if total_iter == max_iter:
                 raise Exception(f"The solution did not converge at {n}th timestep")
             if verbose:
-                print(f"{n} / {self.nt + 1}: {total_iter}; {round(time.time() - solving_time, 2)}")
+                print(f"-------------{n}----------------")
+                # print(f"{n} / {self.nt + 1}: {total_iter}; {round(time.time() - solving_time, 2)}")
 
             if n % ts_per_frame == 0:
                 visualization.save_frame(color_values=self.rcm.inverse(u).cpu().numpy() if self.rcm is not None else u.cpu().numpy(),
