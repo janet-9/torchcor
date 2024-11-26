@@ -26,9 +26,6 @@ class ConjugateGradient:
 
         z_norm = torch.linalg.norm(z)
         for i in range(max_iter):
-
-            total_iter += 1
-            
             Ap = A @ p  # Matrix-vector product A*p
             rz_scala = torch.dot(r, z)
             alpha = rz_scala / torch.dot(p, Ap)  # Step size
@@ -47,6 +44,8 @@ class ConjugateGradient:
             beta = torch.dot(r, z) / rz_scala
 
             p.mul_(beta).add_(z)
+
+            total_iter += 1
 
         return self.x.clone(), total_iter
 
