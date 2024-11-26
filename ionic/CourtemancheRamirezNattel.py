@@ -178,7 +178,7 @@ def interpolate(X: torch.Tensor, table, tp):
     idx =  (X * tp.step).to(torch.long)
     idx = torch.clamp(idx, tp.mn_idx, tp.mx_idx)
     w = ((X - tp.res) / tp.res).unsqueeze(1)
-    return torch.where(X < tp.mn or X > tp.mx, table[idx], (1 - w) * table[idx] + w * table[idx + 1])
+    return torch.where((X < tp.mn) | (X > tp.mx), table[idx], (1 - w) * table[idx] + w * table[idx + 1])
 
 
 class CourtemancheRamirezNattel:
