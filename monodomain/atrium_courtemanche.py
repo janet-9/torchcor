@@ -141,6 +141,7 @@ class AtriumSimulator:
         for n in range(1, self.nt + 1):
             ctime += self.dt
             du = self.ionic_model.differentiate(u)
+            print(du.max().item(), du.min().item())
             b = u + self.dt * du
             for stimulus in self.stimuli:
                 I0 = stimulus.stimApp(ctime)
@@ -149,8 +150,7 @@ class AtriumSimulator:
 
             u, total_iter = cg.solve(self.A, b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
 
-            print(u.max().item())
-            print(u.min().item())
+            print(u.max().item(), u.min().item())
 
             if total_iter == max_iter:
                 raise Exception(f"The solution did not converge at {n}th timestep")
