@@ -176,9 +176,8 @@ class fn_TableParam:
 
 def interpolate(X: torch.Tensor, table, tp):
     idx =  ((X - tp.mn) * tp.step).to(torch.long)
-    lower_idx = torch.clamp(idx, 0, tp.mx_idx)
+    lower_idx = torch.clamp(idx, 0, tp.mx_idx - 1)
     higher_idx = lower_idx + 1
-    higher_idx = torch.clamp(higher_idx, 1, tp.mx_idx)
     w = ((X - idx * tp.res) / tp.res).unsqueeze(1)
     return (1 - w) * table[lower_idx] + w * table[higher_idx]
 
