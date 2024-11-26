@@ -146,9 +146,42 @@ class fn_TableIndex:
   v_rush_larsen_B_idx = 2
   NROWS = 3
 
-Cai_min, Cai_max, Cai_res = 3e-4, 30.0, 3e-4
-V_min, V_max, V_res = -200, 200, 0.1
-fn_min, fn_max, fn_res = -2e-11, 10.0e-11, 2e-15
+@dataclass(frozen=True)
+class Cai_TableParam:
+    mn = 3e-4
+    mx = 30.0
+    res = 3e-4
+    step = 1 / res
+    mn_idx = 0
+    mx_idx = int((mx - mn) * step) - 1
+
+@dataclass(frozen=True)
+class V_TableParam:
+    mn = -200
+    mx = 200
+    res = 0.1
+    step = 1 / res
+    mn_idx = 0
+    mx_idx = int((mx - mn) * step) - 1
+
+@dataclass(frozen=True)
+class fn_TableParam:
+    mn = -2e-11
+    mx = 10.0e-11
+    res = 2e-15
+    step = 1 / res
+    mn_idx = 0
+    mx_idx = int((mx - mn) * step) - 1
+
+v = V_TableParam()
+raise Exception(v.step, v.mn_idx, v.mx_idx)
+
+def interpolate(X: torch.Tensor, table, tp):
+    idx =  (X * tp.step).to(torch.long)
+    idx = torch.clamp(idx, tp.mn_idx, tp.mx_idx)
+    w = ((X - tp.res) / tp.res).unsqueeze(1)
+    return torch.where(X < tp.mn | X > tp.mx, table[idx], (1 - w) * table[idx] + w * table[idx + 1])
+
 
 
 class CourtemancheRamirezNattel:
@@ -320,19 +353,21 @@ class CourtemancheRamirezNattel:
         u_rush_larsen_B = (exp(((-self.dt)/tau_u)))
 
         # Compute lookup tables for things that have already been defined.
-        indices = (V - V_min) / V_res
-        lower_indices = torch.floor(indices).long()
-        weights = (indices - lower_indices).unsqueeze(1)
-        lower_indices = torch.clamp(lower_indices, 0, self.V_tab.size(0) - 1)
-        upper_indices = torch.clamp(lower_indices + 1, 0, self.V_tab.size(0) - 1)
-        V_row =  (1 - weights) * self.V_tab[lower_indices] + weights * self.V_tab[upper_indices]
+        # indices = (V - V_min) / V_res
+        # lower_indices = torch.floor(indices).long()
+        # weights = (indices - lower_indices).unsqueeze(1)
+        # lower_indices = torch.clamp(lower_indices, 0, self.V_tab.size(0) - 1)
+        # upper_indices = torch.clamp(lower_indices + 1, 0, self.V_tab.size(0) - 1)
+        # V_row =  (1 - weights) * self.V_tab[lower_indices] + weights * self.V_tab[upper_indices]
+        V_row = interpolate(V, self.V_tab, V_TableParam())
 
-        indices = (self.Cai - Cai_min) / Cai_res
-        lower_indices = torch.floor(indices).long()
-        weights = (indices - lower_indices).unsqueeze(1)
-        lower_indices = torch.clamp(lower_indices, 0, self.Cai_tab.size(0) - 1)
-        upper_indices = torch.clamp(lower_indices + 1, 0, self.Cai_tab.size(0) - 1)
-        Cai_row = (1 - weights) * self.Cai_tab[lower_indices] + weights * self.Cai_tab[upper_indices]  # [100, 32]
+        # indices = (self.Cai - Cai_min) / Cai_res
+        # lower_indices = torch.floor(indices).long()
+        # weights = (indices - lower_indices).unsqueeze(1)
+        # lower_indices = torch.clamp(lower_indices, 0, self.Cai_tab.size(0) - 1)
+        # upper_indices = torch.clamp(lower_indices + 1, 0, self.Cai_tab.size(0) - 1)
+        # Cai_row = (1 - weights) * self.Cai_tab[lower_indices] + weights * self.Cai_tab[upper_indices]  # [100, 32]
+        Cai_row = interpolate(self.Cai, self.Cai_tab, Cai_TableParam())
 
         # Compute storevars and external modvars
         E_K = (((R*T)/F)*(torch.log((p.Ko/self.Ki))))
@@ -369,12 +404,13 @@ class CourtemancheRamirezNattel:
 
         # Complete Rush Larsen Update
         fn = ((C_Fn1*Irel) - (C_Fn2 * (ICaL - (0.4 * INaCa))))
-        indices = (fn - fn_min) / fn_res
-        lower_indices = torch.floor(indices).long()
-        weights = (indices - lower_indices).unsqueeze(1)
-        lower_indices = torch.clamp(lower_indices, 0, self.fn_tab.size(0) - 1)
-        upper_indices = torch.clamp(lower_indices + 1, 0, self.fn_tab.size(0) - 1)
-        fn_row = (1 - weights) * self.fn_tab[lower_indices] + weights * self.fn_tab[upper_indices]  # [100, 32]
+        # indices = (fn - fn_min) / fn_res
+        # lower_indices = torch.floor(indices).long()
+        # weights = (indices - lower_indices).unsqueeze(1)
+        # lower_indices = torch.clamp(lower_indices, 0, self.fn_tab.size(0) - 1)
+        # upper_indices = torch.clamp(lower_indices + 1, 0, self.fn_tab.size(0) - 1)
+        # fn_row = (1 - weights) * self.fn_tab[lower_indices] + weights * self.fn_tab[upper_indices]  # [100, 32]
+        fn_row = interpolate(fn, self.fn_tab, fn_TableParam())
 
         d_rush_larsen_B = V_row[:, self.V_ti.d_rush_larsen_B_idx]
         f_rush_larsen_B = V_row[:, self.V_ti.f_rush_larsen_B_idx]
