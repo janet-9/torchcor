@@ -14,6 +14,7 @@ from mesh.triangulation import Triangulation
 from mesh.materialproperties import MaterialProperties
 from mesh.stimulus import Stimulus
 from monodomain.tools import load_stimulus_region
+import numpy as np
 
 
 class AtriumSimulatorCourtemanche:
@@ -138,16 +139,16 @@ class AtriumSimulatorCourtemanche:
         ctime = 0
         visualization = VTK3DSurface(self.vertices.cpu(), self.triangles.cpu())
         solving_time = time.time()
+        u_list = []
         for n in range(1, self.nt + 1):
             ctime += self.dt
-            # if n > 80000:
-            print(f"-------------{n} timestep ----------------")
-            print("V max: ", u.max().item(), "V min: ", u.min().item())
 
             du = self.ionic_model.differentiate(u)
-
-            # if n > 80000:
-            print("dV max: ", du.max().item(), "dV min: ", du.min().item())
+            if (n % int(1.0/self.dt))==0:
+                print(f"-------------{n} timestep ----------------")
+                print("V max: ", u.max().item(), "V min: ", u.min().item())
+                print("dV max: ", du.max().item(), "dV min: ", du.min().item())
+                u_list.append(u.cpu().numpy()[10])
 
             b = u + self.dt * du
             for stimulus in self.stimuli:
@@ -167,6 +168,13 @@ class AtriumSimulatorCourtemanche:
                                          frame_path=f"./vtk_files_{self.n_nodes}_{self.rcm is not None}/frame_{n}.vtk")
 
         print(f"Solved in {round(time.time() - solving_time, 2)} seconds")
+
+        np.save('u.npy', np.array(u_list))
+
+
+
+
+
 
 
 
