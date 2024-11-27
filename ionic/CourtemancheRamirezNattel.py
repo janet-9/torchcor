@@ -324,13 +324,13 @@ class CourtemancheRamirezNattel:
 
         self.fn_tab = fn_tab
 
-        with open('V_LUT.npy', 'wb') as f:
-            np.save(f, self.V_tab.cpu().numpy())
-        with open('Cai_tab.npy', 'wb') as f:
-            np.save(f, self.Cai_tab.cpu().numpy())
-        with open('fn_tab.npy', 'wb') as f:
-            np.save(f, self.fn_tab.cpu().numpy())
-        raise Exception("saved")
+        # with open('V_LUT.npy', 'wb') as f:
+        #     np.save(f, self.V_tab.cpu().numpy())
+        # with open('Cai_tab.npy', 'wb') as f:
+        #     np.save(f, self.Cai_tab.cpu().numpy())
+        # with open('fn_tab.npy', 'wb') as f:
+        #     np.save(f, self.fn_tab.cpu().numpy())
+        # raise Exception("saved")
 
     def initialize(self, n_nodes):
         V = torch.full((n_nodes,), V_init).to(self.device).to(self.dtype)
