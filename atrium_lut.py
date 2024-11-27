@@ -4,12 +4,12 @@ import torch
 from pathlib import Path
 
 
-simulation_time = 900 #2400
+simulation_time = 2400
 dt = 0.01
 stim_config = {'tstart': 0.0,
-               'nstim': 2, #3,
+               'nstim': 3,
                'period': 800,
-               'duration': max([3.0, dt]),
+               'duration': max([2.0, dt]),
                'intensity': 100.0,
                'name': 'S1'}
 material_config = {"vg": 0.1,
@@ -24,7 +24,7 @@ device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
 home_directory = Path.home()
 
 ionic_model = CourtemancheRamirezNattel(dt=dt, device=device)
-simulator = AtriumSimulatorCourtemanche(ionic_model, T=simulation_time, dt=dt, apply_rcm=False, device=device)
+simulator = AtriumSimulatorCourtemanche(ionic_model, T=simulation_time, dt=dt, apply_rcm=True, device=device)
 simulator.load_mesh(path=f"{home_directory}/Data/atrium/Case_1")
 simulator.add_material_property(material_config)
 simulator.set_stimulus_region(path=f"{home_directory}/Data/atrium/Case_1.vtx")
