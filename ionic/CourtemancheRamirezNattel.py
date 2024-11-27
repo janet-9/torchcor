@@ -3,7 +3,7 @@ from math import log, exp, expm1
 
 @torch.jit.script
 class CourtemancheRamirezNattel:
-    def __init__(self, dt: float, device: torch.device):
+    def __init__(self, dt: float, device: torch.device, dtype: torch.dtype):
         # Constants
         self.C_B1a = 3.79138232501097e-05
         self.C_B1b = 0.0811764705882353
@@ -191,7 +191,7 @@ class CourtemancheRamirezNattel:
 
         self.dt = dt
         self.device = device
-        self.dtype = torch.float64
+        self.dtype = dtype
 
         self.f_Ca_rush_larsen_B = exp(((-self.dt)/self.tau_f_Ca))
         self.u_rush_larsen_B = exp(((-self.dt)/self.tau_u))
@@ -447,7 +447,7 @@ if __name__ == "__main__":
     n_nodes = 100
     dt = 0.001
     device = "cpu"
-    cm = CourtemancheRamirezNattel(dt, device)
+    cm = CourtemancheRamirezNattel(dt, device, torch.float64)
     cm.construct_tables()
     V = cm.initialize(n_nodes)
     du = cm.differentiate(V)
