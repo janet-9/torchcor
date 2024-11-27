@@ -4,12 +4,12 @@ import torch
 from pathlib import Path
 
 
-simulation_time = 2400
+simulation_time = 900 #2400
 dt = 0.01
 stim_config = {'tstart': 0.0,
-               'nstim': 3,
+               'nstim': 2, #3,
                'period': 800,
-               'duration': max([2.0, dt]),
+               'duration': max([3.0, dt]),
                'intensity': 100.0,
                'name': 'S1'}
 material_config = {"vg": 0.1,

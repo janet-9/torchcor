@@ -140,25 +140,27 @@ class AtriumSimulatorCourtemanche:
         visualization = VTK3DSurface(self.vertices.cpu(), self.triangles.cpu())
         solving_time = time.time()
         u_list = []
+        u_list.append([u.cpu().numpy()[112991],0.0,0.0])
         for n in range(1, self.nt + 1):
             ctime += self.dt
-
             du = self.ionic_model.differentiate(u)
+            b  = u + self.dt * du
+            for stimulus in self.stimuli:
+                I0 = stimulus.stimApp(ctime)
+                b += self.dt * I0
+            #b = self.M @ b
+            u = b
+
             if (n % int(1.0/self.dt))==0:
                 print(f"-------------{n} timestep ----------------")
                 print("V: ", u.cpu().numpy()[112991])
                 print("dV: ", du.cpu().numpy()[112991])
                 #print("V max: ", u.max().item(), "V min: ", u.min().item())
                 #print("dV max: ", du.max().item(), "dV min: ", du.min().item())
-                u_list.append(u.cpu().numpy()[112991])
+                u_list.append([u.cpu().numpy()[112991],du.cpu().numpy()[112991], I0.cpu().numpy()[112991]])
 
 
-            b = u + self.dt * du
-            for stimulus in self.stimuli:
-                I0 = stimulus.stimApp(ctime)
-                b += self.dt * I0
-            #b = self.M @ b
-            u = b
+
 
             #u, total_iter = cg.solve(self.A, b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
 
