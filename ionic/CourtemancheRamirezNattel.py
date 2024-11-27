@@ -90,6 +90,28 @@ class Parameters:
     maxIpCa = 0.275
     maxIup = 0.005
 
+@dataclass(frozen=True)
+class StatesIndex:
+    Ca_rel = 0
+    Ca_up = 1
+    Cai = 2
+    Ki = 3
+    d = 4
+    f = 5
+    f_Ca = 6
+    h = 7
+    j = 8
+    m = 9
+    oa = 10
+    oi = 11
+    u = 12
+    ua = 13
+    ui = 14
+    v = 15
+    w = 16
+    xr = 17
+    xs = 18
+    n_total = 19
 
 @dataclass(frozen=True)
 class Cai_TableIndex:
@@ -186,6 +208,12 @@ def interpolate(X: torch.Tensor, table, tp):
 
 class CourtemancheRamirezNattel:
     def __init__(self, dt, device, dtype=torch.float64):
+        self.si = StatesIndex()
+        self.sv = None
+
+        self.rush_larsen_A = None
+        self.rush_larsen_B = None
+
         self.Cai_tab = None
         self.V_tab = None
         self.fn_tab = None
@@ -324,27 +352,33 @@ class CourtemancheRamirezNattel:
         self.fn_tab = fn_tab
 
     def initialize(self, n_nodes):
-        V = torch.full((n_nodes,), V_init).to(self.device).to(self.dtype)
+        V = torch.full((n_nodes,), V_init, device=self.device, dtype=self.dtype)
 
-        self.Ca_rel = torch.full((n_nodes,), Ca_rel_init).to(self.device)
-        self.Ca_up = torch.full((n_nodes,), Ca_up_init).to(self.device)
-        self.Cai = torch.full((n_nodes,), Cai_init).to(self.device)
-        self.Ki = torch.full((n_nodes,), Ki_init).to(self.device)
-        self.d = torch.full((n_nodes,), d_init).to(self.device)
-        self.f = torch.full((n_nodes,), f_init).to(self.device)
-        self.f_Ca = torch.full((n_nodes,), f_Ca_init).to(self.device)
-        self.h = torch.full((n_nodes,), h_init).to(self.device)
-        self.j = torch.full((n_nodes,), j_init).to(self.device)
-        self.m = torch.full((n_nodes,), m_init).to(self.device)
-        self.oa = torch.full((n_nodes,), oa_init).to(self.device)
-        self.oi = torch.full((n_nodes,), oi_init).to(self.device)
-        self.u = torch.full((n_nodes,), u_init).to(self.device)
-        self.ua = torch.full((n_nodes,), ua_init).to(self.device)
-        self.ui = torch.full((n_nodes,), ui_init).to(self.device)
-        self.v = torch.full((n_nodes,), v_init).to(self.device)
-        self.w = torch.full((n_nodes,), w_init).to(self.device)
-        self.xr = torch.full((n_nodes,), xr_init).to(self.device)
-        self.xs = torch.full((n_nodes,), xs_init).to(self.device)
+        self.sv = torch.zeros((n_nodes, self.si.n_total), device=self.device, dtype=self.dtype)
+        self.sv[:, self.si.Ca_rel] = Ca_rel_init
+        self.sv[:, self.si.Ca_up] = Ca_up_init
+        self.sv[:, self.si.Cai] = Cai_init
+        self.sv[:, self.si.Ki] = Ki_init
+        self.sv[:, self.si.d] = d_init
+        self.sv[:, self.si.f] = f_init
+        self.sv[:, self.si.f_Ca] = f_Ca_init
+        self.sv[:, self.si.h] = h_init
+        self.sv[:, self.si.j] = j_init
+        self.sv[:, self.si.m] = m_init
+        self.sv[:, self.si.oa] = oa_init
+        self.sv[:, self.si.oi] = oi_init
+        self.sv[:, self.si.u] = u_init
+        self.sv[:, self.si.ua] = ua_init
+        self.sv[:, self.si.ui] = ui_init
+        self.sv[:, self.si.v] = v_init
+        self.sv[:, self.si.w] = w_init
+        self.sv[:, self.si.xr] = xr_init
+        self.sv[:, self.si.xs] = xs_init
+
+        self.rush_larsen_A = torch.zeros((n_nodes, 15), device=self.device, dtype=self.dtype)
+        self.rush_larsen_B = torch.zeros((n_nodes, 15), device=self.device, dtype=self.dtype)
+        self.rush_larsen_B[: 2] = exp(((-self.dt)/tau_f_Ca))   # f_Ca
+        self.rush_larsen_B[: 8] = exp(((-self.dt)/tau_u))      # u
 
         return V
 
@@ -352,113 +386,77 @@ class CourtemancheRamirezNattel:
     def differentiate(self, V):
         p = Parameters()
 
-        f_Ca_rush_larsen_B = (exp(((-self.dt)/tau_f_Ca)))
-        u_rush_larsen_B = (exp(((-self.dt)/tau_u)))
-
-        # Compute lookup tables for things that have already been defined.
-        # indices = (V - V_min) / V_res
-        # lower_indices = torch.floor(indices).long()
-        # weights = (indices - lower_indices).unsqueeze(1)
-        # lower_indices = torch.clamp(lower_indices, 0, self.V_tab.size(0) - 1)
-        # upper_indices = torch.clamp(lower_indices + 1, 0, self.V_tab.size(0) - 1)
-        # V_row =  (1 - weights) * self.V_tab[lower_indices] + weights * self.V_tab[upper_indices]
         V_row = interpolate(V, self.V_tab, V_TableParam())
-
-        # indices = (self.Cai - Cai_min) / Cai_res
-        # lower_indices = torch.floor(indices).long()
-        # weights = (indices - lower_indices).unsqueeze(1)
-        # lower_indices = torch.clamp(lower_indices, 0, self.Cai_tab.size(0) - 1)
-        # upper_indices = torch.clamp(lower_indices + 1, 0, self.Cai_tab.size(0) - 1)
-        # Cai_row = (1 - weights) * self.Cai_tab[lower_indices] + weights * self.Cai_tab[upper_indices]  # [100, 32]
-        Cai_row = interpolate(self.Cai, self.Cai_tab, Cai_TableParam())
+        Cai_row = interpolate(self.sv[:, self.si.Cai], self.Cai_tab, Cai_TableParam())
 
         # Compute storevars and external modvars
-        E_K = (((R*T)/F)*(torch.log((p.Ko/self.Ki))))
-        ICaL = (((V_row[:, self.V_ti.vrow_29_idx]*self.d)*self.f)*self.f_Ca)
-        IKACh = (((p.GACh*(10.0/(1.0+(9.13652/(pow(p.ACh,0.477811))))))*(0.0517+(0.4516/(1.0+(torch.exp(((V+59.53)/17.18)))))))*(V-(E_K)))
-        INa = (((((V_row[:, self.V_ti.vrow_7_idx]*self.m)*self.m)*self.m)*self.h)*self.j)
-        INaCa = (V_row[:, self.V_ti.vrow_31_idx]-((self.Cai*V_row[:, self.V_ti.vrow_32_idx])))
-        vrow_13 = (p.Gto*(V-(E_K)))
-        vrow_18 = ((p.factorGKur*V_row[:, self.V_ti.GKur_idx])*(V-(E_K)))
-        vrow_21 = ((p.GKr*(V-(E_K)))/(1.+(torch.exp(((V+15.)/22.4)))))
-        vrow_24 = (p.GKs*(V-(E_K)))
-        vrow_8 = ((p.GK1*(V-(E_K)))/(1.+(torch.exp((0.07*(V+80.))))))
+        E_K = (((R*T)/F)*(torch.log((p.Ko/self.sv[:, self.si.Ki]))))
+        ICaL = (((V_row[:, self.V_ti.vrow_29_idx]*self.sv[:, self.si.d])*self.sv[:, self.si.f])*self.sv[:, self.si.f_Ca])
+        IKACh = (((p.GACh*(10.0/(1.0+(9.13652/(pow(p.ACh,0.477811))))))*(0.0517+(0.4516/(1.0+(torch.exp(((V+59.53)/17.18))))))) * (V - E_K))
+        INa = (((((V_row[:, self.V_ti.vrow_7_idx]*self.sv[:, self.si.m])*self.sv[:, self.si.m])*self.sv[:, self.si.m])*self.sv[:, self.si.h])*self.sv[:, self.si.j])
+        INaCa = (V_row[:, self.V_ti.vrow_31_idx] - (self.sv[:, self.si.Cai] * V_row[:, self.V_ti.vrow_32_idx]))
+        vrow_13 = (p.Gto * (V - E_K))
+        vrow_18 = ((p.factorGKur*V_row[:, self.V_ti.GKur_idx]) * (V - E_K))
+        vrow_21 = ((p.GKr * (V - E_K)) / (1. + (torch.exp(((V + 15.) / 22.4)))))
+        vrow_24 = (p.GKs * (V - E_K))
+        vrow_8 = ((p.GK1 * (V - E_K)) / (1. + (torch.exp((0.07 * (V + 80.))))))
         IK1 = vrow_8
-        IKr = (vrow_21*self.xr)
-        IKs = ((vrow_24*self.xs)*self.xs)
-        IKur = ((((vrow_18*self.ua)*self.ua)*self.ua)*self.ui)
+        IKr = (vrow_21*self.sv[:, self.si.xr])
+        IKs = ((vrow_24*self.sv[:, self.si.xs])*self.sv[:, self.si.xs])
+        IKur = ((((vrow_18*self.sv[:, self.si.ua])*self.sv[:, self.si.ua])*self.sv[:, self.si.ua])*self.sv[:, self.si.ui])
         IpCa = (Cai_row[:, self.Cai_ti.carow_3_idx]+V_row[:, self.V_ti.vrow_36_idx])
-        Ito = ((((vrow_13*self.oa)*self.oa)*self.oa)*self.oi)
+        Ito = ((((vrow_13*self.sv[:, self.si.oa])*self.sv[:, self.si.oa])*self.sv[:, self.si.oa])*self.sv[:, self.si.oi])
         Iion = INa+IK1+Ito+IKur+IKr+IKs+ICaL+IpCa+INaCa+V_row[:, self.V_ti.IbNa_idx]+V_row[:, self.V_ti.INaK_idx]+IKACh
 
         # Complete Forward Euler Update
-        Itr = ((p.factorGtr*(self.Ca_up-(self.Ca_rel)))/tau_tr)
-        Irel = ((((((p.factorGrel*self.u)*self.u)*self.v)*k_rel)*self.w)*(self.Ca_rel-(Cai_row[:, self.Cai_ti.conCa_idx])))
-        dIups = (Cai_row[:, self.Cai_ti.carow_1_idx]-(((p.maxIup/p.maxCaup)*self.Ca_up)))
-        diff_Ca_rel = ((Itr-(Irel))/(1.+((C_dCa_rel/(self.Ca_rel+KmCsqn))/(self.Ca_rel+KmCsqn))))
+        Itr = ((p.factorGtr*(self.sv[:, self.si.Ca_up]-(self.sv[:, self.si.Ca_rel])))/tau_tr)
+        Irel = ((((((p.factorGrel*self.sv[:, self.si.u])*self.sv[:, self.si.u])*self.sv[:, self.si.v])*k_rel)*self.sv[:, self.si.w])*(self.sv[:, self.si.Ca_rel]-(Cai_row[:, self.Cai_ti.conCa_idx])))
+        dIups = (Cai_row[:, self.Cai_ti.carow_1_idx] - ((p.maxIup / p.maxCaup) * self.sv[:, self.si.Ca_up]))
+        diff_Ca_rel = ((Itr - Irel) / (1. + ((C_dCa_rel / (self.sv[:, self.si.Ca_rel] + KmCsqn)) / (self.sv[:, self.si.Ca_rel] + KmCsqn))))
         diff_Ki = ((-((((((Ito+IKr)+IKur)+IKs)+IK1)+IKACh) - (2.0 * V_row[:, self.V_ti.INaK_idx]))) / (F * Voli))
         diff_Ca_up = (dIups - (Itr * C_dCaup))
         diff_Cai = ((((C_B1d * (((INaCa+INaCa) - IpCa) - ICaL)) - (C_B1e * dIups)) + Irel) / Cai_row[:, self.Cai_ti.carow_2_idx])
 
-        self.Ca_rel = self.Ca_rel+diff_Ca_rel*self.dt
-        self.Ca_up = self.Ca_up+diff_Ca_up*self.dt
-        self.Cai = self.Cai+diff_Cai*self.dt
-        self.Ki = self.Ki+diff_Ki*self.dt
+        self.sv[:, self.si.Ca_rel] += diff_Ca_rel * self.dt
+        self.sv[:, self.si.Ca_up] += diff_Ca_up * self.dt
+        self.sv[:, self.si.Cai] += diff_Cai * self.dt
+        self.sv[:, self.si.Ki] += diff_Ki * self.dt
 
         # Complete Rush Larsen Update
         fn = ((C_Fn1*Irel) - (C_Fn2 * (ICaL - (0.4 * INaCa))))
-        # indices = (fn - fn_min) / fn_res
-        # lower_indices = torch.floor(indices).long()
-        # weights = (indices - lower_indices).unsqueeze(1)
-        # lower_indices = torch.clamp(lower_indices, 0, self.fn_tab.size(0) - 1)
-        # upper_indices = torch.clamp(lower_indices + 1, 0, self.fn_tab.size(0) - 1)
-        # fn_row = (1 - weights) * self.fn_tab[lower_indices] + weights * self.fn_tab[upper_indices]  # [100, 32]
         fn_row = interpolate(fn, self.fn_tab, fn_TableParam())
 
-        d_rush_larsen_B = V_row[:, self.V_ti.d_rush_larsen_B_idx]
-        f_rush_larsen_B = V_row[:, self.V_ti.f_rush_larsen_B_idx]
-        h_rush_larsen_A = V_row[:, self.V_ti.h_rush_larsen_A_idx]
-        h_rush_larsen_B = V_row[:, self.V_ti.h_rush_larsen_B_idx]
-        j_rush_larsen_A = V_row[:, self.V_ti.j_rush_larsen_A_idx]
-        j_rush_larsen_B = V_row[:, self.V_ti.j_rush_larsen_B_idx]
-        m_rush_larsen_A = V_row[:, self.V_ti.m_rush_larsen_A_idx]
-        m_rush_larsen_B = V_row[:, self.V_ti.m_rush_larsen_B_idx]
-        w_rush_larsen_B = V_row[:, self.V_ti.w_rush_larsen_B_idx]
-        d_rush_larsen_A = V_row[:, self.V_ti.d_rush_larsen_A_idx]
-        f_Ca_rush_larsen_A = Cai_row[:, self.Cai_ti.f_Ca_rush_larsen_A_idx]
-        f_rush_larsen_A = V_row[:, self.V_ti.f_rush_larsen_A_idx]
-        oa_rush_larsen_B = V_row[:, self.V_ti.oa_rush_larsen_B_idx]
-        oi_rush_larsen_B = V_row[:, self.V_ti.oi_rush_larsen_B_idx]
-        u_rush_larsen_A = fn_row[:, self.fn_ti.u_rush_larsen_A_idx]
-        ua_rush_larsen_B = V_row[:, self.V_ti.ua_rush_larsen_B_idx]
-        ui_rush_larsen_B = V_row[:, self.V_ti.ui_rush_larsen_B_idx]
-        v_rush_larsen_B = fn_row[:, self.fn_ti.v_rush_larsen_B_idx]
-        w_rush_larsen_A = V_row[:, self.V_ti.w_rush_larsen_A_idx]
-        xr_rush_larsen_B = V_row[:, self.V_ti.xr_rush_larsen_B_idx]
-        xs_rush_larsen_B = V_row[:, self.V_ti.xs_rush_larsen_B_idx]
-        oa_rush_larsen_A = V_row[:, self.V_ti.oa_rush_larsen_A_idx]
-        oi_rush_larsen_A = V_row[:, self.V_ti.oi_rush_larsen_A_idx]
-        ua_rush_larsen_A = V_row[:, self.V_ti.ua_rush_larsen_A_idx]
-        ui_rush_larsen_A = V_row[:, self.V_ti.ui_rush_larsen_A_idx]
-        v_rush_larsen_A = fn_row[:, self.fn_ti.v_rush_larsen_A_idx]
-        xr_rush_larsen_A = V_row[:, self.V_ti.xr_rush_larsen_A_idx]
-        xs_rush_larsen_A = V_row[:, self.V_ti.xs_rush_larsen_A_idx]
+        self.rush_larsen_B[:, [0, 1, 3, 4, 5, 6, 7, 9, 10, 12, 13, 14]] = V_row[:, [self.V_ti.d_rush_larsen_B_idx,
+                                                                                    self.V_ti.f_rush_larsen_B_idx,
+                                                                                    self.V_ti.h_rush_larsen_B_idx,
+                                                                                    self.V_ti.j_rush_larsen_B_idx,
+                                                                                    self.V_ti.m_rush_larsen_B_idx,
+                                                                                    self.V_ti.oa_rush_larsen_B_idx,
+                                                                                    self.V_ti.oi_rush_larsen_B_idx,
+                                                                                    self.V_ti.ua_rush_larsen_B_idx,
+                                                                                    self.V_ti.ui_rush_larsen_B_idx,
+                                                                                    self.V_ti.w_rush_larsen_B_idx,
+                                                                                    self.V_ti.xr_rush_larsen_B_idx,
+                                                                                    self.V_ti.xs_rush_larsen_B_idx]]
+        self.rush_larsen_B[:, 11] = fn_row[:, self.fn_ti.v_rush_larsen_B_idx]
 
-        self.d = d_rush_larsen_A+d_rush_larsen_B*self.d
-        self.f_new = f_rush_larsen_A+f_rush_larsen_B*self.f
-        self.f_Ca = f_Ca_rush_larsen_A+f_Ca_rush_larsen_B*self.f_Ca
-        self.h = h_rush_larsen_A+h_rush_larsen_B*self.h
-        self.j = j_rush_larsen_A+j_rush_larsen_B*self.j
-        self.m = m_rush_larsen_A+m_rush_larsen_B*self.m
-        self.oa = oa_rush_larsen_A+oa_rush_larsen_B*self.oa
-        self.oi = oi_rush_larsen_A+oi_rush_larsen_B*self.oi
-        self.u = u_rush_larsen_A+u_rush_larsen_B*self.u
-        self.ua = ua_rush_larsen_A+ua_rush_larsen_B*self.ua
-        self.ui = ui_rush_larsen_A+ui_rush_larsen_B*self.ui
-        self.v = v_rush_larsen_A+v_rush_larsen_B*self.v
-        self.w = w_rush_larsen_A+w_rush_larsen_B*self.w
-        self.xr = xr_rush_larsen_A+xr_rush_larsen_B*self.xr
-        self.xs = xs_rush_larsen_A+xs_rush_larsen_B*self.xs
+        self.rush_larsen_A[:, [0, 1, 3, 4, 5, 6, 7, 9, 10, 12, 13, 14]] = V_row[:, [self.V_ti.d_rush_larsen_A_idx,
+                                                                                    self.V_ti.f_rush_larsen_A_idx,
+                                                                                    self.V_ti.h_rush_larsen_A_idx,
+                                                                                    self.V_ti.j_rush_larsen_A_idx,
+                                                                                    self.V_ti.m_rush_larsen_A_idx,
+                                                                                    self.V_ti.oa_rush_larsen_A_idx,
+                                                                                    self.V_ti.oi_rush_larsen_A_idx,
+                                                                                    self.V_ti.ua_rush_larsen_A_idx,
+                                                                                    self.V_ti.ui_rush_larsen_A_idx,
+                                                                                    self.V_ti.w_rush_larsen_A_idx,
+                                                                                    self.V_ti.xr_rush_larsen_A_idx,
+                                                                                    self.V_ti.xs_rush_larsen_A_idx]]
+        self.rush_larsen_A[:, 2] = Cai_row[:, self.Cai_ti.f_Ca_rush_larsen_A_idx]
+        self.rush_larsen_A[:, 8] = fn_row[:, self.fn_ti.u_rush_larsen_A_idx]
+        self.rush_larsen_A[:, 11] = fn_row[:, self.fn_ti.v_rush_larsen_A_idx]
+
+        self.sv[:, 4:] = self.rush_larsen_A + self.rush_larsen_B * self.sv[:, 4:]
 
         return -Iion
 
