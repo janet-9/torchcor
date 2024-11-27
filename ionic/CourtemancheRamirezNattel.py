@@ -145,6 +145,7 @@ class fn_TableIndex:
   v_rush_larsen_B_idx = 2
   NROWS = 3
 
+
 @dataclass(frozen=True)
 class Cai_TableParam:
     mn = 3e-4
@@ -154,6 +155,7 @@ class Cai_TableParam:
     mn_idx = 0
     mx_idx = int((mx - mn) * step) - 1
 
+
 @dataclass(frozen=True)
 class V_TableParam:
     mn = -200
@@ -162,6 +164,7 @@ class V_TableParam:
     step = 1 / res
     mn_idx = 0
     mx_idx = int((mx - mn) * step) - 1
+
 
 @dataclass(frozen=True)
 class fn_TableParam:
@@ -183,7 +186,6 @@ def interpolate(X: torch.Tensor, table, tp):
     return (1 - w) * table[lower_idx] + w * table[higher_idx]
 
 
-
 class CourtemancheRamirezNattel:
     def __init__(self, dt, device, dtype=torch.float64):
         self.Cai_tab = None
@@ -197,6 +199,9 @@ class CourtemancheRamirezNattel:
         self.dt = dt
         self.device = device
         self.dtype = dtype
+
+        self.f_Ca_rush_larsen_B = exp(((-self.dt)/tau_f_Ca))
+        self.u_rush_larsen_B = exp(((-self.dt)/tau_u))
 
 
     def construct_tables(self):
@@ -229,17 +234,17 @@ class CourtemancheRamirezNattel:
 
         V_tab[:, self.V_ti.GKur_idx] = (0.005+(0.05/(1.+(torch.exp(((15.-(V))/13.))))))
         V_tab[:, self.V_ti.IbNa_idx] = (p.GbNa * (V - E_Na))
-        a_h = torch.where(V>=-40., 0.0, (0.135 * (torch.exp((((V+80.) - p.factorhGate) / -6.8)))))
-        a_j = torch.where(V<-40., ((((-127140.*(torch.exp((0.2444*V))))-((3.474e-5*(torch.exp((-0.04391*V))))))*(V+37.78))/(1.+(torch.exp((0.311*(V+79.23)))))), 0.)
-        a_m = torch.where(V==-47.13, 3.2, ((0.32*(V+47.13))/(1.-((torch.exp((-0.1*(V+47.13))))))))
+        a_h = torch.where(V >= -40., 0.0, (0.135 * (torch.exp((((V+80.) - p.factorhGate) / -6.8)))))
+        a_j = torch.where(V < -40., ((((-127140.*(torch.exp((0.2444*V))))-(3.474e-5*(torch.exp((-0.04391*V)))))*(V+37.78))/(1.+(torch.exp((0.311*(V+79.23)))))), 0.)
+        a_m = torch.where(V == -47.13, 3.2, ((0.32*(V+47.13))/(1.-(torch.exp((-0.1*(V+47.13)))))))
         aa_oa = (0.65 / ((torch.exp(((V+10.)/-8.5))) + (torch.exp(((30. - V) / 59.0)))))
         aa_oi = (1./(18.53+(torch.exp(((V+113.7)/10.95)))))
         aa_ua = (0.65/((torch.exp(((V+10.)/-8.5)))+(torch.exp(((V-(30.))/-59.0)))))
         aa_ui = (1. / (21. + (torch.exp(((V - 185.) / -28.)))))
         aa_xr = (p.factorxrGate*((0.0003*(V+14.1))/(1.-((torch.exp(((V+14.1)/-5.)))))))
         aa_xs = ((4.e-5*(V-(19.9)))/(1.-((torch.exp(((19.9-(V))/17.))))))
-        b_h = torch.where((V>=-40.), ((1./0.13)/(1.+(torch.exp(((-(V+10.66))/11.1))))), ((3.56*(torch.exp((0.079*V))))+(3.1e5*(torch.exp((0.35*V))))))
-        b_j = torch.where((V>=-40.), ((0.3*(torch.exp((-2.535e-7*V))))/(1.+(torch.exp((-0.1*(V+32.)))))), ((0.1212*(torch.exp((-0.01052*V))))/(1.+(torch.exp((-0.1378*(V+40.14)))))))
+        b_h = torch.where((V >= -40.), ((1./0.13)/(1.+(torch.exp(((-(V+10.66))/11.1))))), ((3.56*(torch.exp((0.079*V))))+(3.1e5*(torch.exp((0.35*V))))))
+        b_j = torch.where((V >= -40.), ((0.3*(torch.exp((-2.535e-7*V))))/(1.+(torch.exp((-0.1*(V+32.)))))), ((0.1212*(torch.exp((-0.01052*V))))/(1.+(torch.exp((-0.1378*(V+40.14)))))))
         b_m = (0.08 * (torch.exp(((-(V - p.factormGate)) / 11.))))
         bb_oa = (0.65/(2.5+(torch.exp(((V+82.)/17.)))))
         bb_oi = (1./(35.56+(torch.exp(((-(V+1.26))/7.44)))))
@@ -252,14 +257,14 @@ class CourtemancheRamirezNattel:
         f_inf = (1./(1.+(torch.exp(((V+28.)/6.9)))))
         oa_inf = (1. / (1. + (torch.exp(((-((V+20.47) - p.factoroaGate)) / 17.54)))))
         oi_inf = (1./(1.+(torch.exp(((V+43.1)/5.3)))))
-        tau_d = torch.where((V==-10.), (((1./6.24)/0.035)/2.), ((((1.-((torch.exp(((-(V+10.))/6.24)))))/0.035)/(V+10.))/(1.+(torch.exp(((-(V+10.))/6.24))))))
+        tau_d = torch.where(V == -10., (((1./6.24)/0.035)/2.), ((((1.-((torch.exp(((-(V+10.))/6.24)))))/0.035)/(V+10.))/(1.+(torch.exp(((-(V+10.))/6.24))))))
         tau_f = (9./((0.0197*(torch.exp((((-0.0337*0.0337)*(V+10.))*(V+10.)))))+0.02))
-        tau_w = (((6.*(1.-((torch.exp(((7.9-(V))/5.))))))/(1.+(0.3*(torch.exp(((7.9-(V))/5.))))))/(V-(7.9)))
+        tau_w = (((6. * (1. - (torch.exp(((7.9 - V) / 5.))))) / (1. + (0.3 * (torch.exp(((7.9 - (V)) / 5.)))))) / (V - (7.9)))
         ua_inf = (1./(1.+(torch.exp(((V+30.3)/-9.6)))))
-        ui_inf = (1./(1.+(torch.exp(((V-(99.45))/27.48)))))
-        V_tab[:, self.V_ti.vrow_29_idx] = (p.GCaL*(V-(65.)))
+        ui_inf = (1. / (1. + (torch.exp(((V - 99.45) / 27.48)))))
+        V_tab[:, self.V_ti.vrow_29_idx] = (p.GCaL * (V - 65.))
         V_tab[:, self.V_ti.vrow_31_idx] = ((((((((p.maxINaCa*(torch.exp(((((gamma*F)*V)/R)/T))))*Nai)*Nai)*Nai)*p.Cao)/(KmNa3+((p.Nao*p.Nao)*p.Nao)))/(KmCa+p.Cao))/(1.+(k_sat*(torch.exp((((((gamma-(1.))*F)*V)/R)/T))))))
-        V_tab[:, self.V_ti.vrow_32_idx] = ((((((((p.maxINaCa*(torch.exp((((((gamma-(1.))*F)*V)/R)/T))))*p.Nao)*p.Nao)*p.Nao)/(KmNa3+((p.Nao*p.Nao)*p.Nao)))/(KmCa+p.Cao))/(1.+(k_sat*(torch.exp((((((gamma-(1.))*F)*V)/R)/T))))))/1000.)
+        V_tab[:, self.V_ti.vrow_32_idx] = ((((((((p.maxINaCa * (torch.exp((((((gamma - 1.) * F) * V) / R) / T)))) * p.Nao) * p.Nao) * p.Nao) / (KmNa3 + ((p.Nao * p.Nao) * p.Nao))) / (KmCa + p.Cao)) / (1. + (k_sat * (torch.exp((((((gamma - (1.)) * F) * V) / R) / T)))))) / 1000.)
         V_tab[:, self.V_ti.vrow_36_idx] = (V*p.GbCa)
         V_tab[:, self.V_ti.vrow_7_idx] = (p.GNa * (V - E_Na))
         w_inf = (1. - (1. / (1. + (torch.exp(((40. - V) / 17.))))))
@@ -352,9 +357,6 @@ class CourtemancheRamirezNattel:
     def differentiate(self, V):
         p = Parameters()
 
-        f_Ca_rush_larsen_B = (exp(((-self.dt)/tau_f_Ca)))
-        u_rush_larsen_B = (exp(((-self.dt)/tau_u)))
-
         V_row = interpolate(V, self.V_tab, V_TableParam())
         Cai_row = interpolate(self.Cai, self.Cai_tab, Cai_TableParam())
 
@@ -378,10 +380,10 @@ class CourtemancheRamirezNattel:
         Iion = INa+IK1+Ito+IKur+IKr+IKs+ICaL+IpCa+INaCa+V_row[:, self.V_ti.IbNa_idx]+V_row[:, self.V_ti.INaK_idx]+IKACh
 
         # Complete Forward Euler Update
-        Itr = ((p.factorGtr*(self.Ca_up-(self.Ca_rel)))/tau_tr)
+        Itr = ((p.factorGtr * (self.Ca_up - self.Ca_rel)) / tau_tr)
         Irel = ((((((p.factorGrel*self.u)*self.u)*self.v)*k_rel)*self.w)*(self.Ca_rel-(Cai_row[:, self.Cai_ti.conCa_idx])))
-        dIups = (Cai_row[:, self.Cai_ti.carow_1_idx]-(((p.maxIup/p.maxCaup)*self.Ca_up)))
-        diff_Ca_rel = ((Itr-(Irel))/(1.+((C_dCa_rel/(self.Ca_rel+KmCsqn))/(self.Ca_rel+KmCsqn))))
+        dIups = (Cai_row[:, self.Cai_ti.carow_1_idx] - ((p.maxIup / p.maxCaup) * self.Ca_up))
+        diff_Ca_rel = ((Itr - Irel) / (1. + ((C_dCa_rel / (self.Ca_rel + KmCsqn)) / (self.Ca_rel + KmCsqn))))
         diff_Ki = ((-((((((Ito+IKr)+IKur)+IKs)+IK1)+IKACh) - (2.0 * V_row[:, self.V_ti.INaK_idx]))) / (F * Voli))
         diff_Ca_up = (dIups - (Itr * C_dCaup))
         diff_Cai = ((((C_B1d * (((INaCa+INaCa) - IpCa) - ICaL)) - (C_B1e * dIups)) + Irel) / Cai_row[:, self.Cai_ti.carow_2_idx])
@@ -424,21 +426,21 @@ class CourtemancheRamirezNattel:
         xr_rush_larsen_A = V_row[:, self.V_ti.xr_rush_larsen_A_idx]
         xs_rush_larsen_A = V_row[:, self.V_ti.xs_rush_larsen_A_idx]
 
-        self.d = d_rush_larsen_A+d_rush_larsen_B*self.d
-        self.f_new = f_rush_larsen_A+f_rush_larsen_B*self.f
-        self.f_Ca = f_Ca_rush_larsen_A+f_Ca_rush_larsen_B*self.f_Ca
-        self.h = h_rush_larsen_A+h_rush_larsen_B*self.h
-        self.j = j_rush_larsen_A+j_rush_larsen_B*self.j
-        self.m = m_rush_larsen_A+m_rush_larsen_B*self.m
-        self.oa = oa_rush_larsen_A+oa_rush_larsen_B*self.oa
-        self.oi = oi_rush_larsen_A+oi_rush_larsen_B*self.oi
-        self.u = u_rush_larsen_A+u_rush_larsen_B*self.u
-        self.ua = ua_rush_larsen_A+ua_rush_larsen_B*self.ua
-        self.ui = ui_rush_larsen_A+ui_rush_larsen_B*self.ui
-        self.v = v_rush_larsen_A+v_rush_larsen_B*self.v
-        self.w = w_rush_larsen_A+w_rush_larsen_B*self.w
-        self.xr = xr_rush_larsen_A+xr_rush_larsen_B*self.xr
-        self.xs = xs_rush_larsen_A+xs_rush_larsen_B*self.xs
+        self.d = d_rush_larsen_A + d_rush_larsen_B * self.d
+        self.f_new = f_rush_larsen_A + f_rush_larsen_B * self.f
+        self.f_Ca = f_Ca_rush_larsen_A + self.f_Ca_rush_larsen_B * self.f_Ca
+        self.h = h_rush_larsen_A + h_rush_larsen_B * self.h
+        self.j = j_rush_larsen_A + j_rush_larsen_B * self.j
+        self.m = m_rush_larsen_A + m_rush_larsen_B * self.m
+        self.oa = oa_rush_larsen_A + oa_rush_larsen_B * self.oa
+        self.oi = oi_rush_larsen_A + oi_rush_larsen_B * self.oi
+        self.u = u_rush_larsen_A + self.u_rush_larsen_B * self.u
+        self.ua = ua_rush_larsen_A + ua_rush_larsen_B * self.ua
+        self.ui = ui_rush_larsen_A + ui_rush_larsen_B * self.ui
+        self.v = v_rush_larsen_A + v_rush_larsen_B * self.v
+        self.w = w_rush_larsen_A + w_rush_larsen_B * self.w
+        self.xr = xr_rush_larsen_A + xr_rush_larsen_B * self.xr
+        self.xs = xs_rush_larsen_A + xs_rush_larsen_B * self.xs
 
         return -Iion
 
