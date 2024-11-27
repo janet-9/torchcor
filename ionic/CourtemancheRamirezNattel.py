@@ -3,7 +3,7 @@ from math import log, exp, expm1
 
 @torch.jit.script
 class CourtemancheRamirezNattel:
-    def __init__(self, dt: float, device: torch.device, dtype: torch.dtype):
+    def __init__(self, dt: float, device: torch.device, dtype: torch.dtype = torch.float64):
         # Constants
         self.C_B1a = 3.79138232501097e-05
         self.C_B1b = 0.0811764705882353
@@ -164,11 +164,12 @@ class CourtemancheRamirezNattel:
         self.fn_T_mn_idx = 0.
         self.fn_T_mx_idx = int((self.fn_T_mx - self.fn_T_mn) * self.fn_T_step) - 1
 
-
+        # 3 lookup tables
         self.Cai_tab = torch.tensor([1.0])
         self.V_tab = torch.tensor([1.0])
         self.fn_tab = torch.tensor([1.0])
 
+        # 19 states variables
         self.Ca_rel = torch.full((1,), self.Ca_rel_init).to(device)
         self.Ca_up = torch.full((1,), self.Ca_up_init).to(device)
         self.Cai = torch.full((1,), self.Cai_init).to(device)

@@ -18,10 +18,10 @@ import numpy as np
 
 
 class AtriumSimulatorCourtemanche:
-    def __init__(self, ionic_model, T, dt, apply_rcm, device=None, dtype=None):
+    def __init__(self, ionic_model, T, dt, apply_rcm, device=None, dtype=torch.float64):
         self.device = torch.device(device) if device is not None else "cuda:0" \
             if torch.cuda.is_available() else "cpu"
-        self.dtype = dtype if dtype is not None else torch.float64
+        self.dtype = dtype
 
         self.T = T  # ms = 2.4s
         self.dt = dt  # ms
