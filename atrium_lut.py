@@ -30,5 +30,5 @@ simulator.add_material_property(material_config)
 simulator.set_stimulus_region(path=f"{home_directory}/Data/atrium/Case_1.vtx")
 simulator.add_stimulus(stim_config)
 simulator.assemble()
-simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=1000, plot_interval=simulation_time, verbose=True)
+simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=1000, plot_interval=simulation_time, verbose=False)
 

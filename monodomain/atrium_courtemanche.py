@@ -141,13 +141,13 @@ class AtriumSimulatorCourtemanche:
         for n in range(1, self.nt + 1):
             ctime += self.dt
             # if n > 80000:
-            #     print(f"-------------{n} timestep ----------------")
-            #     print("V max: ", u.max().item(), "V min: ", u.min().item())
+            print(f"-------------{n} timestep ----------------")
+            print("V max: ", u.max().item(), "V min: ", u.min().item())
 
             du = self.ionic_model.differentiate(u)
 
             # if n > 80000:
-            #     print("dV max: ", du.max().item(), "dV min: ", du.min().item())
+            print("dV max: ", du.max().item(), "dV min: ", du.min().item())
 
             b = u + self.dt * du
             for stimulus in self.stimuli:
