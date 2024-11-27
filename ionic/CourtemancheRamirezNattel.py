@@ -1,7 +1,7 @@
 import torch
 from dataclasses import dataclass
 from math import log, exp, expm1
-
+import numpy as np
 
 C_B1a = 3.79138232501097e-05
 C_B1b = 0.0811764705882353
@@ -175,7 +175,8 @@ class fn_TableParam:
 
 
 def interpolate(X: torch.Tensor, table, tp):
-    idx =  ((X - tp.mn) * tp.step).to(torch.long)
+    X = torch.clamp(X, tp.mn, tp.mx)
+    idx = ((X - tp.mn) * tp.step).to(torch.long)
     lower_idx = torch.clamp(idx, 0, tp.mx_idx - 1)
     higher_idx = lower_idx + 1
     lower_pos = lower_idx * tp.res + tp.mn
@@ -322,6 +323,14 @@ class CourtemancheRamirezNattel:
         fn_tab[:, self.fn_ti.v_rush_larsen_A_idx] = ((-v_inf)*v_rush_larsen_C)
 
         self.fn_tab = fn_tab
+
+        with open('V_LUT.npy', 'wb') as f:
+            np.save(f, self.V_tab.cpu().numpy())
+        with open('Cai_tab.npy', 'wb') as f:
+            np.save(f, self.Cai_tab.cpu().numpy())
+        with open('fn_tab.npy', 'wb') as f:
+            np.save(f, self.fn_tab.cpu().numpy())
+        raise Exception("saved")
 
     def initialize(self, n_nodes):
         V = torch.full((n_nodes,), V_init).to(self.device).to(self.dtype)

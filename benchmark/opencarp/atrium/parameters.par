@@ -51,8 +51,8 @@ gregion[0].ID[2]   = 3
 gregion[0].ID[3]   = 4      
 gregion[0].ID[4]   = 5
 gregion[0].ID[5]   = 6
-gregion[0].g_il   = 0.5272
-gregion[0].g_it   = 0.5272
+gregion[0].g_il   = 0.4
+gregion[0].g_it   = 0.4
 
 num_stim =  1
 ##############################
