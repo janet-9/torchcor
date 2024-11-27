@@ -12,13 +12,8 @@ stim_config = {'tstart': 0.0,
                'duration': max([2.0, dt]),
                'intensity': 1.0,
                'name': 'S1'}
-material_config = {"vg": 0.1,
-                   "diffusl": (1000 * 1000) * 0.175,
-                   "diffust": (1000 * 1000) * 0.04375,
-                   "tin": 0.15,
-                   "tout": 1.5,
-                   "topen": 105.0,
-                   "tclose": 185.0}
+material_config = {"diffusl": (1000 * 1000) * 0.175,
+                   "diffust": (1000 * 1000) * 0.04375}
 
 device = torch.device(f"cuda:1" if torch.cuda.is_available() else "cpu")
 home_directory = Path.home()
