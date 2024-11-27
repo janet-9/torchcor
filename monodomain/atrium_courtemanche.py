@@ -146,18 +146,21 @@ class AtriumSimulatorCourtemanche:
             du = self.ionic_model.differentiate(u)
             if (n % int(1.0/self.dt))==0:
                 print(f"-------------{n} timestep ----------------")
-                print("V max: ", u.max().item(), "V min: ", u.min().item())
-                print("dV max: ", du.max().item(), "dV min: ", du.min().item())
-                u_list.append(u.cpu().numpy()[10])
+                print("V: ", u.cpu().numpy()[112991])
+                print("dV: ", du.cpu().numpy()[112991])
+                #print("V max: ", u.max().item(), "V min: ", u.min().item())
+                #print("dV max: ", du.max().item(), "dV min: ", du.min().item())
+                u_list.append(u.cpu().numpy()[112991])
 
 
             b = u + self.dt * du
             for stimulus in self.stimuli:
                 I0 = stimulus.stimApp(ctime)
                 b += self.dt * I0
-            b = self.M @ b
+            #b = self.M @ b
+            u = b
 
-            u, total_iter = cg.solve(self.A, b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
+            #u, total_iter = cg.solve(self.A, b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
 
             if total_iter == max_iter:
                 np.save('u.npy', np.array(u_list))

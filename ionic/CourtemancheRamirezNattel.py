@@ -398,7 +398,7 @@ class CourtemancheRamirezNattel:
         IKur = ((((vrow_18*self.ua)*self.ua)*self.ua)*self.ui)
         IpCa = (Cai_row[:, self.Cai_ti.carow_3_idx]+V_row[:, self.V_ti.vrow_36_idx])
         Ito = ((((vrow_13*self.oa)*self.oa)*self.oa)*self.oi)
-        Iion = (((((((((((INa+IK1)+Ito)+IKur)+IKr)+IKs)+ICaL)+IpCa)+INaCa)+V_row[:, self.V_ti.IbNa_idx])+V_row[:, self.V_ti.INaK_idx])+IKACh)
+        Iion = INa+IK1+Ito+IKur+IKr+IKs+ICaL+IpCa+INaCa+V_row[:, self.V_ti.IbNa_idx]+V_row[:, self.V_ti.INaK_idx]+IKACh
 
         # Complete Forward Euler Update
         Itr = ((p.factorGtr*(self.Ca_up-(self.Ca_rel)))/tau_tr)
