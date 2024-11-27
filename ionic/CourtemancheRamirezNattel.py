@@ -197,6 +197,66 @@ class CourtemancheRamirezNattel:
         self.f_Ca_rush_larsen_B = exp(((-self.dt)/self.tau_f_Ca))
         self.u_rush_larsen_B = exp(((-self.dt)/self.tau_u))
 
+    def default_parameters(self):
+        return {
+            "ACh": self.ACh,
+            "Cao": self.Cao,
+            "Cm": self.Cm,
+            "GACh": self.GACh,
+            "GCaL": self.GCaL,
+            "GK1": self.GK1,
+            "GKr": self.GKr,
+            "GKs": self.GKs,
+            "GNa": self.GNa,
+            "GbCa": self.GbCa,
+            "GbNa": self.GbNa,
+            "Gto": self.Gto,
+            "Ko": self.Ko,
+            "Nao": self.Nao,
+            "factorGKur": self.factorGKur,
+            "factorGrel": self.factorGrel,
+            "factorGtr": self.factorGtr,
+            "factorGup": self.factorGup,
+            "factorhGate": self.factorhGate,
+            "factormGate": self.factormGate,
+            "factoroaGate": self.factoroaGate,
+            "factorxrGate": self.factorxrGate,
+            "maxCaup": self.maxCaup,
+            "maxINaCa": self.maxINaCa,
+            "maxINaK": self.maxINaK,
+            "maxIpCa": self.maxIpCa,
+            "maxIup": self.maxIup}
+
+    def set_parameters(self, ACh: float = 0.000001, Cao: float = 1.8, Cm: float = 100., GACh: float = 0., GCaL: float = 0.1238, GK1: float = 0.09, GKr: float = 0.0294, GKs: float = 0.129, GNa: float = 7.8, GbCa: float = 0.00113, GbNa: float = 0.000674, Gto: float = 0.1652, Ko: float = 5.4, Nao: float = 140., factorGKur: float = 1., factorGrel: float = 1., factorGtr: float = 1., factorGup: float = 1., factorhGate: float = 0., factormGate: float = 0., factoroaGate: float = 0., factorxrGate: float = 1., maxCaup: float = 15., maxINaCa: float = 1600., maxINaK: float = 0.60, maxIpCa: float = 0.275, maxIup: float = 0.005):
+        self.ACh = ACh
+        self.Cao = Cao
+        self.Cm = Cm
+        self.GACh = GACh
+        self.GCaL = GCaL
+        self.GK1 = GK1
+        self.GKr = GKr
+        self.GKs = GKs
+        self.GNa = GNa
+        self.GbCa = GbCa
+        self.GbNa = GbNa
+        self.Gto = Gto
+        self.Ko = Ko
+        self.Nao = Nao
+        self.factorGKur = factorGKur
+        self.factorGrel = factorGrel
+        self.factorGtr = factorGtr
+        self.factorGup = factorGup
+        self.factorhGate = factorhGate
+        self.factormGate = factormGate
+        self.factoroaGate = factoroaGate
+        self.factorxrGate = factorxrGate
+        self.maxCaup = maxCaup
+        self.maxINaCa = maxINaCa
+        self.maxINaK = maxINaK
+        self.maxIpCa = maxIpCa
+        self.maxIup = maxIup
+
+
     def interpolate(self, X, table, mn: float, mx: float, res: float, step: float, mx_idx: int):
         X = torch.clamp(X, mn, mx)
         idx = ((X - mn) * step).to(torch.long)
@@ -207,8 +267,6 @@ class CourtemancheRamirezNattel:
         return (1 - w) * table[lower_idx] + w * table[higher_idx]
 
     def construct_tables(self):
-
-        # Define the constants that depend on the parameters.
         E_Na = ((self.R*self.T)/self.F)*(log((self.Nao/self.Nai)))
         f_Ca_rush_larsen_C = expm1(((-self.dt)/self.tau_f_Ca))
         sigma = ((exp((self.Nao/67.3)))-1.)/7.
@@ -353,8 +411,6 @@ class CourtemancheRamirezNattel:
 
 
     def differentiate(self, V):
-
-        # X, table, mn, mx, res, step, mx_idx
         V_row = self.interpolate(V, self.V_tab, self.V_T_mn, self.V_T_mx, self.V_T_res, self.V_T_step, self.V_T_mx_idx)
         Cai_row = self.interpolate(self.Cai, self.Cai_tab, self.Cai_T_mn, self.Cai_T_mx, self.Cai_T_res, self.Cai_T_step, self.Cai_T_mx_idx)
 
