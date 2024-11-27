@@ -227,7 +227,7 @@ class CourtemancheRamirezNattel:
             "maxIpCa": self.maxIpCa,
             "maxIup": self.maxIup}
 
-    def set_parameters(self, ACh: float = 0.000001, Cao: float = 1.8, Cm: float = 100., GACh: float = 0., GCaL: float = 0.1238, GK1: float = 0.09, GKr: float = 0.0294, GKs: float = 0.129, GNa: float = 7.8, GbCa: float = 0.00113, GbNa: float = 0.000674, Gto: float = 0.1652, Ko: float = 5.4, Nao: float = 140., factorGKur: float = 1., factorGrel: float = 1., factorGtr: float = 1., factorGup: float = 1., factorhGate: float = 0., factormGate: float = 0., factoroaGate: float = 0., factorxrGate: float = 1., maxCaup: float = 15., maxINaCa: float = 1600., maxINaK: float = 0.60, maxIpCa: float = 0.275, maxIup: float = 0.005):
+    def reset_parameters(self, ACh: float = 0.000001, Cao: float = 1.8, Cm: float = 100., GACh: float = 0., GCaL: float = 0.1238, GK1: float = 0.09, GKr: float = 0.0294, GKs: float = 0.129, GNa: float = 7.8, GbCa: float = 0.00113, GbNa: float = 0.000674, Gto: float = 0.1652, Ko: float = 5.4, Nao: float = 140., factorGKur: float = 1., factorGrel: float = 1., factorGtr: float = 1., factorGup: float = 1., factorhGate: float = 0., factormGate: float = 0., factoroaGate: float = 0., factorxrGate: float = 1., maxCaup: float = 15., maxINaCa: float = 1600., maxINaK: float = 0.60, maxIpCa: float = 0.275, maxIup: float = 0.005):
         self.ACh = ACh
         self.Cao = Cao
         self.Cm = Cm
