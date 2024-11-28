@@ -15,10 +15,8 @@ from core.visualize import VTK3D
 from core.reorder import RCM as RCM
 import time
 from mesh.triangulation import Triangulation
-from mesh.materialproperties import MaterialProperties
 from mesh.stimulus import Stimulus
 from monodomain.tools import load_stimulus_region
-import pickle
 
 
 class VentricleSimulator:
