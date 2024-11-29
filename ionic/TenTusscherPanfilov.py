@@ -369,7 +369,6 @@ class TenTusscherPanfilov:
         F_RT = (1./RTONF)
         invVcF_Cm = (inverseVcF*self.CAPACITANCE)
 
-        print(self.CaSS_tab.device)
         CaSS_row = self.interpolate(self.CaSS, self.CaSS_tab, self.CaSS_T_mn, self.CaSS_T_mx, self.CaSS_T_res, self.CaSS_T_step, self.CaSS_T_mx_idx)
         V_row = self.interpolate(V, self.V_tab, self.V_T_mn, self.V_T_mx, self.V_T_res, self.V_T_step, self.V_T_mx_idx)
 
@@ -459,7 +458,7 @@ class TenTusscherPanfilov:
         self.Xr2 = Xr2_rush_larsen_A+Xr2_rush_larsen_B*self.Xr2
         self.Xs = Xs_rush_larsen_A+Xs_rush_larsen_B*self.Xs
 
-        return Iion
+        return -Iion
 
 
 
