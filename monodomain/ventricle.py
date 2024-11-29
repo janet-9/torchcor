@@ -136,7 +136,7 @@ class VentricleSimulator:
         self.A = A.to_sparse_csr()
 
     def solve(self, a_tol, r_tol, max_iter, plot_interval=10, verbose=True):
-        u = self.ionic_model.initialize(self.n_nodes, self.dt)
+        u = self.ionic_model.initialize(self.n_nodes)
         if self.rcm is not None:
             u = self.rcm.reorder(u)
 
