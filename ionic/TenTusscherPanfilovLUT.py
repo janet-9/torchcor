@@ -180,7 +180,6 @@ class TenTusscherPanfilovLUT:
         self.inf_indices = list(inf_dict.values())
 
         self.H = None
-        self.dt = None
 
         self.V_LUT = construct_V_LUT(device)
 
