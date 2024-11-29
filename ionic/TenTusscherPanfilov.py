@@ -338,7 +338,7 @@ class TenTusscherPanfilov:
         self.CaSR = torch.full((n_nodes,), self.CaSR_init, dtype=self.dtype, device=self.device)
         self.CaSS = torch.full((n_nodes,), self.CaSS_init, dtype=self.dtype, device=self.device)
         self.Cai = torch.full((n_nodes,), self.Cai_init, dtype=self.dtype, device=self.device)
-        self.Cai *= 1e3
+        # self.Cai *= 1e3
         self.F = torch.full((n_nodes,), self.F_init, dtype=self.dtype, device=self.device)
         self.F2 = torch.full((n_nodes,), self.F2_init, dtype=self.dtype, device=self.device)
         self.FCaSS = torch.full((n_nodes,), self.FCaSS_init, dtype=self.dtype, device=self.device)
@@ -414,7 +414,7 @@ class TenTusscherPanfilov:
         self.CaSR = self.CaSR+diff_CaSR*self.dt
         self.CaSS = self.CaSS+diff_CaSS*self.dt
         self.Cai = self.Cai+diff_Cai*self.dt
-        self.Cai *= 1e3
+        # self.Cai *= 1e3
         self.Ki = self.Ki+diff_Ki*self.dt
         self.Nai = self.Nai+diff_Nai*self.dt
         self.R_ = self.R_+diff_R_*self.dt
