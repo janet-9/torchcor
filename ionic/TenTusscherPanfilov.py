@@ -388,7 +388,7 @@ class TenTusscherPanfilov:
         Eks = (RTONF*(torch.log(((self.Ko+(self.pKNa*self.Nao))/(self.Ki+(self.pKNa*self.Nai))))))
         Ena = (RTONF*(torch.log((self.Nao/self.Nai))))
         IpCa = ((self.GpCa*self.Cai)/(self.KpCa+self.Cai))
-        a1 = ((((self.GCaL_sv*self.Fconst)*F_RT)*4.) * torch.where(V == 15., ((1./2.)*F_RT), ((V - 15.) / (expm1(((2. * (V - 15.)) * F_RT))))))
+        a1 = ((((self.GCaL_sv*self.Fconst)*F_RT)*4.) * torch.where(V == 15., ((1./2.)*F_RT), ((V - 15.) / (torch.expm1(((2. * (V - 15.)) * F_RT))))))
         ICaL_A = (a1*V_row[:, self.a2_idx])
         ICaL_B = (a1*self.Cao)
         IKr = ((((self.GKr_sv*sqrt_Ko)*self.Xr1)*self.Xr2) * (V - Ek))
