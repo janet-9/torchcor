@@ -1,8 +1,5 @@
-import pickle
 import sys
 import os
-
-import numpy as np
 
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir)
@@ -70,22 +67,6 @@ class VentricleSimulator:
     def add_material_property(self, material_config):
         self.material_config = material_config
 
-        # material = MaterialProperties()
-        # nodal_properties = material.nodal_property_names()
-        #
-        # for npr in nodal_properties:
-        #     npr_type = material.nodal_property_type(npr)
-        #     attribute_value = self.ionic_model.get_attribute(npr)
-        #
-        #     if attribute_value is not None:
-        #         if npr_type == "uniform":
-        #             values = material.NodalProperty(npr, -1, -1)
-        #         else:
-        #             values = torch.full(size=(self.n_nodes, 1), fill_value=attribute_value)
-        #             for point_id, region_id in enumerate(self.point_region_ids):
-        #                 values[point_id] = material.NodalProperty(npr, point_id, region_id)
-        #         self.ionic_model.set_attribute(npr, values)
-
     def add_stimulus(self, stim_region_path, stim_config):
         self.stimulus_region = load_stimulus_region(stim_region_path)
 
@@ -149,7 +130,6 @@ class VentricleSimulator:
 
         ctime = 0
         solving_time = time.time()
-        # u_list = []
         for n in range(1, self.nt + 1):
             ctime += self.dt
             du = self.ionic_model.differentiate(u)
@@ -159,11 +139,6 @@ class VentricleSimulator:
                 b += self.dt * I0
             b = self.M @ b
 
-            # u = b
-            # u_list.append(u[126544].item())
-            # print(f"{n}: ", u[126544].item())
-
-        # np.save("u.npy", np.array(u_list))
             u, total_iter = cg.solve(self.A, b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
 
             if total_iter == max_iter:
