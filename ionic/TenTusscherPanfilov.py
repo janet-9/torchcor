@@ -329,7 +329,7 @@ class TenTusscherPanfilov:
         self.VEk_tab = VEk_tab
 
     def initialize(self, n_nodes: int):
-        V = torch.full((n_nodes,), self.V_init)
+        V = torch.full((n_nodes,), self.V_init, dtype=self.dtype, device=self.device)
 
         self.GCaL_sv = torch.full((n_nodes,), self.GCaL, dtype=self.dtype, device=self.device)
         self.GKr_sv = torch.full((n_nodes,), self.GKr, dtype=self.dtype, device=self.device)
