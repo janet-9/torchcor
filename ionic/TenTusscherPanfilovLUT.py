@@ -184,6 +184,9 @@ class TenTusscherPanfilovLUT:
 
         self.V_LUT = construct_V_LUT(device)
 
+    def construct_tables(self):
+        pass
+
     def initialize(self, n_nodes):
         self.states = self.states.repeat(n_nodes, 1).clone()
 
