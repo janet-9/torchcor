@@ -207,14 +207,8 @@ class TenTusscherPanfilov:
         Nao3 = ((self.Nao*self.Nao)*self.Nao)
         RTONF = ((self.Rconst*self.T)/self.Fconst)
         invKmCa_Cao = (1./(self.KmCa+self.Cao))
-        inverseVcF = (1./(self.Vc*self.Fconst))
-        inverseVcF2 = (1./((2.*self.Vc)*self.Fconst))
-        inverseVssF2 = (1./((2.*self.Vss)*self.Fconst))
-        pmf_INaK = (self.knak*(self.Ko/(self.Ko+self.KmK)))
-        sqrt_Ko = (sqrt((self.Ko/5.4)))
         F_RT = (1./RTONF)
         invKmNai3_Nao3 = (1./(KmNai3+Nao3))
-        invVcF_Cm = (inverseVcF*self.CAPACITANCE)
         pmf_INaCa = ((self.knaca*invKmNai3_Nao3)*invKmCa_Cao)
 
         # construct the CaSS lookup table
@@ -366,19 +360,14 @@ class TenTusscherPanfilov:
         return V
 
     def differentiate(self, V):
-        KmNai3 = ((self.KmNai*self.KmNai)*self.KmNai)
-        Nao3 = ((self.Nao*self.Nao)*self.Nao)
         RTONF = ((self.Rconst*self.T)/self.Fconst)
-        invKmCa_Cao = (1./(self.KmCa+self.Cao))
         inverseVcF = (1./(self.Vc*self.Fconst))
         inverseVcF2 = (1./((2.*self.Vc)*self.Fconst))
         inverseVssF2 = (1./((2.*self.Vss)*self.Fconst))
         pmf_INaK = (self.knak*(self.Ko/(self.Ko+self.KmK)))
         sqrt_Ko = (sqrt((self.Ko/5.4)))
         F_RT = (1./RTONF)
-        invKmNai3_Nao3 = (1./(KmNai3+Nao3))
         invVcF_Cm = (inverseVcF*self.CAPACITANCE)
-        pmf_INaCa = ((self.knaca*invKmNai3_Nao3)*invKmCa_Cao)
 
         CaSS_row = self.interpolate(self.CaSS, self.CaSS_tab, self.CaSS_T_mn, self.CaSS_T_mx, self.CaSS_T_res, self.CaSS_T_step, self.CaSS_T_mx_idx)
         V_row = self.interpolate(V, self.V_tab, self.V_T_mn, self.V_T_mx, self.V_T_res, self.V_T_step, self.V_T_mx_idx)
@@ -425,7 +414,7 @@ class TenTusscherPanfilov:
         self.CaSR = self.CaSR+diff_CaSR*self.dt
         self.CaSS = self.CaSS+diff_CaSS*self.dt
         self.Cai = self.Cai+diff_Cai*self.dt
-        self.Cai *= 1e3
+        # self.Cai *= 1e3
         self.Ki = self.Ki+diff_Ki*self.dt
         self.Nai = self.Nai+diff_Nai*self.dt
         self.R_ = self.R_+diff_R_*self.dt
