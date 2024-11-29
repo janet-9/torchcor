@@ -190,7 +190,7 @@ class TenTusscherPanfilov:
         self.Xr1 = torch.full((1,), self.Xr1_init, dtype=dtype, device=device)
         self.Xr2 = torch.full((1,), self.Xr2_init, dtype=dtype, device=device)
         self.Xs = torch.full((1,), self.Xs_init, dtype=dtype, device=device)
-        self.D = torch.full((1,), self.Xs_init, dtype=dtype, device=devices)
+        self.D = torch.full((1,), self.Xs_init, dtype=dtype, device=device)
 
 
     def interpolate(self, X, table, mn: float, mx: float, res: float, step: float, mx_idx: int):
@@ -329,33 +329,33 @@ class TenTusscherPanfilov:
         self.VEk_tab = VEk_tab
 
     def initialize(self, n_nodes: int):
-        V = torch.full((n_nodes,), self.V_init).to(self.device).to(self.dtype)
+        V = torch.full((n_nodes,), self.V_init)
 
-        self.GCaL_sv = torch.full((n_nodes,), self.GCaL).to(self.device)
-        self.GKr_sv = torch.full((n_nodes,), self.GKr).to(self.device)
-        self.GKs_sv = torch.full((n_nodes,), self.GKs).to(self.device)
-        self.Gto_sv = torch.full((n_nodes,), self.Gto).to(self.device)
-        self.CaSR = torch.full((n_nodes,), self.CaSR_init).to(self.device)
-        self.CaSS = torch.full((n_nodes,), self.CaSS_init).to(self.device)
-        self.Cai = torch.full((n_nodes,), self.Cai_init).to(self.device)
+        self.GCaL_sv = torch.full((n_nodes,), self.GCaL, dtype=self.dtype, device=self.device)
+        self.GKr_sv = torch.full((n_nodes,), self.GKr, dtype=self.dtype, device=self.device)
+        self.GKs_sv = torch.full((n_nodes,), self.GKs, dtype=self.dtype, device=self.device)
+        self.Gto_sv = torch.full((n_nodes,), self.Gto, dtype=self.dtype, device=self.device)
+        self.CaSR = torch.full((n_nodes,), self.CaSR_init, dtype=self.dtype, device=self.device)
+        self.CaSS = torch.full((n_nodes,), self.CaSS_init, dtype=self.dtype, device=self.device)
+        self.Cai = torch.full((n_nodes,), self.Cai_init, dtype=self.dtype, device=self.device)
         self.Cai *= 1e3
-        self.F = torch.full((n_nodes,), self.F_init).to(self.device)
-        self.F2 = torch.full((n_nodes,), self.F2_init).to(self.device)
-        self.FCaSS = torch.full((n_nodes,), self.FCaSS_init).to(self.device)
-        self.H = torch.full((n_nodes,), self.H_init).to(self.device)
-        self.J = torch.full((n_nodes,), self.J_init).to(self.device)
-        self.Ki = torch.full((n_nodes,), self.Ki_init).to(self.device)
-        self.M = torch.full((n_nodes,), self.M_init).to(self.device)
-        self.Nai = torch.full((n_nodes,), self.Nai_init).to(self.device)
-        self.R = torch.full((n_nodes,), self.R_init).to(self.device)
-        self.R_ = torch.full((n_nodes,), self.R__init).to(self.device)
-        self.S = torch.full((n_nodes,), self.S_init).to(self.device)
-        self.Xr1 = torch.full((n_nodes,), self.Xr1_init).to(self.device)
-        self.Xr2 = torch.full((n_nodes,), self.Xr2_init).to(self.device)
-        self.Xs = torch.full((n_nodes,), self.Xs_init).to(self.device)
+        self.F = torch.full((n_nodes,), self.F_init, dtype=self.dtype, device=self.device)
+        self.F2 = torch.full((n_nodes,), self.F2_init, dtype=self.dtype, device=self.device)
+        self.FCaSS = torch.full((n_nodes,), self.FCaSS_init, dtype=self.dtype, device=self.device)
+        self.H = torch.full((n_nodes,), self.H_init, dtype=self.dtype, device=self.device)
+        self.J = torch.full((n_nodes,), self.J_init, dtype=self.dtype, device=self.device)
+        self.Ki = torch.full((n_nodes,), self.Ki_init, dtype=self.dtype, device=self.device)
+        self.M = torch.full((n_nodes,), self.M_init, dtype=self.dtype, device=self.device)
+        self.Nai = torch.full((n_nodes,), self.Nai_init, dtype=self.dtype, device=self.device)
+        self.R = torch.full((n_nodes,), self.R_init, dtype=self.dtype, device=self.device)
+        self.R_ = torch.full((n_nodes,), self.R__init, dtype=self.dtype, device=self.device)
+        self.S = torch.full((n_nodes,), self.S_init, dtype=self.dtype, device=self.device)
+        self.Xr1 = torch.full((n_nodes,), self.Xr1_init, dtype=self.dtype, device=self.device)
+        self.Xr2 = torch.full((n_nodes,), self.Xr2_init, dtype=self.dtype, device=self.device)
+        self.Xs = torch.full((n_nodes,), self.Xs_init, dtype=self.dtype, device=self.device)
 
         D_init = (1. / (1. + (exp((((-8.+self.D_CaL_off) - self.V_init) / 7.5)))))
-        self.D = torch.full((n_nodes,), D_init).to(self.device)
+        self.D = torch.full((n_nodes,), D_init, dtype=self.dtype, device=self.device)
 
         return V
 
