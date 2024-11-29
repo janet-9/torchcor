@@ -31,6 +31,7 @@ class VentricleSimulator:
         self.rcm = RCM(device=device, dtype=dtype) if apply_rcm else None
 
         self.ionic_model = ionic_model
+        self.ionic_model.initialize()
 
         self.pcd = None
 
