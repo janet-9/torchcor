@@ -161,7 +161,7 @@ class VentricleSimulator:
 
             u = b
             u_list.append(u[126544].item())
-            print("n: ", u[126544].item())
+            print(f"{n}: ", u[126544].item())
 
         np.save("u.npy", np.array(u_list))
         #     u, total_iter = cg.solve(self.A, b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
