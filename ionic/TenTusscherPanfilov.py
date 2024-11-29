@@ -414,7 +414,7 @@ class TenTusscherPanfilov:
         self.CaSR = self.CaSR+diff_CaSR*self.dt
         self.CaSS = self.CaSS+diff_CaSS*self.dt
         self.Cai = self.Cai+diff_Cai*self.dt
-        # self.Cai *= 1e3
+        self.Cai *= 1e3
         self.Ki = self.Ki+diff_Ki*self.dt
         self.Nai = self.Nai+diff_Nai*self.dt
         self.R_ = self.R_+diff_R_*self.dt
