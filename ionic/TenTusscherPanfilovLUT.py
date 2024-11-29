@@ -202,7 +202,7 @@ class TenTusscherPanfilovLUT:
         rates, algebraic = self.compute_rates(states=self.states, constants=self.constants)
 
         # update states
-        self.apply_rush_larsen(algebraic, self.dt)
+        self.apply_rush_larsen(algebraic)
         self.states[:, self.non_gate_indices] += self.dt * rates[:, self.non_gate_indices]
 
         dU = rates[:, 0]
@@ -214,12 +214,12 @@ class TenTusscherPanfilovLUT:
 
         return rates, algebraic
 
-    def apply_rush_larsen(self, algebraic, dt):
+    def apply_rush_larsen(self, algebraic):
         steady_states = algebraic[:, self.inf_indices]
         time_constants = algebraic[:, self.tau_indices]
 
         # Update gating variables using Rush-Larsen method
-        self.states[:, self.gate_indices] = steady_states + (self.states[:, self.gate_indices] - steady_states) * torch.exp(-dt / time_constants)
+        self.states[:, self.gate_indices] = steady_states + (self.states[:, self.gate_indices] - steady_states) * torch.exp(-self.dt / time_constants)
 
     def default_constants(self):
         return dict(self.name_constant_dict)
