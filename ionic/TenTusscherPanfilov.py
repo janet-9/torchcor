@@ -160,37 +160,37 @@ class TenTusscherPanfilov:
         self.VEk_T_mx_idx = int((self.VEk_T_mx - self.VEk_T_mn) * self.VEk_T_step) - 1
 
         # 3 lookup tables
-        self.CaSS_tab = torch.tensor([1.0])
-        self.V_tab = torch.tensor([1.0])
-        self.VEk_tab = torch.tensor([1.0])
+        self.CaSS_tab = torch.tensor([1.0], dtype=dtype, device=device)
+        self.V_tab = torch.tensor([1.0], dtype=dtype, device=device)
+        self.VEk_tab = torch.tensor([1.0], dtype=dtype, device=device)
 
         self.dt = dt
         self.device = device
         self.dtype = dtype
 
         # 22 states variables
-        self.GCaL_sv = torch.full((1,), self.GCaL).to(self.device)
-        self.GKr_sv = torch.full((1,), self.GKr).to(self.device)
-        self.GKs_sv = torch.full((1,), self.GKs).to(self.device)
-        self.Gto_sv = torch.full((1,), self.Gto).to(self.device)
-        self.CaSR = torch.full((1,), self.CaSR_init).to(self.device)
-        self.CaSS = torch.full((1,), self.CaSS_init).to(self.device)
-        self.Cai = torch.full((1,), self.Cai_init).to(self.device)
-        self.F = torch.full((1,), self.F_init).to(self.device)
-        self.F2 = torch.full((1,), self.F2_init).to(self.device)
-        self.FCaSS = torch.full((1,), self.FCaSS_init).to(self.device)
-        self.H = torch.full((1,), self.H_init).to(self.device)
-        self.J = torch.full((1,), self.J_init).to(self.device)
-        self.Ki = torch.full((1,), self.Ki_init).to(self.device)
-        self.M = torch.full((1,), self.M_init).to(self.device)
-        self.Nai = torch.full((1,), self.Nai_init).to(self.device)
-        self.R = torch.full((1,), self.R_init).to(self.device)
-        self.R_ = torch.full((1,), self.R__init).to(self.device)
-        self.S = torch.full((1,), self.S_init).to(self.device)
-        self.Xr1 = torch.full((1,), self.Xr1_init).to(self.device)
-        self.Xr2 = torch.full((1,), self.Xr2_init).to(self.device)
-        self.Xs = torch.full((1,), self.Xs_init).to(self.device)
-        self.D = torch.full((1,), self.Xs_init).to(self.device)
+        self.GCaL_sv = torch.full((1,), self.GCaL, dtype=dtype, device=device)
+        self.GKr_sv = torch.full((1,), self.GKr, dtype=dtype, device=device)
+        self.GKs_sv = torch.full((1,), self.GKs, dtype=dtype, device=device)
+        self.Gto_sv = torch.full((1,), self.Gto, dtype=dtype, device=device)
+        self.CaSR = torch.full((1,), self.CaSR_init, dtype=dtype, device=device)
+        self.CaSS = torch.full((1,), self.CaSS_init, dtype=dtype, device=device)
+        self.Cai = torch.full((1,), self.Cai_init, dtype=dtype, device=device)
+        self.F = torch.full((1,), self.F_init, dtype=dtype, device=device)
+        self.F2 = torch.full((1,), self.F2_init, dtype=dtype, device=device)
+        self.FCaSS = torch.full((1,), self.FCaSS_init, dtype=dtype, device=device)
+        self.H = torch.full((1,), self.H_init, dtype=dtype, device=device)
+        self.J = torch.full((1,), self.J_init, dtype=dtype, device=device)
+        self.Ki = torch.full((1,), self.Ki_init, dtype=dtype, device=device)
+        self.M = torch.full((1,), self.M_init, dtype=dtype, device=device)
+        self.Nai = torch.full((1,), self.Nai_init, dtype=dtype, device=device)
+        self.R = torch.full((1,), self.R_init, dtype=dtype, device=device)
+        self.R_ = torch.full((1,), self.R__init, dtype=dtype, device=device)
+        self.S = torch.full((1,), self.S_init, dtype=dtype, device=device)
+        self.Xr1 = torch.full((1,), self.Xr1_init, dtype=dtype, device=device)
+        self.Xr2 = torch.full((1,), self.Xr2_init, dtype=dtype, device=device)
+        self.Xs = torch.full((1,), self.Xs_init, dtype=dtype, device=device)
+        self.D = torch.full((1,), self.Xs_init, dtype=dtype, device=devices)
 
 
     def interpolate(self, X, table, mn: float, mx: float, res: float, step: float, mx_idx: int):
