@@ -1,5 +1,5 @@
 from monodomain import VentricleSimulator
-from ionic import TenTusscherPanfilov
+from ionic import TenTusscherPanfilov, TenTusscherPanfilovLUT
 import torch
 from pathlib import Path
 
@@ -52,7 +52,8 @@ material_config = {"diffusl": {34: 0.5272 * 1000 * 1000,
 device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
 home_dir = Path.home()
 
-ionic_model = TenTusscherPanfilov(cell_type="ENDO", dt=dt, device=device)
+# ionic_model = TenTusscherPanfilov(cell_type="ENDO", dt=dt, device=device)
+ionic_model = TenTusscherPanfilovLUT( dt=dt, device=device)
 simulator = VentricleSimulator(ionic_model, T=simulation_time, dt=dt, apply_rcm=True, device=device)
 simulator.load_mesh(path=f"{home_dir}/Data/ventricle/biv")
 simulator.add_material_property(material_config)

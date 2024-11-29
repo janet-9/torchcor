@@ -132,7 +132,7 @@ def compute_rates(algebraic, states, constants):
 
     return rates
 
-class TenTusscherPanfilov:
+class TenTusscherPanfilovLUT:
     def __init__(self, dt, device, dtype=torch.float64):
         self.dt = dt
         self.device = device
