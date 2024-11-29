@@ -3,7 +3,7 @@ from ionic import TenTusscherPanfilov
 import torch
 from pathlib import Path
 
-simulation_time = 50
+simulation_time = 100
 dt = 0.005
 stim_LV_sf = {'tstart': 0.0,
               'nstim': 1,
