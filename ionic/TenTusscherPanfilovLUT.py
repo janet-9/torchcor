@@ -133,7 +133,8 @@ def compute_rates(algebraic, states, constants):
     return rates
 
 class TenTusscherPanfilov:
-    def __init__(self, device, dtype=torch.float64):
+    def __init__(self, dt, device, dtype=torch.float64):
+        self.dt = dt
         self.device = device
         self.dtype = dtype
 
@@ -183,13 +184,12 @@ class TenTusscherPanfilov:
 
         self.V_LUT = construct_V_LUT(device)
 
-    def initialize(self, n_nodes, dt):
+    def initialize(self, n_nodes):
         self.states = self.states.repeat(n_nodes, 1).clone()
 
         self.constants = torch.tensor(list(self.name_constant_dict.values()), device=self.device, dtype=self.dtype)
         U = self.states[:, 0].clone()
         self.H = self.states[:, 1:].clone()
-        self.dt = dt
 
         return U
 
