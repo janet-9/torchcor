@@ -1,5 +1,5 @@
 import torch
-from math import log, exp, expm1, sqrt
+from math import exp, sqrt
 
 
 @torch.jit.script
@@ -458,7 +458,7 @@ class TenTusscherPanfilov:
         self.Xr2 = Xr2_rush_larsen_A+Xr2_rush_larsen_B*self.Xr2
         self.Xs = Xs_rush_larsen_A+Xs_rush_larsen_B*self.Xs
 
-        return -Iion
+        return Iion
 
 
 
