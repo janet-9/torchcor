@@ -139,6 +139,7 @@ class VentricleSimulator:
             for stimulus in self.stimuli:
                 I0 = stimulus.stimApp(ctime)
                 b += self.dt * I0
+                print(I0)
             u = b
             u_list.append(u[125433].item())
         np.save("u.npy", np.array(u_list))
