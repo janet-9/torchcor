@@ -6,7 +6,10 @@
 #    (Short)(1): Bidomain
 #    (Short)(0): Monodomain
 
-bidomain = 0
+mass_lumping   = 0
+bidomain       = 0
+bidm_eqv_mono  = 0
+parab_solve    = 1
 
 #===================================
 # Ionic Model
