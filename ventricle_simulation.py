@@ -4,7 +4,7 @@ import torch
 from pathlib import Path
 
 simulation_time = 500
-dt = 0.005
+dt = 0.01
 stim_LV_sf = {'tstart': 0.0,
               'nstim': 1,
               'period': 800,
@@ -49,7 +49,7 @@ material_config = {"diffusl": {34: 0.5272 * 1000 * 1000,
                                46: 0.3332 * 1000 * 1000}}
 
 
-device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device(f"cuda:1" if torch.cuda.is_available() else "cpu")
 home_dir = Path.home()
 
 ionic_model = TenTusscherPanfilov(cell_type="ENDO", dt=dt, device=device)
