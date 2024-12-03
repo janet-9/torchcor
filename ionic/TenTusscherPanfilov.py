@@ -176,6 +176,7 @@ class TenTusscherPanfilov:
         self.CaSR = torch.full((1,), self.CaSR_init, dtype=dtype, device=device)
         self.CaSS = torch.full((1,), self.CaSS_init, dtype=dtype, device=device)
         self.Cai = torch.full((1,), self.Cai_init, dtype=dtype, device=device)
+        self.Cai *= 1e3
         self.F = torch.full((1,), self.F_init, dtype=dtype, device=device)
         self.F2 = torch.full((1,), self.F2_init, dtype=dtype, device=device)
         self.FCaSS = torch.full((1,), self.FCaSS_init, dtype=dtype, device=device)
@@ -338,7 +339,7 @@ class TenTusscherPanfilov:
         self.CaSR = torch.full((n_nodes,), self.CaSR_init, dtype=self.dtype, device=self.device)
         self.CaSS = torch.full((n_nodes,), self.CaSS_init, dtype=self.dtype, device=self.device)
         self.Cai = torch.full((n_nodes,), self.Cai_init, dtype=self.dtype, device=self.device)
-        # self.Cai *= 1e3
+        self.Cai *= 1e3
         self.F = torch.full((n_nodes,), self.F_init, dtype=self.dtype, device=self.device)
         self.F2 = torch.full((n_nodes,), self.F2_init, dtype=self.dtype, device=self.device)
         self.FCaSS = torch.full((n_nodes,), self.FCaSS_init, dtype=self.dtype, device=self.device)
@@ -371,6 +372,7 @@ class TenTusscherPanfilov:
 
         CaSS_row = self.interpolate(self.CaSS, self.CaSS_tab, self.CaSS_T_mn, self.CaSS_T_mx, self.CaSS_T_res, self.CaSS_T_step, self.CaSS_T_mx_idx)
         V_row = self.interpolate(V, self.V_tab, self.V_T_mn, self.V_T_mx, self.V_T_res, self.V_T_step, self.V_T_mx_idx)
+        self.Cai *= 1e-3
 
         Eca = ((0.5*RTONF)*(torch.log((self.Cao/self.Cai))))
         Ek = (RTONF*(torch.log((self.Ko/self.Ki))))
@@ -457,6 +459,8 @@ class TenTusscherPanfilov:
         self.Xr1 = Xr1_rush_larsen_A+Xr1_rush_larsen_B*self.Xr1
         self.Xr2 = Xr2_rush_larsen_A+Xr2_rush_larsen_B*self.Xr2
         self.Xs = Xs_rush_larsen_A+Xs_rush_larsen_B*self.Xs
+
+        self.Cai *= 1e3
 
         return -Iion
 
