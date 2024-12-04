@@ -354,7 +354,7 @@ class TenTusscherPanfilov:
         self.Xr2 = torch.full((n_nodes,), self.Xr2_init, dtype=self.dtype, device=self.device)
         self.Xs = torch.full((n_nodes,), self.Xs_init, dtype=self.dtype, device=self.device)
 
-        D_init = (1. / (1. + (exp((((-8.+self.D_CaL_off) - self.V_init) / 7.5)))))
+        D_init = 1. / (1. + exp(((-8.+self.D_CaL_off - self.V_init) / 7.5)))
         self.D = torch.full((n_nodes,), D_init, dtype=self.dtype, device=self.device)
 
         return V
