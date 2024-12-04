@@ -14,7 +14,7 @@ class ConjugateGradient:
         self.x_prev = x.clone()
 
     def solve(self, A, b, a_tol: float=1e-6, r_tol: float = 1e-6, max_iter: int = 100):
-        total_iter: int = 0
+        n_iter: int = 0
 
         x_clone = self.x.clone()
         self.x.mul_(2).sub_(self.x_prev)
@@ -45,9 +45,9 @@ class ConjugateGradient:
 
             p.mul_(beta).add_(z)
 
-            total_iter += 1
+            n_iter += 1
 
-        return self.x.clone(), total_iter
+        return self.x.clone(), n_iter
 
 
 #

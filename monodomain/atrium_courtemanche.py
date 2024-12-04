@@ -140,6 +140,7 @@ class AtriumSimulatorCourtemanche:
         visualization = VTK3DSurface(self.vertices.cpu(), self.triangles.cpu())
         solving_time = time.time()
 
+        n_total_iter = 0
         for n in range(1, self.nt + 1):
             ctime += self.dt
             du = self.ionic_model.differentiate(u)
@@ -149,19 +150,20 @@ class AtriumSimulatorCourtemanche:
                 b += self.dt * I0
             b = self.M @ b
 
-            u, total_iter = cg.solve(self.A, b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
+            u, n_iter = cg.solve(self.A, b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
+            n_total_iter += n_iter
 
-            if total_iter == max_iter:
+            if n_iter == max_iter:
                 raise Exception(f"The solution did not converge at {n}th timestep")
 
             if verbose:
-                print(f"{n} / {self.nt + 1}: {total_iter}; {round(time.time() - solving_time, 2)}")
+                print(f"{n} / {self.nt + 1}: {n_iter}; {round(time.time() - solving_time, 2)}")
 
             if n % ts_per_frame == 0:
                 visualization.save_frame(color_values=self.rcm.inverse(u).cpu().numpy() if self.rcm is not None else u.cpu().numpy(),
                                          frame_path=f"./vtk_files_{self.n_nodes}_{self.rcm is not None}/frame_{n}.vtk")
 
-        print(f"Solved in {round(time.time() - solving_time, 2)} seconds")
+        print(f"Ran {n_total_iter} iterations in {round(time.time() - solving_time, 2)} seconds")
 
 
 
