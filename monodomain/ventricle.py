@@ -132,8 +132,12 @@ class VentricleSimulator:
         ctime = 0
         solving_time = time.time()
         for n in range(1, self.nt + 1):
+            # print(f"{n}: {u.max().item()}, {u.min().item()}", end=" ")
             ctime += self.dt
             du = self.ionic_model.differentiate(u)
+
+            # print(u.max().item(), du.max().item())
+
             b = u + self.dt * du
             for stimulus in self.stimuli:
                 I0 = stimulus.stimApp(ctime)
@@ -147,9 +151,9 @@ class VentricleSimulator:
             if verbose:
                 print(f"{n} / {self.nt + 1}: {total_iter}; {round(time.time() - solving_time, 2)}")
             
-            if n % ts_per_frame == 0:
-                visualization.save_frame(color_values=self.rcm.inverse(u).cpu().numpy() if self.rcm is not None else u.cpu().numpy(),
-                                         frame_path=f"./vtk_files_{self.n_nodes}_{self.rcm is not None}/frame_{n}.vtk")
+            # if n % ts_per_frame == 0:
+            #     visualization.save_frame(color_values=self.rcm.inverse(u).cpu().numpy() if self.rcm is not None else u.cpu().numpy(),
+            #                              frame_path=f"./vtk_files_{self.n_nodes}_{self.rcm is not None}/frame_{n}.vtk")
         
         print(f"Solved in {round(time.time() - solving_time, 2)} seconds")
 

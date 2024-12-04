@@ -169,29 +169,28 @@ class TenTusscherPanfilov:
         self.dtype = dtype
 
         # 22 states variables
-        self.GCaL_sv = torch.full((1,), self.GCaL, dtype=dtype, device=device)
-        self.GKr_sv = torch.full((1,), self.GKr, dtype=dtype, device=device)
-        self.GKs_sv = torch.full((1,), self.GKs, dtype=dtype, device=device)
-        self.Gto_sv = torch.full((1,), self.Gto, dtype=dtype, device=device)
-        self.CaSR = torch.full((1,), self.CaSR_init, dtype=dtype, device=device)
-        self.CaSS = torch.full((1,), self.CaSS_init, dtype=dtype, device=device)
-        self.Cai = torch.full((1,), self.Cai_init, dtype=dtype, device=device)
-        self.Cai *= 1e3
-        self.F = torch.full((1,), self.F_init, dtype=dtype, device=device)
-        self.F2 = torch.full((1,), self.F2_init, dtype=dtype, device=device)
-        self.FCaSS = torch.full((1,), self.FCaSS_init, dtype=dtype, device=device)
-        self.H = torch.full((1,), self.H_init, dtype=dtype, device=device)
-        self.J = torch.full((1,), self.J_init, dtype=dtype, device=device)
-        self.Ki = torch.full((1,), self.Ki_init, dtype=dtype, device=device)
-        self.M = torch.full((1,), self.M_init, dtype=dtype, device=device)
-        self.Nai = torch.full((1,), self.Nai_init, dtype=dtype, device=device)
-        self.R = torch.full((1,), self.R_init, dtype=dtype, device=device)
-        self.R_ = torch.full((1,), self.R__init, dtype=dtype, device=device)
-        self.S = torch.full((1,), self.S_init, dtype=dtype, device=device)
-        self.Xr1 = torch.full((1,), self.Xr1_init, dtype=dtype, device=device)
-        self.Xr2 = torch.full((1,), self.Xr2_init, dtype=dtype, device=device)
-        self.Xs = torch.full((1,), self.Xs_init, dtype=dtype, device=device)
-        self.D = torch.full((1,), self.Xs_init, dtype=dtype, device=device)
+        self.GCaL_sv = torch.tensor([self.GCaL])
+        self.GKr_sv = torch.tensor([self.GKr])
+        self.GKs_sv = torch.tensor([self.GKs])
+        self.Gto_sv = torch.tensor([self.Gto])
+        self.CaSR = torch.tensor([self.CaSR_init])
+        self.CaSS = torch.tensor([self.CaSS_init])
+        self.Cai = torch.tensor([self.Cai_init])
+        self.F = torch.tensor([self.F_init])
+        self.F2 = torch.tensor([self.F2_init])
+        self.FCaSS = torch.tensor([self.FCaSS_init])
+        self.H = torch.tensor([self.H_init])
+        self.J = torch.tensor([self.J_init])
+        self.Ki = torch.tensor([self.Ki_init])
+        self.M = torch.tensor([self.M_init])
+        self.Nai = torch.tensor([self.Nai_init])
+        self.R = torch.tensor([self.R_init])
+        self.R_ = torch.tensor([self.R__init])
+        self.S = torch.tensor([self.S_init])
+        self.Xr1 = torch.tensor([self.Xr1_init])
+        self.Xr2 = torch.tensor([self.Xr2_init])
+        self.Xs = torch.tensor([self.Xs_init])
+        self.D = torch.tensor([self.Xs_init])
 
 
     def interpolate(self, X, table, mn: float, mx: float, res: float, step: float, mx_idx: int):
@@ -375,6 +374,9 @@ class TenTusscherPanfilov:
         self.Cai *= 1e-3
 
         Eca = ((0.5*RTONF)*(torch.log((self.Cao/self.Cai))))
+        
+        print(V.max().item(), V.min().item(), Eca.max().item(), Eca.min().item(), self.Cai.max().item(), self.Cai.min().item())
+
         Ek = (RTONF*(torch.log((self.Ko/self.Ki))))
         Eks = (RTONF*(torch.log(((self.Ko+(self.pKNa*self.Nao))/(self.Ki+(self.pKNa*self.Nai))))))
         Ena = (RTONF*(torch.log((self.Nao/self.Nai))))
@@ -396,7 +398,8 @@ class TenTusscherPanfilov:
         ICaL = ((((self.D*self.F)*self.F2)*self.FCaSS) * ((ICaL_A*self.CaSS) - ICaL_B))
         INaCa = ((((V_row[:, self.INaCa_A_idx]*self.Nai)*self.Nai)*self.Nai) - (V_row[:, self.INaCa_B_idx] * self.Cai))
         IK1 = ((self.GK1*VEk_row[:, self.rec_iK1_idx]) * (V - Ek))
-        Iion = (((((((((((IKr+IKs)+IK1)+Ito)+INa)+IbNa)+ICaL)+IbCa)+INaK)+INaCa)+IpCa)+IpK)
+        Iion = IKr+IKs+IK1+Ito+INa+IbNa+ICaL+IbCa+INaK+INaCa+IpCa+IpK
+        # print(IKr.max().item(), IKs.max().item(), IK1.max().item(), Ito.max().item(), INa.max().item(), IbNa.max().item(), ICaL.max().item(), IbCa.max().item(), INaK.max().item(), INaCa.max().item(), IpCa.max().item(), IpK.max().item())
 
         # Complete Forward Euler Update
         Ileak = (self.Vleak * (self.CaSR - self.Cai))
@@ -416,7 +419,6 @@ class TenTusscherPanfilov:
         self.CaSR = self.CaSR+diff_CaSR*self.dt
         self.CaSS = self.CaSS+diff_CaSS*self.dt
         self.Cai = self.Cai+diff_Cai*self.dt
-        # self.Cai *= 1e3
         self.Ki = self.Ki+diff_Ki*self.dt
         self.Nai = self.Nai+diff_Nai*self.dt
         self.R_ = self.R_+diff_R_*self.dt
