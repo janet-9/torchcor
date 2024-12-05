@@ -65,30 +65,6 @@ class AtriumSimulatorCourtemanche:
     def add_material_property(self, material_config):
         self.material_config = material_config
 
-        # material = MaterialProperties()
-        #
-        # material.add_nodal_property('tau_in', 'uniform', material_config["tin"])
-        # material.add_nodal_property('tau_out', 'uniform', material_config["tout"])
-        # material.add_nodal_property('tau_open', 'uniform', material_config["topen"])
-        # material.add_nodal_property('tau_close', 'uniform', material_config["tclose"])
-        # material.add_nodal_property('u_gate', 'uniform', material_config["vg"])
-        # material.add_nodal_property('u_crit', 'uniform', material_config["vg"])
-        #
-        # nodal_properties = material.nodal_property_names()
-        #
-        # for npr in nodal_properties:
-        #     npr_type = material.nodal_property_type(npr)
-        #     attribute_value = self.ionic_model.get_attribute(npr)
-        #
-        #     if attribute_value is not None:
-        #         if npr_type == "uniform":
-        #             values = material.NodalProperty(npr, -1, -1)
-        #         else:
-        #             values = torch.full(size=(self.n_nodes, 1), fill_value=attribute_value)
-        #             for point_id, region_id in enumerate(self.point_region_ids):
-        #                 values[point_id] = material.NodalProperty(npr, point_id, region_id)
-        #         self.ionic_model.set_attribute(npr, values)
-
     def set_stimulus_region(self, path="/Users/bei/Project/FinitePDE/data/Case_1.vtx"):
         self.stimulus_region = load_stimulus_region(path)  # (2168,)
 
