@@ -153,9 +153,9 @@ class VentricleSimulator:
             if verbose:
                 print(f"{n} / {self.nt + 1}: {n_iter}; {round(time.time() - solving_time, 2)}")
             
-            # if n % ts_per_frame == 0:
-            #     visualization.save_frame(color_values=self.rcm.inverse(u).cpu().numpy() if self.rcm is not None else u.cpu().numpy(),
-            #                              frame_path=f"./vtk_files_{self.n_nodes}_{self.rcm is not None}/frame_{n}.vtk")
+            if n % ts_per_frame == 0:
+                visualization.save_frame(color_values=self.rcm.inverse(u).cpu().numpy() if self.rcm is not None else u.cpu().numpy(),
+                                         frame_path=f"./vtk_files_{self.n_nodes}_{self.rcm is not None}/frame_{n}.vtk")
         
         print(f"Ran {n_total_iter} iterations in {round(time.time() - solving_time, 2)} seconds")
 

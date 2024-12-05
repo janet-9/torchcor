@@ -3,7 +3,7 @@ from ionic import TenTusscherPanfilov
 import torch
 from pathlib import Path
 
-simulation_time = 1000
+simulation_time = 500
 dt = 0.005
 stim_LV_sf = {'tstart': 0.0,
               'nstim': 1,
@@ -63,5 +63,5 @@ simulator.add_stimulus(f"{home_dir}/Data/ventricle/LV_af.vtx", stim_LV_af)
 simulator.add_stimulus(f"{home_dir}/Data/ventricle/RV_sf.vtx", stim_RV_sf)
 simulator.add_stimulus(f"{home_dir}/Data/ventricle/RV_mod.vtx", stim_RV_mod)
 simulator.assemble()
-simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=1000, plot_interval=simulation_time, verbose=True)
+simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=1000, plot_interval=10, verbose=True)
 
