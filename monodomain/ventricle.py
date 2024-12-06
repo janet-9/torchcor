@@ -133,11 +133,8 @@ class VentricleSimulator:
         solving_time = time.time()
         n_total_iter = 0
         for n in range(1, self.nt + 1):
-            # print(f"{n}: {u.max().item()}, {u.min().item()}", end=" ")
             ctime += self.dt
             du = self.ionic_model.differentiate(u)
-
-            # print(u.max().item(), du.max().item())
 
             b = u + self.dt * du
             for stimulus in self.stimuli:

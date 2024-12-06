@@ -3,7 +3,7 @@ from ionic import CourtemancheRamirezNattel
 import torch
 from pathlib import Path
 
-simulation_time = 2400
+simulation_time = 3000
 dt = 0.01
 stim_config = {'tstart': 0.0,
                'nstim': 3,

@@ -120,6 +120,7 @@ class AtriumSimulatorCourtemanche:
         for n in range(1, self.nt + 1):
             ctime += self.dt
             du = self.ionic_model.differentiate(u)
+            
             b = u + self.dt * du
             for stimulus in self.stimuli:
                 I0 = stimulus.stimApp(ctime)
@@ -131,7 +132,6 @@ class AtriumSimulatorCourtemanche:
 
             if n_iter == max_iter:
                 raise Exception(f"The solution did not converge at {n}th timestep")
-
             if verbose:
                 print(f"{n} / {self.nt + 1}: {n_iter}; {round(time.time() - solving_time, 2)}")
 
