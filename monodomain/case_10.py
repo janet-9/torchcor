@@ -7,7 +7,7 @@ import torch
 from core.assemble import Matrices3DSurface
 from core.preconditioner import Preconditioner
 from core.solver import ConjugateGradient
-from core.visualize import VTK3DSurface
+from core.visualize import VTK3DSurface, VTK3DSurfaceSave
 from core.reorder import RCM as RCM
 import time
 from mesh.triangulation import Triangulation
@@ -15,6 +15,11 @@ from mesh.materialproperties import MaterialProperties
 from mesh.stimulus import Stimulus
 from monodomain.tools import load_stimulus_region
 import numpy as np
+from mesh.igbreader import IGBReader
+
+def renormalise_fibres(fibres):
+    fibre_len = torch.sqrt(fibres[:, 0] ** 2 + fibres[:, 1] ** 2 + fibres[:, 2] ** 2).unsqueeze(1)
+    return fibres / fibre_len
 
 
 class AtriumSimulatorCourtemanche:
@@ -25,7 +30,7 @@ class AtriumSimulatorCourtemanche:
 
         self.T = T  # ms = 2.4s
         self.dt = dt  # ms
-        self.nt = int(T // dt)
+        self.nt = int(T / dt)
         self.rcm = RCM(device=device, dtype=dtype) if apply_rcm else None
 
         self.ionic_model = ionic_model
@@ -45,6 +50,8 @@ class AtriumSimulatorCourtemanche:
         self.M = None
         self.A = None
 
+        self.apply_crank_nicolson = True
+
         self.stimulus_region = None
         self.stimuli = []
 
@@ -58,6 +65,11 @@ class AtriumSimulatorCourtemanche:
         self.vertices = torch.from_numpy(mesh.Pts()).to(dtype=self.dtype, device=self.device)
         self.triangles = torch.from_numpy(mesh.Elems()['Trias'][:, :-1]).to(dtype=torch.long, device=self.device)
         self.fibers = torch.from_numpy(mesh.Fibres()).to(dtype=self.dtype, device=self.device)
+
+        print(self.fibers[0: 3])
+        print(renormalise_fibres(self.fibers)[0: 3])
+
+        raise Exception(renormalise_fibres(self.fibers).shape)
 
         if self.rcm is not None:
             self.rcm.calculate_rcm_order(self.vertices, self.triangles)
@@ -99,15 +111,18 @@ class AtriumSimulatorCourtemanche:
         self.M = M.to(device=self.device, dtype=self.dtype)
         
         #######################################################
-        # C = - self.K * (self.dt / 2)
-        # A = self.M - C
-        A = self.M + self.K * self.dt
+        if self.apply_crank_nicolson:
+            C = - self.K * (self.dt / 2)
+            A = self.M - C
+        else:
+            A = self.M + self.K * self.dt
 
         self.pcd = Preconditioner()
         self.pcd.create_Jocobi(A)
 
         self.A = A.to_sparse_csr()
-        # self.C = C.to_sparse_csr()
+        if self.apply_crank_nicolson:
+            self.C = C.to_sparse_csr()
         #######################################################
 
     def solve(self, a_tol, r_tol, max_iter, plot_interval=10, verbose=True):
@@ -119,46 +134,58 @@ class AtriumSimulatorCourtemanche:
         cg.initialize(x=u)
 
         ts_per_frame = int(plot_interval / self.dt)
+        # raise Exception(ts_per_frame, self.nt)
         ctime = 0
         visualization = VTK3DSurface(self.vertices.cpu(), self.triangles.cpu())
         solving_time = time.time()
 
+        solutions = [u.cpu().numpy()]
+
         n_total_iter = 0
         for n in range(1, self.nt + 1):
-            ctime += 0.5*self.dt
+            ctime += self.dt
             #######################################################
             du = self.ionic_model.differentiate(u)
             
-            b = u + 0.5*self.dt * du
+            b = u + self.dt * du
             for stimulus in self.stimuli:
                 I0 = stimulus.stimApp(ctime)
-                b += 0.5*self.dt * I0
+                b += self.dt * I0
+
+                print(I0.max())
             # b is now u at time n+1/2
-            # b = self.M @ b + self.C @ u
-            b = self.M @ b
+            if self.apply_crank_nicolson:
+                b = self.M @ b + self.C @ u
+            else:
+                b = self.M @ b
             #######################################################
             u, n_iter = cg.solve(self.A, b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
             n_total_iter += n_iter
-            ctime += 0.5*self.dt
-            du = self.ionic_model.differentiate(u)
-            b = u + 0.5*self.dt * du
-            for stimulus in self.stimuli:
-                I0 = stimulus.stimApp(ctime)
-                b += 0.5*self.dt * I0
-            u=b
+
+            
+
+            # ctime += 0.5*self.dt
+            # du = self.ionic_model.differentiate(u)
+            # b = u + 0.5*self.dt * du
+            # for stimulus in self.stimuli:
+            #     I0 = stimulus.stimApp(ctime)
+            #     b += 0.5*self.dt * I0
+            # u=b
 
             if n_iter == max_iter:
                 raise Exception(f"The solution did not converge at {n}th timestep")
-            # if verbose:
-            #     print(f"{n} / {self.nt + 1}: {n_iter}; {round(time.time() - solving_time, 2)}")
+            if verbose:
+                print(f"{n} / {self.nt}: {n_iter}; {round(time.time() - solving_time, 2)}")
 
-            # if n % ts_per_frame == 0:
-            #     visualization.save_frame(color_values=self.rcm.inverse(u).cpu().numpy() if self.rcm is not None else u.cpu().numpy(),
-            #                              frame_path=f"./vtk_files_{self.n_nodes}_{self.rcm is not None}/frame_{n}.vtk")
+            if n % ts_per_frame == 0:
+                solutions.append(u.cpu().numpy())
+                # print(np.array(solutions).shape, u.cpu().numpy().dtype)
 
+                visualization.save_frame(color_values=self.rcm.inverse(u).cpu().numpy() if self.rcm is not None else u.cpu().numpy(),
+                                         frame_path=f"./vtk_files_{self.n_nodes}_{self.rcm is not None}/frame_{n}.vtk")
+
+        # np.save("./Case_10_300_1.npy", np.array(solutions))
         print(f"Ran {n_total_iter} iterations in {round(time.time() - solving_time, 2)} seconds")
-
-
 
 
 
@@ -167,7 +194,7 @@ if __name__ == "__main__":
     import torch
     from pathlib import Path
 
-    simulation_time = 3000
+    simulation_time = 300
     dt = 0.01
     stim_config = {'tstart': 0.0,
                 'nstim': 3,
@@ -175,13 +202,8 @@ if __name__ == "__main__":
                 'duration': 2.0,
                 'intensity': 100.0,
                 'name': 'S1'}
-    material_config = {"vg": 0.1,
-                    "diffusl": 0.4 * 1000 * 1000,
-                    "diffust": 0.4 * 1000 * 1000,
-                    "tin": 0.15,
-                    "tout": 1.5,
-                    "topen": 105.0,
-                    "tclose": 185.0}
+    material_config = {"diffusl": 0.4 * 1000 * 100,
+                       "diffust": 0.4 * 1000 * 100}
 
 
     device = torch.device(f"cuda:3" if torch.cuda.is_available() else "cpu")
@@ -191,15 +213,15 @@ if __name__ == "__main__":
     dtype = torch.float64
 
     home_directory = Path.home()
-    ionic_model = CourtemancheRamirezNattel(dt=dt/2.0, device=device, dtype=dtype)
+    ionic_model = CourtemancheRamirezNattel(dt=dt, device=device, dtype=dtype)
     print(ionic_model.default_parameters())
-    ionic_model.reset_parameters(ACh=0.000001, Cao=1.8, Cm=100.)
-    simulator = AtriumSimulatorCourtemanche(ionic_model, T=simulation_time, dt=dt, apply_rcm=True, device=device, dtype=dtype)
-    simulator.load_mesh(path=f"{home_directory}/Data/atrium/Case_1/Case_1")
+    ionic_model.reset_parameters()
+    simulator = AtriumSimulatorCourtemanche(ionic_model, T=simulation_time, dt=dt, apply_rcm=False, device=device, dtype=dtype)
+    simulator.load_mesh(path=f"{home_directory}/Data/atrium/Case_10/Case_10")
     simulator.add_material_property(material_config)
     simulator.set_stimulus_region(path=f"{home_directory}/Data/atrium/Case_10/Case_10.vtx")
     simulator.add_stimulus(stim_config)
     simulator.assemble()
-    simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=1000, plot_interval=10, verbose=True)
+    simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=1000, plot_interval=1, verbose=True)
 
 

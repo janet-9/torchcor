@@ -14,9 +14,9 @@ parab_solve    = 1
 #       TEMPORAL        #
 #########################
 dt      = 10         #in microseconds; PDEnsorflow uses milliseconds
-tend    = 3000
+tend    = 1000
 timedt  = 10
-spacedt = 3000 #1 in ms  #writes the solution every spacedt times set to tend to not write the solution
+spacedt = 1000 #1 in ms  #writes the solution every spacedt times set to tend to not write the solution
 simID   = "results"
 
 #######################################

@@ -35,7 +35,7 @@ class ConjugateGradient:
             r.sub_(alpha * Ap)
 
             z_new_norm = torch.linalg.vector_norm(z)
-
+            # print(z_new_norm.item())
             if z_new_norm < a_tol or (z_new_norm / z_norm) < r_tol:
                 break
 

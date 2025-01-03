@@ -24,7 +24,7 @@ class Preconditioner:
         PC = torch.zeros(A.shape[0], device=device, dtype=dtype)
         PC[row_indices[diagonal_mask]] = sparse_values[diagonal_mask]
 
-        self.PC = PC
+        self.PC = 1.0 / PC
 
     # def create_scaled_Jacobi(self, A):
     #     self.create_Jocobi(A)
@@ -36,7 +36,7 @@ class Preconditioner:
 
 
     def apply(self, r):
-        z = (1 / self.PC) * r
+        z = self.PC * r
         
         return z
     

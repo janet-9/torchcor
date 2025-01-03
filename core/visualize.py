@@ -4,7 +4,7 @@ import matplotlib.animation as animation
 import torch
 import pyvista as pv
 from pathlib import Path
-
+from mesh.igbreader import IGBReader
 
 class Visualization2D:
     def __init__(self, frames, vertices, triangles, dt, ts_per_frame):
@@ -134,3 +134,27 @@ class VTK3D:
 
 
 
+class VTK3DSurfaceSave:
+    def __init__(self, vertices, triangles):
+        self.vertices = vertices
+        self.triangles = triangles
+        self.n_triangles = triangles.shape[0]
+
+    def save_frame(self, carp_values, cor_values, frame_path):
+        # Cells array indicating triangles (3 vertices per triangle)
+        cells = np.hstack((np.full((self.n_triangles, 1), 3, dtype=int), self.triangles)).flatten().astype(int)
+        # Cell type for triangles
+        cell_type = np.full(self.n_triangles, 5, dtype=int)
+        # Create the unstructured grid
+        grid = pv.UnstructuredGrid(cells, cell_type, self.vertices.numpy())
+        grid.point_data["carp_values"] = carp_values
+        grid.point_data["cor_values"] = cor_values
+
+        
+
+        # grid.point_data["openCARP"] = carp_solution
+
+        # Save the grid to the specified file path
+        file_path = Path(frame_path)
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        grid.save(frame_path)
