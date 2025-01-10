@@ -1,5 +1,12 @@
+import sys
+import os
+
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(parent_dir)
+
+
 import pygmsh
-from ionic import TenTusscherPanfilov
+from TenTusscherPanfilov import TenTusscherPanfilov
 import torch
 from core.assemble import Matrices3D
 from core.preconditioner import Preconditioner
@@ -9,14 +16,15 @@ from core.reorder import RCM as RCM
 import time
 
 
-class VentricleSimulator:
+class Monodomain:
     def __init__(self, ionic_model, T, dt, apply_rcm, device=None, dtype=None):
         self.device = torch.device(device) if device is not None else "cuda:0" \
             if torch.cuda.is_available() else "cpu"
         self.dtype = dtype if dtype is not None else torch.float64
 
-        self.T = T  # ms = 2.4s
+        self.T = T  # ms 
         self.dt = dt  # ms
+        self.dx = None
         self.nt = int(T // dt)
         self.rcm = RCM(device=device, dtype=dtype) if apply_rcm else None
 
@@ -34,6 +42,9 @@ class VentricleSimulator:
 
         self.material_config = None
 
+        
+        self.Chi = 140  # mm
+        self.Cm = 0.01  # uFmm
         self.K = None
         self.M = None
         self.A = None
@@ -42,9 +53,11 @@ class VentricleSimulator:
         self.stimuli = []
 
     def load_mesh(self, dx):
-        length = 20  
-        width = 7   
-        height = 3   
+        self.dx = dx
+
+        length = 20  # mm
+        width = 7    # mm
+        height = 3   # mm
 
         # Create the cube with tethrahedrals
         with pygmsh.geo.Geometry() as geom:
@@ -59,13 +72,22 @@ class VentricleSimulator:
         self.vertices = torch.from_numpy(mesh.points).to(dtype=self.dtype, device=self.device)
         self.n_nodes = self.vertices.shape[0]
         self.tetrahedral = torch.from_numpy(mesh.cells_dict["tetra"]).to(dtype=torch.long, device=self.device)
-        self.fibers = torch.tensor([0, 1, 0]).repeat(self.tetrahedral.shape[0], 1).to(dtype=self.dtype, device=self.device)
+        self.fibers = torch.tensor([1, 0, 0]).repeat(self.tetrahedral.shape[0], 1).to(dtype=self.dtype, device=self.device)
 
         corner_size = 1.5
         self.corner_indices = torch.where((self.vertices[:, 0] <= corner_size) &  # x <= 1.5
                                        (self.vertices[:, 1] <= corner_size) &  # y <= 1.5
                                        (self.vertices[:, 2] <= corner_size)    # z <= 1.5
                                 )[0] 
+        
+        self.P1_index = torch.where((self.vertices[:, 0] == 0) &  
+                                    (self.vertices[:, 1] == 0) &  
+                                    (self.vertices[:, 2] == 0)    
+                                )[0]
+        self.P8_index = torch.where((self.vertices[:, 0] == 20) &  
+                                    (self.vertices[:, 1] == 7) &  
+                                    (self.vertices[:, 2] == 3)   
+                                )[0]
 
         print(self.vertices.shape, self.tetrahedral.shape, self.fibers.shape)
 
@@ -94,7 +116,7 @@ class VentricleSimulator:
 
         self.K = K.to(device=self.device, dtype=self.dtype)
         self.M = M.to(device=self.device, dtype=self.dtype)
-        A = self.M + self.K * self.dt
+        A = self.M * self.Cm * self.Chi + self.K * self.dt
 
         self.pcd = Preconditioner()
         self.pcd.create_Jocobi(A)
@@ -102,9 +124,9 @@ class VentricleSimulator:
 
     def solve(self, a_tol, r_tol, max_iter, plot_interval=10, verbose=True):
         u = self.ionic_model.initialize(self.n_nodes)
-        new_u = torch.zeros_like(u)
-        new_u[self.corner_indices] = u[self.corner_indices]
-        u = new_u
+
+        stimulus = torch.zeros_like(u)
+        stimulus[self.corner_indices] = 50
 
         if self.rcm is not None:
             u = self.rcm.reorder(u)
@@ -114,40 +136,53 @@ class VentricleSimulator:
 
         ts_per_frame = int(plot_interval / self.dt)
         visualization = VTK3D(self.vertices.cpu().numpy(), self.tetrahedral.cpu().numpy())
-        visualization.save_frame(color_values=self.rcm.inverse(u).cpu().numpy() if self.rcm is not None else u.cpu().numpy(),
-                                         frame_path=f"./verification_{self.n_nodes}_{self.rcm is not None}/frame_{0}.vtk")
+        # visualization.save_frame(color_values=self.rcm.inverse(u).cpu().numpy() if self.rcm is not None else u.cpu().numpy(),
+        #                                  frame_path=f"./verification_{self.n_nodes}_{self.rcm is not None}/frame_{0}.vtk")
 
         ctime = 0
         solving_time = time.time()
         n_total_iter = 0
+
         for n in range(1, self.nt + 1):
             ctime += self.dt
-            du = self.ionic_model.differentiate(u)
 
-            b = u + self.dt * du
-            b = self.M @ b
+            du = self.ionic_model.differentiate(u)
+            
+            b = u * self.Cm + self.dt * du
+            # b = u * self.Cm 
+
+            # apply the stimulus for 2
+            if ctime <= 2.0:
+                b += self.dt * stimulus
+
+            b = self.M @ b * self.Chi
             
             u, n_iter = cg.solve(self.A, b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
             n_total_iter += n_iter
 
+            print(u[self.P1_index].item(), u[self.P8_index].item(), u.min().item(), u.max().item())
+            if u[self.P8_index].item() > 0:
+                break
+            # print()
+
             if n_iter == max_iter:
                 raise Exception(f"The solution did not converge at {n}th timestep")
             if verbose:
-                print(f"{n} / {self.nt}: {n_iter}; {round(time.time() - solving_time, 2)}")
+                print(f"{round(ctime, 3)} / {self.T}: {n_iter}; {round(time.time() - solving_time, 2)}")
             
             if n % ts_per_frame == 0:
                 visualization.save_frame(color_values=self.rcm.inverse(u).cpu().numpy() if self.rcm is not None else u.cpu().numpy(),
-                                         frame_path=f"./verification_{self.n_nodes}_{self.rcm is not None}/frame_{n}.vtk")
+                                         frame_path=f"./{self.n_nodes}_{self.rcm is not None}_dt{self.dt}_dx{self.dx}/frame_{n}.vtk")
         
         print(f"Ran {n_total_iter} iterations in {round(time.time() - solving_time, 2)} seconds")
 
 if __name__ == "__main__":
-    dt = 0.05
-    dx = 0.5
+    dt = 0.005  # ms
+    dx = 0.2    # mm
 
-    device = torch.device(f"cuda:1" if torch.cuda.is_available() else "cpu")
+    device = torch.device(f"cuda:3" if torch.cuda.is_available() else "cpu")
 
-    ionic_model = TenTusscherPanfilov(cell_type="ENDO", dt=dt, device=device)
+    ionic_model = TenTusscherPanfilov(cell_type="EPI", dt=dt, device=device)
     ionic_model.V_init = -85.23
     ionic_model.Xr1_init = 0.00621
     ionic_model.Xr2_init = 0.4712
@@ -168,11 +203,17 @@ if __name__ == "__main__":
     ionic_model.Nai_init = 8.064
     ionic_model.Ki_init = 136.89
 
-    material_config = {"diffusl": 0.3332 * 1000 * 100,
-                       "diffust": 0.3332 * 1000 * 100}
+    il = 0.17 
+    it = 0.019
+    el = 0.62
+    et = 0.2
+    material_config = {"diffusl": il * el * (1 / (il + el)),
+                       "diffust": it * et * (1 / (it + et))}
 
-    simulator = VentricleSimulator(ionic_model, T=2, dt=dt, apply_rcm=True, device=device)
+    simulator = Monodomain(ionic_model, T=150, dt=dt, apply_rcm=False, device=device)
+    simulator.Chi = 140
+    simulator.Cm = 0.01
     simulator.load_mesh(dx=dx)
     simulator.add_material_property(material_config)
     simulator.assemble()
-    simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=1000, plot_interval=dt, verbose=True)
+    simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=1000, plot_interval=dt * 10, verbose=True)

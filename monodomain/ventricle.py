@@ -140,7 +140,7 @@ class VentricleSimulator:
             for stimulus in self.stimuli:
                 I0 = stimulus.stimApp(ctime)
                 b += self.dt * I0
-            b = self.M @ b
+            b = self.M @ b 
             
             u, n_iter = cg.solve(self.A, b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
             n_total_iter += n_iter

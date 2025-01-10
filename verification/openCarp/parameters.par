@@ -1,0 +1,111 @@
+#===================================
+# Source (EP) Model
+#===================================
+# TO BE SPECIFIED IN THE MAIN SCIPT
+#    (Short)(2): Pseudo-bidomain
+#    (Short)(1): Bidomain
+#    (Short)(0): Monodomain
+
+mass_lumping   = 0
+bidomain       = 0
+bidm_eqv_mono  = 0
+parab_solve    = 1
+
+#===================================
+# Ionic Model
+#===================================
+# imp_region: assignment of active electrophysiological properties
+num_imp_regions          = 1
+
+# ------------------------------------------------------------------------------
+# Ventricular Myocytes
+# ------------------------------------------------------------------------------
+imp_region[0].num_IDs    = 5
+imp_region[0].ID[0]      = 34  #RV
+imp_region[0].ID[1]      = 35  #LV
+imp_region[0].ID[2]      = 44  #RV_subendo
+imp_region[0].ID[3]      = 45  #LV_subendo
+imp_region[0].ID[4]      = 46  #RVseptum_subendo
+imp_region[0].im         = tenTusscherPanfilov
+imp_region[0].im_param   = "flags=ENDO"
+
+#===================================
+# Conductivities
+#===================================
+# gregion: assignement of passive tissue properties
+meshformat               = 0 # 0: carp_txt file, 1: binary file
+num_gregions             = 2
+
+
+# ------------------------------------------------------------------------------
+# Ventricles
+# ------------------------------------------------------------------------------
+# R-D settings
+gregion[0].num_IDs       = 2
+gregion[0].ID[0]         = 34       # RV
+gregion[0].ID[1]         = 35       # LV
+gregion[0].g_il          = 0.5272 # CV = 0.63m/s # [S/m] Conductivity along the fibre direction (l=longitudinal) in the intracellular space
+gregion[0].g_it          = 0.2076 # CV = 0.30m/s # [S/m] Conductivity transverse to the fibre direction (t=trasversal) in the intracellular space
+
+gregion[1].num_IDs       = 3
+gregion[1].ID[0]         = 44 #RV_subendo
+gregion[1].ID[1]         = 45 #LV_subendo
+gregion[1].ID[2]         = 46 #RVseptum_subendo
+gregion[1].g_il          = 0.9074
+gregion[1].g_it          = 0.3332
+
+
+#===================================
+# Stimulation
+#===================================
+num_stim             = 5
+
+stimulus[0].name     = LV_sf
+stimulus[0].stimtype = 0
+stimulus[0].duration = 1.0
+stimulus[0].strength = 100
+stimulus[0].start    = 0.0
+stimulus[0].vtx_file = /home/bzhou6/Data/ventricle/LV_sf
+
+stimulus[1].name     = LV_pf
+stimulus[1].stimtype = 0
+stimulus[1].duration = 1.0
+stimulus[1].strength = 100
+stimulus[1].start    = 0.0
+stimulus[1].vtx_file = /home/bzhou6/Data/ventricle/LV_pf
+
+stimulus[2].name     = LV_af
+stimulus[2].stimtype = 0
+stimulus[2].duration = 1.0
+stimulus[2].strength = 100
+stimulus[2].start    = 0.0
+stimulus[2].vtx_file = /home/bzhou6/Data/ventricle/LV_af
+
+stimulus[3].name     = RV_sf
+stimulus[3].stimtype = 0
+stimulus[3].duration = 1.0
+stimulus[3].strength = 100
+stimulus[3].start    = 5.0
+stimulus[3].vtx_file = /home/bzhou6/Data/ventricle/RV_sf
+
+stimulus[4].name     = RV_mod
+stimulus[4].stimtype = 0
+stimulus[4].duration = 1.0
+stimulus[4].strength = 100
+stimulus[4].start    = 5.0
+stimulus[4].vtx_file = /home/bzhou6/Data/ventricle/RV_mod
+
+
+#===================================
+# Solver
+#===================================
+dt                       = 10               # Defines the time step size to solve the numeric equations for. NOTE: [us]
+tend                     = 1000             # Defines the point in time when the simulation stops.                 [ms]
+simID   = "results"
+
+#===================================
+# Output
+#===================================
+timedt                   = 10             # Defines the temporal interval between progress updates made to the terminal. (For informational purposes only).
+spacedt                  = 10              # Defines the temporal interval to output data to files.
+gridout_i                = 0
