@@ -28,7 +28,7 @@ Ny = 100  # Number of grid points in x and y
 T0 = 100
 
 sigma = torch.tensor([[0.001 * 0.5, -0.001 * 0.5],
-                           [-0.001 * 0.5, 0.001 * 0.5]], device=device, dtype=dtype)  # Thermal diffusivity
+                      [-0.001 * 0.5, 0.001 * 0.5]], device=device, dtype=dtype)  # Thermal diffusivity
 # h = 0.5206164
 # print(h ** 2 / (2 * alpha))
 dt = 0.0125  # Time step size
@@ -46,35 +46,35 @@ X, Y = np.meshgrid(x, y)
 
 # Flatten the X, Y, Z arrays for input to Delaunay
 vertices = np.vstack([X.flatten(), Y.flatten()]).T
-print(vertices.shape)
-triangles = Delaunay(vertices).simplices
-
+triangles = torch.from_numpy(Delaunay(vertices).simplices).to(dtype=torch.long, device=device)
+vertices = torch.from_numpy(vertices).to(dtype=dtype, device=device)
 
 print(f"Vertices: {len(vertices)}, Nodes: {len(triangles)}")
 
 start = time.time()
 print("assembling matrices")
 rcm = RCM(device=device, dtype=dtype)
-rcm_vertices, rcm_triangles = rcm.calculate_rcm_order(vertices, triangles)
+rcm.calculate_rcm_order(vertices, triangles)
+
+rcm_vertices = rcm.reorder(vertices)
+rcm_triangles = rcm.map(triangles)
 
 matrices = Matrices2D(rcm_vertices, rcm_triangles, device=device, dtype=dtype)
 K, M = matrices.assemble_matrices(sigma)
 print(f"assembled in: {time.time() - start} seconds")
-
 
 M_dt = M * (1 / dt)
 A = M_dt + K
 
 # apply initial condition for A
 print("applying boundary condition for A")
-dirichlet_boundary_nodes = torch.arange(30 * Nx, 30 * Nx + Ny)
-dirichlet_boundary_nodes = rcm.apply(dirichlet_boundary_nodes).to(device)
+dirichlet_boundary_nodes = torch.arange(30 * Nx, 30 * Nx + Ny).to(device)
+dirichlet_boundary_nodes = rcm.map(dirichlet_boundary_nodes).to(device)
 boundary_values = torch.ones_like(dirichlet_boundary_nodes, device=device, dtype=dtype) * T0
 
 u0 = torch.zeros((Nx * Ny,), device=device, dtype=dtype)
 u0[dirichlet_boundary_nodes] = boundary_values
 u = u0
-
 
 A = apply_dirichlet_boundary_conditions(A, dirichlet_boundary_nodes)
 

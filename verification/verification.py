@@ -153,7 +153,7 @@ class Monodomain:
 
             # apply the stimulus for 2
             if ctime <= 2.0:
-                b += self.dt * stimulus
+                b += self.dt * stimulus    #TODO: -= or += ?
 
             b = self.M @ b * self.Chi
             
@@ -203,10 +203,10 @@ if __name__ == "__main__":
     ionic_model.Nai_init = 8.064
     ionic_model.Ki_init = 136.89
 
-    il = 0.17 
-    it = 0.019
-    el = 0.62
-    et = 0.2
+    il = 0.17 * 1000 * 100
+    it = 0.019 * 1000 * 100
+    el = 0.62 * 1000 * 100
+    et = 0.2 * 1000 * 100
     material_config = {"diffusl": il * el * (1 / (il + el)),
                        "diffust": it * et * (1 / (it + et))}
 
