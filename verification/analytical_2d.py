@@ -148,7 +148,7 @@ class Monodomain:
                     frames = torch.cat((frames, u.reshape((1, self.Nx, self.Ny))))
 
         visualization = Visualization2D(frames, self.vertices, self.triangles, self.dt, ts_per_frame)
-        visualization.save_gif("./Analytical solution.gif")
+        visualization.save_gif("./approximation solution.gif")
 
 if __name__ == "__main__":
     dt = 0.0125  # ms
