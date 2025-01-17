@@ -27,8 +27,8 @@ Nx = 100
 Ny = 100  # Number of grid points in x and y
 T0 = 100
 
-sigma = torch.tensor([[0.001 * 0.5, -0.001 * 0.5],
-                      [-0.001 * 0.5, 0.001 * 0.5]], device=device, dtype=dtype)  # Thermal diffusivity
+sigma = torch.tensor([[0.001 * 0.5, 0],
+                      [0, 0.001 * 0.5]], device=device, dtype=dtype)  # Thermal diffusivity
 # h = 0.5206164
 # print(h ** 2 / (2 * alpha))
 dt = 0.0125  # Time step size
@@ -68,7 +68,7 @@ A = M_dt + K
 
 # apply initial condition for A
 print("applying boundary condition for A")
-dirichlet_boundary_nodes = torch.arange(30 * Nx, 30 * Nx + Ny).to(device)
+dirichlet_boundary_nodes = torch.arange(0, Nx).to(device)
 dirichlet_boundary_nodes = rcm.map(dirichlet_boundary_nodes).to(device)
 boundary_values = torch.ones_like(dirichlet_boundary_nodes, device=device, dtype=dtype) * T0
 

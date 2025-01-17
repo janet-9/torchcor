@@ -13,6 +13,7 @@ from core.preconditioner import Preconditioner
 from core.solver import ConjugateGradient
 from core.visualize import VTK3D
 from core.reorder import RCM as RCM
+import numpy as np
 import time
 
 
@@ -136,12 +137,11 @@ class Monodomain:
 
         ts_per_frame = int(plot_interval / self.dt)
         visualization = VTK3D(self.vertices.cpu().numpy(), self.tetrahedral.cpu().numpy())
-        # visualization.save_frame(color_values=self.rcm.inverse(u).cpu().numpy() if self.rcm is not None else u.cpu().numpy(),
-        #                                  frame_path=f"./verification_{self.n_nodes}_{self.rcm is not None}/frame_{0}.vtk")
 
         ctime = 0
         solving_time = time.time()
         n_total_iter = 0
+        activation_time = torch.zeros_like(u)
 
         for n in range(1, self.nt + 1):
             ctime += self.dt
@@ -153,18 +153,19 @@ class Monodomain:
 
             # apply the stimulus for 2
             if ctime <= 2.0:
-                b += self.dt * stimulus    #TODO: -= or += ?
+                b += self.dt * stimulus
 
             b = self.M @ b * self.Chi
             
             u, n_iter = cg.solve(self.A, b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
             n_total_iter += n_iter
 
+            activation_time[(u > 0) & (activation_time == 0)] = ctime
+
             print(u[self.P1_index].item(), u[self.P8_index].item(), u.min().item(), u.max().item())
             if u[self.P8_index].item() > 0:
                 break
-            # print()
-
+            
             if n_iter == max_iter:
                 raise Exception(f"The solution did not converge at {n}th timestep")
             if verbose:
@@ -176,9 +177,13 @@ class Monodomain:
         
         print(f"Ran {n_total_iter} iterations in {round(time.time() - solving_time, 2)} seconds")
 
+        # np.save(f"activation_time_dt{self.dt}_dx{self.dx}.npy", activation_time.cpu().numpy())
+        visualization.save_frame(color_values=self.rcm.inverse(activation_time).cpu().numpy() if self.rcm is not None else activation_time.cpu().numpy(),
+                                 frame_path=f"activation_time_dt{self.dt}_dx{self.dx}_laplace.vtk")
+
 if __name__ == "__main__":
     dt = 0.005  # ms
-    dx = 0.2    # mm
+    dx = 0.1    # mm
 
     device = torch.device(f"cuda:3" if torch.cuda.is_available() else "cpu")
 
@@ -203,17 +208,25 @@ if __name__ == "__main__":
     ionic_model.Nai_init = 8.064
     ionic_model.Ki_init = 136.89
 
-    il = 0.17 * 1000 * 100
-    it = 0.019 * 1000 * 100
-    el = 0.62 * 1000 * 100
-    et = 0.2 * 1000 * 100
+    il = 0.17 
+    it = 0.019 
+    el = 0.62 
+    et = 0.2
     material_config = {"diffusl": il * el * (1 / (il + el)),
                        "diffust": it * et * (1 / (it + et))}
 
-    simulator = Monodomain(ionic_model, T=150, dt=dt, apply_rcm=False, device=device)
+    simulator = Monodomain(ionic_model, 
+                           T=150, 
+                           dt=dt, 
+                           apply_rcm=False, 
+                           device=device)
     simulator.Chi = 140
     simulator.Cm = 0.01
     simulator.load_mesh(dx=dx)
     simulator.add_material_property(material_config)
     simulator.assemble()
-    simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=1000, plot_interval=dt * 10, verbose=True)
+    simulator.solve(a_tol=1e-5, 
+                    r_tol=1e-5, 
+                    max_iter=1000, 
+                    plot_interval=dt * 10, 
+                    verbose=True)

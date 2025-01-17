@@ -317,7 +317,7 @@ class TenTusscherPanfilov:
 
     def initialize(self, n_nodes: int):
         V = torch.full((n_nodes,), self.V_init, device=self.device, dtype=self.dtype)
-
+    
         self.GCaL = torch.full((n_nodes,), self.GCaL_init, device=self.device, dtype=self.dtype)
         self.GKr = torch.full((n_nodes,), self.GKr_init, device=self.device, dtype=self.dtype)
         self.GKs = torch.full((n_nodes,), self.GKs_init, device=self.device, dtype=self.dtype)
@@ -449,3 +449,47 @@ class TenTusscherPanfilov:
         return -Iion
 
 
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+    import numpy as np
+    dt = 0.01
+    stimulus = 50
+    device = torch.device(f"cuda:3" if torch.cuda.is_available() else "cpu")
+    ionic = TenTusscherPanfilov(cell_type="EPI", 
+                                dt=dt, 
+                                device=device, 
+                                dtype=torch.float64)
+    ionic.construct_tables()
+    V = ionic.initialize(n_nodes=1)
+
+
+    solutions = []
+    Cai = []
+    CaSS = []
+
+    ctime = 0.0
+    for _ in range(int(800/dt)):
+        dV = ionic.differentiate(V)
+        V = V + dt * dV
+        ctime += dt
+        if ctime <= 2.0: 
+            V = V + dt * stimulus
+        
+        solutions.append([ctime, V.item()])
+        Cai.append([ctime, ionic.Cai.item()])
+        CaSS.append([ctime, ionic.CaSS.item()])
+    
+    plt.figure()
+    solutions = np.array(solutions)    
+    plt.plot(solutions[:, 0],solutions[:, 1])
+    plt.savefig("ttp.png")
+
+    plt.figure()
+    Cai = np.array(Cai)    
+    plt.plot(Cai[:,0], Cai[:,1])
+    plt.savefig("Cai.png")
+
+    plt.figure()
+    CaSS = np.array(CaSS)    
+    plt.plot(CaSS[:,0], CaSS[:,1])
+    plt.savefig("CaSS.png")
