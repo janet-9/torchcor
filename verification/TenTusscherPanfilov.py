@@ -452,8 +452,8 @@ class TenTusscherPanfilov:
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import numpy as np
-    dt = 0.01
-    stimulus = 50
+    dt = 0.02
+    stimulus = 20
     device = torch.device(f"cuda:3" if torch.cuda.is_available() else "cpu")
     ionic = TenTusscherPanfilov(cell_type="EPI", 
                                 dt=dt, 
@@ -469,15 +469,17 @@ if __name__ == "__main__":
 
     ctime = 0.0
     for _ in range(int(800/dt)):
-        dV = ionic.differentiate(V)
-        V = V + dt * dV
-        ctime += dt
-        if ctime <= 2.0: 
-            V = V + dt * stimulus
-        
         solutions.append([ctime, V.item()])
         Cai.append([ctime, ionic.Cai.item()])
         CaSS.append([ctime, ionic.CaSS.item()])
+
+        dV = ionic.differentiate(V)
+        V = V + dt * dV
+        ctime += dt
+        if ((ctime>=100) and (ctime <= (100+2.0) )): 
+            V = V + dt * stimulus
+        
+        
     
     plt.figure()
     solutions = np.array(solutions)    
