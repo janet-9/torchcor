@@ -1,5 +1,6 @@
-# FinitePDE
-FinitePDE: A High-Performance GPU Library for Finite Methods in Solving Partial Differential Equations
+# TorchCor
+TorchCor: Efficient Cardiac Electrophysiology
+Simulations on General Purpose GPUs
 
 
 
