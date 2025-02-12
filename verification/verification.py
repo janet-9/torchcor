@@ -183,7 +183,7 @@ class Monodomain:
 
 if __name__ == "__main__":
     dt = 0.005  # ms
-    dx = 0.1    # mm
+    dx = 0.2    # mm
 
     device = torch.device(f"cuda:3" if torch.cuda.is_available() else "cpu")
 

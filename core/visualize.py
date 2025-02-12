@@ -6,7 +6,7 @@ import pyvista as pv
 from pathlib import Path
 from mesh.igbreader import IGBReader
 
-class Visualization2D:
+class GIF2D:
     def __init__(self, frames, vertices, triangles, dt, ts_per_frame):
         # Convert frames to numpy if they are in a tensor format
         self.frames = frames.cpu().numpy() if isinstance(frames, torch.Tensor) else frames
@@ -28,7 +28,7 @@ class Visualization2D:
                       self.vertices[:, 1], 
                       self.triangles, 
                       self.frames[k].flatten(),
-                      cmap=plt.cm.jet, vmin=0, vmax=100, shading='gouraud')
+                      cmap=plt.cm.jet, vmin=0, vmax=self.frames.max(), shading='gouraud')
         plt.colorbar()
 
     def animate(self, k):
@@ -40,7 +40,7 @@ class Visualization2D:
         anim.save(filepath)  
 
 
-class Visualization3DSurface:
+class GIF3DSurface:
     def __init__(self, frames, vertices, triangles, dt, ts_per_frame):
         # Convert frames to numpy if they are in a tensor format
         self.frames = frames.cpu().numpy() if isinstance(frames, torch.Tensor) else frames
@@ -91,6 +91,30 @@ class Visualization3DSurface:
         anim.save(filepath)  
 
 
+class VTK2D:
+    def __init__(self, vertices, triangles):
+        self.vertices = vertices  
+        self.triangles = triangles
+        self.n_triangles = triangles.shape[0]
+
+    def save_frame(self, color_values, frame_path):
+        # Convert 2D vertices to 3D by adding a zero z-coordinate
+        vertices_3d = np.hstack((self.vertices, np.zeros((self.vertices.shape[0], 1))))
+        # Create the cells array in VTK format (triangular cells)
+        cells = np.hstack((np.full((self.n_triangles, 1), 3, dtype=int), self.triangles)).flatten().astype(int)
+        # Cell type for triangles (5 represents triangles in VTK)
+        cell_type = np.full(self.n_triangles, 5, dtype=int)
+        # Create the unstructured grid (it holds the triangles and vertices)
+        grid = pv.UnstructuredGrid(cells, cell_type, vertices_3d)
+        # Assign color values to the points
+        grid.point_data["colors"] = color_values
+        # Save the grid to the specified file path
+        file_path = Path(frame_path)
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        grid.save(frame_path)
+
+
+
 class VTK3DSurface:
     def __init__(self, vertices, triangles):
         self.vertices = vertices
@@ -128,33 +152,6 @@ class VTK3D:
         # plotter = pv.Plotter()
         # plotter.add_mesh(grid, scalars="colors", cmap="viridis", show_edges=True)
         # plotter.show()
-        file_path = Path(frame_path)
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        grid.save(frame_path)
-
-
-
-class VTK3DSurfaceSave:
-    def __init__(self, vertices, triangles):
-        self.vertices = vertices
-        self.triangles = triangles
-        self.n_triangles = triangles.shape[0]
-
-    def save_frame(self, carp_values, cor_values, frame_path):
-        # Cells array indicating triangles (3 vertices per triangle)
-        cells = np.hstack((np.full((self.n_triangles, 1), 3, dtype=int), self.triangles)).flatten().astype(int)
-        # Cell type for triangles
-        cell_type = np.full(self.n_triangles, 5, dtype=int)
-        # Create the unstructured grid
-        grid = pv.UnstructuredGrid(cells, cell_type, self.vertices.numpy())
-        grid.point_data["carp_values"] = carp_values
-        grid.point_data["cor_values"] = cor_values
-
-        
-
-        # grid.point_data["openCARP"] = carp_solution
-
-        # Save the grid to the specified file path
         file_path = Path(frame_path)
         file_path.parent.mkdir(parents=True, exist_ok=True)
         grid.save(frame_path)

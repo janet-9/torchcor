@@ -1,8 +1,6 @@
 import sys
 import os
-import warnings
 
-warnings.filterwarnings("ignore", message="Sparse CSR tensor support is in beta state")
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir)
 
@@ -11,21 +9,13 @@ import torch
 from core.assemble import Matrices2D
 from core.preconditioner import Preconditioner
 from core.solver import ConjugateGradient
-from core.visualize import VTK2D, GIF2D
+from core.visualize import Visualization2D
 from core.reorder import RCM as RCM
 from scipy.spatial import Delaunay
 import numpy as np
 import time
-import math
 from core.boundary import apply_dirichlet_boundary_conditions
 
-def compute_w(t, vertices, k=2, w1=2 * math.pi, w2=math.pi, lbda=math.pi/4):
-    a = w1 * vertices[:, 0] + w2 * vertices[:, 1] - lbda * t
-    return math.exp(-k * t) * torch.cos(a)
-
-def compute_r(w, t, vertices, k=2, w1=2 * math.pi, w2=math.pi, lbda=math.pi/4):
-    a = w1 * vertices[:, 0] + w2 * vertices[:, 1] - lbda * t
-    return math.exp(-k * t) * (-k * torch.cos(a) + lbda * torch.sin(a)) + (w1 ** 2 + w2 ** 2) * w
 
 class Monodomain:
     def __init__(self, ionic_model, T, dt, apply_rcm, device=None, dtype=None):
@@ -73,7 +63,6 @@ class Monodomain:
 
         # Flatten the X, Y, Z arrays for input to Delaunay
         vertices = np.vstack([X.flatten(), Y.flatten()]).T
-
         self.triangles = torch.from_numpy(Delaunay(vertices).simplices).to(dtype=torch.long, device=device)
         self.vertices = torch.from_numpy(vertices).to(dtype=self.dtype, device=device)
 
@@ -112,67 +101,54 @@ class Monodomain:
 
     def solve(self, a_tol, r_tol, max_iter, plot_interval=10, verbose=True):
         
-        dirichlet_boundary_nodes = torch.where((self.vertices[:, 0] == 0) | (self.vertices[:, 0] == 1) | (self.vertices[:, 1] == 0) | (self.vertices[:, 1] == 1))
+        dirichlet_boundary_nodes = torch.arange(0, self.Nx).to(device)
+        if self.rcm is not None:
+            dirichlet_boundary_nodes = self.rcm.map(dirichlet_boundary_nodes).to(device)
+        boundary_values = torch.ones_like(dirichlet_boundary_nodes, device=self.device, dtype=self.dtype) * 100
 
-        u0 = compute_w(t=0, vertices=self.vertices)
+        u0 = torch.zeros((self.Nx * self.Ny,), device=self.device, dtype=self.dtype)
+        u0[dirichlet_boundary_nodes] = boundary_values
         u = u0
+
+        if self.rcm is not None:
+            u = self.rcm.reorder(u)
 
         cg = ConjugateGradient(self.pcd)
         cg.initialize(x=u)
 
         ts_per_frame = int(plot_interval / self.dt)
 
-        t = 0
+        ctime = 0
         solving_time = time.time()
         n_total_iter = 0
-
-        vtk2d = VTK2D(self.vertices.cpu().numpy(), self.triangles.cpu().numpy())
-
-        w_frames = u.reshape((1, self.Nx, self.Ny))
-        u_frames = u.reshape((1, self.Nx, self.Ny))
+        if self.rcm is not None:
+            frames = self.rcm.inverse(u).reshape((1, self.Nx, self.Ny))
+        else:
+            frames = u.reshape((1, self.Nx, self.Ny))
 
         for n in range(1, self.nt + 1):
-            t += self.dt
+            ctime += self.dt
 
-            w = compute_w(t, self.vertices)
-            Iion = -compute_r(w, t, self.vertices)
-
-            b = u * self.Cm - self.dt * Iion
+            b = u * self.Cm 
             b = self.M @ b * self.Chi
-            # boundary condition
-            b[dirichlet_boundary_nodes] = w[dirichlet_boundary_nodes]
+            b[dirichlet_boundary_nodes] = boundary_values
             
             u, n_iter = cg.solve(self.A, b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
             n_total_iter += n_iter
             
-            raise Exception(u.max().item(), w.max().item())
-
-
             if n_iter == max_iter:
                 raise Exception(f"The solution did not converge at {n}th timestep")
-            # if verbose:
-            #     print(f"{round(t, 3)} / {self.T}: {n_iter}; {round(time.time() - solving_time, 2)}")
+            if verbose:
+                print(f"{round(ctime, 3)} / {self.T}: {n_iter}; {round(time.time() - solving_time, 2)}")
             
-
             if n % ts_per_frame == 0:
-                # print(compute_w(t, self.vertices))
-                
-                print(u.max().item())
-                # print(self.vertices.shape, self.triangles.shape, w.shape, u.shape)
+                if self.rcm is not None:
+                    frames = torch.cat((frames, self.rcm.inverse(u).reshape((1, self.Nx, self.Ny))))
+                else:
+                    frames = torch.cat((frames, u.reshape((1, self.Nx, self.Ny))))
 
-                w_frames = torch.cat((w_frames, w.reshape((1, self.Nx, self.Ny))))
-                u_frames = torch.cat((u_frames, u.reshape((1, self.Nx, self.Ny))))
-
-                vtk2d.save_frame(color_values=w.cpu().numpy(),
-                                 frame_path=f"./w/frame_{n}.vtk")
-                vtk2d.save_frame(color_values=u.cpu().numpy(),
-                                 frame_path=f"./u/frame_{n}.vtk")
-
-        visualization = GIF2D(w_frames, self.vertices, self.triangles, self.dt, ts_per_frame)
-        visualization.save_gif("./w.gif")
-
-        visualization = GIF2D(u_frames, self.vertices, self.triangles, self.dt, ts_per_frame)
-        visualization.save_gif("./u.gif")
+        visualization = Visualization2D(frames, self.vertices, self.triangles, self.dt, ts_per_frame)
+        visualization.save_gif("./laplance_2d.gif")
 
 if __name__ == "__main__":
     dt = 0.0125  # ms

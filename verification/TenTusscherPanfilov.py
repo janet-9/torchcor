@@ -468,7 +468,7 @@ if __name__ == "__main__":
     CaSS = []
 
     ctime = 0.0
-    for _ in range(int(800/dt)):
+    for _ in range(int(1000/dt)):
         solutions.append([ctime, V.item()])
         Cai.append([ctime, ionic.Cai.item()])
         CaSS.append([ctime, ionic.CaSS.item()])
@@ -476,7 +476,7 @@ if __name__ == "__main__":
         dV = ionic.differentiate(V)
         V = V + dt * dV
         ctime += dt
-        if ((ctime>=100) and (ctime <= (100+2.0) )): 
+        if ((ctime>=0) and (ctime <= (0+2.0) )): 
             V = V + dt * stimulus
         
         
