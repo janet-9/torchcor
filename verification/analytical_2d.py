@@ -93,8 +93,8 @@ class Monodomain:
             rcm_vertices = self.vertices
             rcm_triangles = self.triangles
         
-        sigma = torch.tensor([[0.001, 0],
-                              [0, 0.001]], device=self.device, dtype=self.dtype)
+        sigma = torch.tensor([[1, 0],
+                              [0, 1]], device=self.device, dtype=self.dtype)
 
         matrices = Matrices2D(rcm_vertices, rcm_triangles, device=self.device, dtype=self.dtype)
         K, M = matrices.assemble_matrices(sigma)
@@ -175,7 +175,7 @@ class Monodomain:
         visualization.save_gif("./u.gif")
 
 if __name__ == "__main__":
-    dt = 0.0125  # ms
+    dt = 0.00000125  # ms
 
     device = torch.device(f"cuda:3" if torch.cuda.is_available() else "cpu")
 
