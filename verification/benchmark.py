@@ -69,7 +69,7 @@ class Monodomain:
                 mesh_size=dx
             )
             mesh = geom.generate_mesh()
-
+        # raise Exception(mesh)
         self.vertices = torch.from_numpy(mesh.points).to(dtype=self.dtype, device=self.device)
         self.n_nodes = self.vertices.shape[0]
         self.tetrahedral = torch.from_numpy(mesh.cells_dict["tetra"]).to(dtype=torch.long, device=self.device)
@@ -162,28 +162,29 @@ class Monodomain:
 
             activation_time[(u > 0) & (activation_time == 0)] = ctime
 
-            print(u[self.P1_index].item(), u[self.P8_index].item(), u.min().item(), u.max().item())
+            if n_iter == max_iter:
+                raise Exception(f"The solution did not converge at {n}th timestep")
+            
+            if verbose:
+                print(f"{ctime:.3f} / {self.T}: {n_iter}; ", 
+                      round(u[self.P1_index].item(), 1), 
+                      round(u[self.P8_index].item(), 1))
+                
             if u[self.P8_index].item() > 0:
                 break
             
-            if n_iter == max_iter:
-                raise Exception(f"The solution did not converge at {n}th timestep")
-            if verbose:
-                print(f"{round(ctime, 3)} / {self.T}: {n_iter}; {round(time.time() - solving_time, 2)}")
-            
-            if n % ts_per_frame == 0:
-                visualization.save_frame(color_values=self.rcm.inverse(u).cpu().numpy() if self.rcm is not None else u.cpu().numpy(),
-                                         frame_path=f"./{self.n_nodes}_{self.rcm is not None}_dt{self.dt}_dx{self.dx}/frame_{n}.vtk")
+            # if n % ts_per_frame == 0:
+            #     visualization.save_frame(color_values=self.rcm.inverse(u).cpu().numpy() if self.rcm is not None else u.cpu().numpy(),
+            #                              frame_path=f"./{self.n_nodes}_{self.rcm is not None}_dt{self.dt}_dx{self.dx}/frame_{n}.vtk")
         
         print(f"Ran {n_total_iter} iterations in {round(time.time() - solving_time, 2)} seconds")
 
         # np.save(f"activation_time_dt{self.dt}_dx{self.dx}.npy", activation_time.cpu().numpy())
-        visualization.save_frame(color_values=self.rcm.inverse(activation_time).cpu().numpy() if self.rcm is not None else activation_time.cpu().numpy(),
-                                 frame_path=f"activation_time_dt{self.dt}_dx{self.dx}_laplace.vtk")
+        # visualization.save_frame(color_values=self.rcm.inverse(activation_time).cpu().numpy() if self.rcm is not None else activation_time.cpu().numpy(),
+        #                          frame_path=f"activation_time_dt{self.dt}_dx{self.dx}_laplace.vtk")
 
 if __name__ == "__main__":
     dt = 0.005  # ms
-    dx = 0.2    # mm
 
     device = torch.device(f"cuda:3" if torch.cuda.is_available() else "cpu")
 
@@ -211,7 +212,7 @@ if __name__ == "__main__":
     il = 0.17 
     it = 0.019 
     el = 0.62 
-    et = 0.2
+    et = 0.2  
     material_config = {"diffusl": il * el * (1 / (il + el)),
                        "diffust": it * et * (1 / (it + et))}
 
@@ -220,8 +221,9 @@ if __name__ == "__main__":
                            dt=dt, 
                            apply_rcm=False, 
                            device=device)
-    simulator.Chi = 140
-    simulator.Cm = 0.01
+    dx = 0.1    # mm
+    simulator.Chi = 1.0
+    simulator.Cm = 1.0
     simulator.load_mesh(dx=dx)
     simulator.add_material_property(material_config)
     simulator.assemble()

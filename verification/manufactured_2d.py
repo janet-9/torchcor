@@ -14,18 +14,19 @@ from core.solver import ConjugateGradient
 from core.visualize import VTK2D, GIF2D
 from core.reorder import RCM as RCM
 from scipy.spatial import Delaunay
+import matplotlib.pyplot as plt
 import numpy as np
 import time
 import math
 from core.boundary import apply_dirichlet_boundary_conditions
 
-def compute_w(t, vertices, k=2, w1=2 * math.pi, w2=math.pi, lbda=math.pi/4):
-    a = w1 * vertices[:, 0] + w2 * vertices[:, 1] - lbda * t
+def compute_w(t, vertices, k=2, omega_1=2 * math.pi, omega_2=math.pi, lbda=math.pi/4):
+    a = omega_1 * vertices[:, 0] + omega_2 * vertices[:, 1] - lbda * t
     return math.exp(-k * t) * torch.cos(a)
 
-def compute_r(w, t, vertices, k=2, w1=2 * math.pi, w2=math.pi, lbda=math.pi/4):
-    a = w1 * vertices[:, 0] + w2 * vertices[:, 1] - lbda * t
-    return math.exp(-k * t) * (-k * torch.cos(a) + lbda * torch.sin(a)) + (w1 ** 2 + w2 ** 2) * w
+def compute_r(w, t, vertices, k=2, omega_1=2 * math.pi, omega_2=math.pi, lbda=math.pi/4):
+    a = omega_1 * vertices[:, 0] + omega_2 * vertices[:, 1] - lbda * t
+    return math.exp(-k * t) * (-k * torch.cos(a) + lbda * torch.sin(a)) + (omega_1 ** 2 + omega_2 ** 2) * w
 
 class Monodomain:
     def __init__(self, ionic_model, T, dt, apply_rcm, device=None, dtype=None):
@@ -60,6 +61,8 @@ class Monodomain:
 
         self.stimulus_region = None
         self.stimuli = []
+
+        self.dirichlet_boundary_nodes = None
 
     def load_mesh(self):
 
@@ -103,17 +106,19 @@ class Monodomain:
         self.M = M.to(device=self.device, dtype=self.dtype)
         A = self.M * self.Cm * self.Chi + self.K * self.dt
 
-        dirichlet_boundary_nodes = torch.arange(0, self.Nx).to(device)
-        A = apply_dirichlet_boundary_conditions(A, dirichlet_boundary_nodes)
+        # the nodes on the 4 borders.
+        self.dirichlet_boundary_nodes = torch.where((self.vertices[:, 0] == 0) | 
+                                                    (self.vertices[:, 0] == 1) | 
+                                                    (self.vertices[:, 1] == 0) | 
+                                                    (self.vertices[:, 1] == 1))[0]
+
+        A = apply_dirichlet_boundary_conditions(A, self.dirichlet_boundary_nodes)
 
         self.pcd = Preconditioner()
         self.pcd.create_Jocobi(A)
         self.A = A.to_sparse_csr()
 
     def solve(self, a_tol, r_tol, max_iter, plot_interval=10, verbose=True):
-        
-        dirichlet_boundary_nodes = torch.where((self.vertices[:, 0] == 0) | (self.vertices[:, 0] == 1) | (self.vertices[:, 1] == 0) | (self.vertices[:, 1] == 1))
-
         u0 = compute_w(t=0, vertices=self.vertices)
         u = u0
 
@@ -131,6 +136,7 @@ class Monodomain:
         w_frames = u.reshape((1, self.Nx, self.Ny))
         u_frames = u.reshape((1, self.Nx, self.Ny))
 
+        diff_list = []
         for n in range(1, self.nt + 1):
             t += self.dt
 
@@ -140,47 +146,57 @@ class Monodomain:
             b = u * self.Cm - self.dt * Iion
             b = self.M @ b * self.Chi
             # boundary condition
-            b[dirichlet_boundary_nodes] = w[dirichlet_boundary_nodes]
+            b[self.dirichlet_boundary_nodes] = w[self.dirichlet_boundary_nodes]
             
             u, n_iter = cg.solve(self.A, b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
             n_total_iter += n_iter
             
-            raise Exception(u.max().item(), w.max().item())
+            diff = torch.norm(u - w, p=2) / torch.norm(w, p=2)
+            diff_list.append([t, diff.item()])
 
 
             if n_iter == max_iter:
                 raise Exception(f"The solution did not converge at {n}th timestep")
+            
+        plt.figure()
+        diff_list = np.array(diff_list)    
+        plt.plot(diff_list[:, 0], diff_list[:, 1])
+        plt.xlabel("Time (mm)")
+        plt.ylabel("Normalized error between V and w")
+        plt.title("Solution Difference Over Time")
+        plt.savefig("solution_diff.png")
+
             # if verbose:
             #     print(f"{round(t, 3)} / {self.T}: {n_iter}; {round(time.time() - solving_time, 2)}")
             
 
-            if n % ts_per_frame == 0:
-                # print(compute_w(t, self.vertices))
+        #     if n % ts_per_frame == 0:
+        #         # print(compute_w(t, self.vertices))
                 
-                print(u.max().item())
-                # print(self.vertices.shape, self.triangles.shape, w.shape, u.shape)
+        #         print(u.max().item())
+        #         # print(self.vertices.shape, self.triangles.shape, w.shape, u.shape)
 
-                w_frames = torch.cat((w_frames, w.reshape((1, self.Nx, self.Ny))))
-                u_frames = torch.cat((u_frames, u.reshape((1, self.Nx, self.Ny))))
+        #         w_frames = torch.cat((w_frames, w.reshape((1, self.Nx, self.Ny))))
+        #         u_frames = torch.cat((u_frames, u.reshape((1, self.Nx, self.Ny))))
 
-                vtk2d.save_frame(color_values=w.cpu().numpy(),
-                                 frame_path=f"./w/frame_{n}.vtk")
-                vtk2d.save_frame(color_values=u.cpu().numpy(),
-                                 frame_path=f"./u/frame_{n}.vtk")
+        #         vtk2d.save_frame(color_values=w.cpu().numpy(),
+        #                          frame_path=f"./w/frame_{n}.vtk")
+        #         vtk2d.save_frame(color_values=u.cpu().numpy(),
+        #                          frame_path=f"./u/frame_{n}.vtk")
 
-        visualization = GIF2D(w_frames, self.vertices, self.triangles, self.dt, ts_per_frame)
-        visualization.save_gif("./w.gif")
+        # visualization = GIF2D(w_frames, self.vertices, self.triangles, self.dt, ts_per_frame)
+        # visualization.save_gif("./w.gif")
 
-        visualization = GIF2D(u_frames, self.vertices, self.triangles, self.dt, ts_per_frame)
-        visualization.save_gif("./u.gif")
+        # visualization = GIF2D(u_frames, self.vertices, self.triangles, self.dt, ts_per_frame)
+        # visualization.save_gif("./u.gif")
 
 if __name__ == "__main__":
-    dt = 0.00000125  # ms
+    dt = 0.0005  # ms
 
     device = torch.device(f"cuda:3" if torch.cuda.is_available() else "cpu")
 
     simulator = Monodomain(ionic_model=None, 
-                           T=10, 
+                           T=20, 
                            dt=dt, 
                            apply_rcm=False, 
                            device=device)

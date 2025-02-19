@@ -463,35 +463,40 @@ if __name__ == "__main__":
     V = ionic.initialize(n_nodes=1)
 
 
-    solutions = []
-    Cai = []
-    CaSS = []
+    V_list = []
+    Cai_list = []
+    CaSS_list = []
+    dV_list = []
 
     ctime = 0.0
     for _ in range(int(1000/dt)):
-        solutions.append([ctime, V.item()])
-        Cai.append([ctime, ionic.Cai.item()])
-        CaSS.append([ctime, ionic.CaSS.item()])
+        V_list.append([ctime, V.item()])
+        Cai_list.append([ctime, ionic.Cai.item()])
+        CaSS_list.append([ctime, ionic.CaSS.item()])
 
         dV = ionic.differentiate(V)
         V = V + dt * dV
         ctime += dt
-        if ((ctime>=0) and (ctime <= (0+2.0) )): 
+        if ctime >= 0 and ctime <= (0+2.0): 
             V = V + dt * stimulus
-        
-        
+        dV_list.append([ctime, dV.item()])
     
     plt.figure()
-    solutions = np.array(solutions)    
-    plt.plot(solutions[:, 0],solutions[:, 1])
-    plt.savefig("ttp.png")
+    V_list = np.array(V_list)    
+    plt.plot(V_list[:, 0], V_list[:, 1])
+    plt.savefig("V.png")
 
     plt.figure()
-    Cai = np.array(Cai)    
-    plt.plot(Cai[:,0], Cai[:,1])
+    dV_list = np.array(dV_list)    
+    plt.plot(dV_list[:, 0], dV_list[:, 1])
+    plt.savefig("dV.png")
+
+    plt.figure()
+    Cai_list = np.array(Cai_list)    
+    plt.plot(Cai_list[:,0], Cai_list[:,1])
     plt.savefig("Cai.png")
 
     plt.figure()
-    CaSS = np.array(CaSS)    
-    plt.plot(CaSS[:,0], CaSS[:,1])
+    CaSS_list = np.array(CaSS_list)    
+    plt.plot(CaSS_list[:,0], CaSS_list[:,1])
     plt.savefig("CaSS.png")
