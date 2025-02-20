@@ -52,9 +52,9 @@ class Monodomain:
 
         self.material_config = None
 
-        
         self.Chi = 1  # mm
         self.Cm = 1  # uFmm
+        self.theta = 1
         self.K = None
         self.M = None
         self.A = None
@@ -65,7 +65,6 @@ class Monodomain:
         self.dirichlet_boundary_nodes = None
 
     def load_mesh(self):
-
         L = 1  # Length of domain in x and y directions
         self.Nx = 100
         self.Ny = 100  # Number of grid points in x and y
@@ -104,7 +103,7 @@ class Monodomain:
         
         self.K = K.to(device=self.device, dtype=self.dtype)
         self.M = M.to(device=self.device, dtype=self.dtype)
-        A = self.M * self.Cm * self.Chi + self.K * self.dt
+        A = self.M * self.Cm * self.Chi + self.K * self.dt * self.theta
 
         # the nodes on the 4 borders.
         self.dirichlet_boundary_nodes = torch.where((self.vertices[:, 0] == 0) | 
@@ -125,16 +124,8 @@ class Monodomain:
         cg = ConjugateGradient(self.pcd)
         cg.initialize(x=u)
 
-        ts_per_frame = int(plot_interval / self.dt)
-
         t = 0
-        solving_time = time.time()
         n_total_iter = 0
-
-        vtk2d = VTK2D(self.vertices.cpu().numpy(), self.triangles.cpu().numpy())
-
-        w_frames = u.reshape((1, self.Nx, self.Ny))
-        u_frames = u.reshape((1, self.Nx, self.Ny))
 
         diff_list = []
         for n in range(1, self.nt + 1):
@@ -145,19 +136,21 @@ class Monodomain:
 
             b = u * self.Cm - self.dt * Iion
             b = self.M @ b * self.Chi
+            b -= (1 - self.theta) * self.K @ u * dt
             # boundary condition
             b[self.dirichlet_boundary_nodes] = w[self.dirichlet_boundary_nodes]
             
             u, n_iter = cg.solve(self.A, b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
+            if n_iter == max_iter:
+                raise Exception(f"The solution did not converge at {n}th timestep")
+            if verbose:
+                print(f"{round(t, 3)} / {self.T}: {n_iter}")
             n_total_iter += n_iter
             
             diff = torch.norm(u - w, p=2) / torch.norm(w, p=2)
             diff_list.append([t, diff.item()])
 
-
-            if n_iter == max_iter:
-                raise Exception(f"The solution did not converge at {n}th timestep")
-            
+        print(f"total iterations: {n_total_iter}")
         plt.figure()
         diff_list = np.array(diff_list)    
         plt.plot(diff_list[:, 0], diff_list[:, 1])
@@ -166,37 +159,13 @@ class Monodomain:
         plt.title("Solution Difference Over Time")
         plt.savefig("solution_diff.png")
 
-            # if verbose:
-            #     print(f"{round(t, 3)} / {self.T}: {n_iter}; {round(time.time() - solving_time, 2)}")
-            
-
-        #     if n % ts_per_frame == 0:
-        #         # print(compute_w(t, self.vertices))
-                
-        #         print(u.max().item())
-        #         # print(self.vertices.shape, self.triangles.shape, w.shape, u.shape)
-
-        #         w_frames = torch.cat((w_frames, w.reshape((1, self.Nx, self.Ny))))
-        #         u_frames = torch.cat((u_frames, u.reshape((1, self.Nx, self.Ny))))
-
-        #         vtk2d.save_frame(color_values=w.cpu().numpy(),
-        #                          frame_path=f"./w/frame_{n}.vtk")
-        #         vtk2d.save_frame(color_values=u.cpu().numpy(),
-        #                          frame_path=f"./u/frame_{n}.vtk")
-
-        # visualization = GIF2D(w_frames, self.vertices, self.triangles, self.dt, ts_per_frame)
-        # visualization.save_gif("./w.gif")
-
-        # visualization = GIF2D(u_frames, self.vertices, self.triangles, self.dt, ts_per_frame)
-        # visualization.save_gif("./u.gif")
-
 if __name__ == "__main__":
     dt = 0.0005  # ms
 
     device = torch.device(f"cuda:3" if torch.cuda.is_available() else "cpu")
 
     simulator = Monodomain(ionic_model=None, 
-                           T=20, 
+                           T=10, 
                            dt=dt, 
                            apply_rcm=False, 
                            device=device)

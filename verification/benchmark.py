@@ -15,6 +15,7 @@ from core.visualize import VTK3D
 from core.reorder import RCM as RCM
 import numpy as np
 import time
+import matplotlib.pyplot as plt
 
 
 class Monodomain:
@@ -89,6 +90,29 @@ class Monodomain:
                                     (self.vertices[:, 1] == 7) &  
                                     (self.vertices[:, 2] == 3)   
                                 )[0]
+        
+
+        x, y, z = self.vertices[:, 0], self.vertices[:, 1], self.vertices[:, 2]
+        t_x = x / 20  
+        t_y = y / 7  
+        t_z = z / 3  
+        if dx == 0.1:
+            tolerance = 0.001
+        if dx == 0.2:
+            tolerance = 0.01
+        elif dx == 0.5:
+            tolerance = 0.15
+
+        mask = (torch.abs(t_x - t_y) < tolerance) & \
+               (torch.abs(t_y - t_z) < tolerance) & \
+               (t_x >= 0) & \
+               (t_x <= 1)
+        diagonal_indices = torch.where(mask)[0]
+        diagonal_vertices = self.vertices[diagonal_indices]
+        distances = torch.sqrt((diagonal_vertices[:, 0] - 0) ** 2 + (diagonal_vertices[:, 1] - 0) ** 2 + (diagonal_vertices[:, 2] - 0) ** 2)
+        sorted_indices = torch.argsort(distances)
+        self.diagonal_indices = diagonal_indices[sorted_indices]
+        self.diagonal_distance = distances[sorted_indices]
 
         print(self.vertices.shape, self.tetrahedral.shape, self.fibers.shape)
 
@@ -135,13 +159,9 @@ class Monodomain:
         cg = ConjugateGradient(self.pcd)
         cg.initialize(x=u)
 
-        ts_per_frame = int(plot_interval / self.dt)
-        visualization = VTK3D(self.vertices.cpu().numpy(), self.tetrahedral.cpu().numpy())
-
         ctime = 0
-        solving_time = time.time()
         n_total_iter = 0
-        activation_time = torch.zeros_like(u)
+        self.activation_time = torch.zeros_like(self.diagonal_indices, dtype=torch.float32)
 
         for n in range(1, self.nt + 1):
             ctime += self.dt
@@ -160,7 +180,7 @@ class Monodomain:
             u, n_iter = cg.solve(self.A, b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
             n_total_iter += n_iter
 
-            activation_time[(u > 0) & (activation_time == 0)] = ctime
+            self.activation_time[(u[self.diagonal_indices] > 0) & (self.activation_time == 0)] = ctime
 
             if n_iter == max_iter:
                 raise Exception(f"The solution did not converge at {n}th timestep")
@@ -172,16 +192,6 @@ class Monodomain:
                 
             if u[self.P8_index].item() > 0:
                 break
-            
-            # if n % ts_per_frame == 0:
-            #     visualization.save_frame(color_values=self.rcm.inverse(u).cpu().numpy() if self.rcm is not None else u.cpu().numpy(),
-            #                              frame_path=f"./{self.n_nodes}_{self.rcm is not None}_dt{self.dt}_dx{self.dx}/frame_{n}.vtk")
-        
-        print(f"Ran {n_total_iter} iterations in {round(time.time() - solving_time, 2)} seconds")
-
-        # np.save(f"activation_time_dt{self.dt}_dx{self.dx}.npy", activation_time.cpu().numpy())
-        # visualization.save_frame(color_values=self.rcm.inverse(activation_time).cpu().numpy() if self.rcm is not None else activation_time.cpu().numpy(),
-        #                          frame_path=f"activation_time_dt{self.dt}_dx{self.dx}_laplace.vtk")
 
 if __name__ == "__main__":
     dt = 0.005  # ms
@@ -221,14 +231,41 @@ if __name__ == "__main__":
                            dt=dt, 
                            apply_rcm=False, 
                            device=device)
-    dx = 0.1    # mm
-    simulator.Chi = 1.0
-    simulator.Cm = 1.0
-    simulator.load_mesh(dx=dx)
-    simulator.add_material_property(material_config)
-    simulator.assemble()
-    simulator.solve(a_tol=1e-5, 
-                    r_tol=1e-5, 
-                    max_iter=1000, 
-                    plot_interval=dt * 10, 
-                    verbose=True)
+    
+    for dx in [0.1, 0.2, 0.5]:
+        simulator.Chi = 1.4
+        simulator.Cm = 1
+        simulator.load_mesh(dx=dx)
+        simulator.add_material_property(material_config)
+        simulator.assemble()
+        simulator.solve(a_tol=1e-5, 
+                        r_tol=1e-5, 
+                        max_iter=1000, 
+                        plot_interval=dt * 10, 
+                        verbose=True)
+    
+        if simulator.dx == 0.1:
+            color = 'red'
+        elif simulator.dx == 0.2:
+            color = 'green'
+        elif simulator.dx == 0.5:
+            color = 'blue'
+
+        plt.plot(simulator.diagonal_distance.cpu().numpy().tolist(), 
+                 simulator.activation_time.cpu().numpy().tolist(), 
+                 color=color,
+                 label=f'dx = {simulator.dx}')
+    
+    plt.xlim(0, 21.4)
+    x_space = np.linspace(0, 21.4, 5).tolist()
+    plt.xticks(x_space)
+    for x in x_space:
+        plt.axvline(x=x, color='gray', linestyle='--', linewidth=0.7) 
+
+    plt.ylim(0, 50)
+    y_space = np.linspace(0, 50, 5).tolist()
+    plt.yticks(y_space)
+    for y in y_space:
+        plt.axhline(y=y, color='gray', linestyle='--', linewidth=0.7)   
+    plt.title(f"Cm={simulator.Cm}, Chi={simulator.Chi}")    
+    plt.savefig(f"activation_time.png")
