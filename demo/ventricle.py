@@ -45,6 +45,9 @@ class VentricleSimulator:
         self.K = None
         self.M = None
         self.A = None
+        self.Chi = 140 
+        self.Cm = 0.01  
+        self.theta = 0.5
 
         self.stimulus_region = None
         self.stimuli = []
@@ -58,7 +61,7 @@ class VentricleSimulator:
         self.point_region_ids = mesh.point_region_ids()
         self.n_nodes = self.point_region_ids.shape[0]
 
-        self.vertices = torch.from_numpy(mesh.Pts()).to(dtype=self.dtype, device=self.device)
+        self.vertices = torch.from_numpy(mesh.Pts()).to(dtype=self.dtype, device=self.device) / 1000
         self.triangles = torch.from_numpy(mesh.Elems()['Tetras'][:, :-1]).to(dtype=torch.long, device=self.device)
         self.fibers = torch.from_numpy(mesh.Fibres()).to(dtype=self.dtype, device=self.device)
 
@@ -112,7 +115,7 @@ class VentricleSimulator:
 
         self.K = K.to(device=self.device, dtype=self.dtype)
         self.M = M.to(device=self.device, dtype=self.dtype)
-        A = self.M + self.K * self.dt
+        A = self.M * self.Cm * self.Chi + self.K * self.dt * self.theta
 
         self.pcd = Preconditioner()
         self.pcd.create_Jocobi(A)
@@ -134,13 +137,15 @@ class VentricleSimulator:
         n_total_iter = 0
         for n in range(1, self.nt + 1):
             ctime += self.dt
-            du = self.ionic_model.differentiate(u)
+            du = self.ionic_model.differentiate(u) / 100
 
-            b = u + self.dt * du
+            b = u * self.Cm + self.dt * du
             for stimulus in self.stimuli:
-                I0 = stimulus.stimApp(ctime)
+                I0 = stimulus.stimApp(ctime) / self.Chi
                 b += self.dt * I0
-            b = self.M @ b 
+            
+            b = self.Chi * self.M @ b 
+            b -= (1 - self.theta) * self.dt * self.K @ u
             
             u, n_iter = cg.solve(self.A, b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
             n_total_iter += n_iter
@@ -167,50 +172,63 @@ if __name__ == "__main__":
     simulation_time = 1000
     dt = 0.01
     stim_LV_sf = {'tstart': 0.0,
-                'nstim': 1,
-                'period': 800,
-                'duration': 1.0,
-                'intensity': 100.0,
-                'name': 'LV_sf'}
+                  'nstim': 1,
+                  'period': 800,
+                  'duration': 1.0,
+                  'intensity': 100.0,
+                  'name': 'LV_sf'}
     stim_LV_pf = {'tstart': 0.0,
-                'nstim': 1,
-                'period': 800,
-                'duration': 1.0,
-                'intensity': 100.0,
-                'name': 'LV_pf'}
+                  'nstim': 1,
+                  'period': 800,
+                  'duration': 1.0,
+                  'intensity': 100.0,
+                  'name': 'LV_pf'}
     stim_LV_af = {'tstart': 0.0,
-                'nstim': 1,
-                'period': 800,
-                'duration': 1.0,
-                'intensity': 100.0,
-                'name': 'LV_af'}
+                  'nstim': 1,
+                  'period': 800,
+                  'duration': 1.0,
+                  'intensity': 100.0,
+                  'name': 'LV_af'}
     stim_RV_sf = {'tstart': 5.0,
-                'nstim': 1,
-                'period': 800,
-                'duration': 1.0,
-                'intensity': 100.0,
-                'name': 'RV_sf'}
+                  'nstim': 1,
+                  'period': 800,
+                  'duration': 1.0,
+                  'intensity': 100.0,
+                  'name': 'RV_sf'}
     stim_RV_mod = {'tstart': 5.0,
-                'nstim': 1,
-                'period': 800,
-                'duration': 1.0,
-                'intensity': 100.0,
-                'name': 'RV_mod'}
+                   'nstim': 1,
+                   'period': 800,
+                   'duration': 1.0,
+                   'intensity': 100.0,
+                   'name': 'RV_mod'}
+
+    il = 0.5272
+    it = 0.2076
+    el = 1.0732 
+    et = 0.4227
+    l_34_35 = il * el * (1 / (il + el))
+    t_34_35 = it * et * (1 / (it + et))
+
+    il = 0.9074 
+    it = 0.3332
+    el = 0.9074
+    et = 0.3332
+    l_44_45_46 = il * el * (1 / (il + el))
+    t_44_45_46 = it * et * (1 / (it + et))
+
+    material_config = {"diffusl": {34: l_34_35,
+                                   35: l_34_35,
+                                   44: l_44_45_46,
+                                   45: l_44_45_46,
+                                   46: l_44_45_46},
+                       "diffust": {34: t_34_35,
+                                   35: t_34_35,
+                                   44: t_44_45_46,
+                                   45: t_44_45_46,
+                                   46: t_44_45_46}}
 
 
-    material_config = {"diffusl": {34: 0.5272 * 1000 * 100,
-                                35: 0.5272 * 1000 * 100,
-                                44: 0.9074 * 1000 * 100,
-                                45: 0.9074 * 1000 * 100,
-                                46: 0.9074 * 1000 * 100},
-                    "diffust": {34: 0.2076 * 1000 * 100,
-                                35: 0.2076 * 1000 * 100,
-                                44: 0.3332 * 1000 * 100,
-                                45: 0.3332 * 1000 * 100,
-                                46: 0.3332 * 1000 * 100}}
-
-
-    device = torch.device(f"cuda:1" if torch.cuda.is_available() else "cpu")
+    device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
     home_dir = Path.home()
 
     ionic_model = TenTusscherPanfilov(cell_type="ENDO", dt=dt, device=device)

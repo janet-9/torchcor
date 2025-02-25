@@ -1,17 +1,4 @@
 #!/bin/bash 
-#SBATCH --job-name=Atrium
-#SBATCH --account e348
-#SBATCH --partition=standard
-#SBATCH --qos=standard
-#SBATCH --time=23:59:59 
-#SBATCH --nodes=1
-#SBATCH --tasks-per-node=128
-#SBATCH --cpus-per-task=1
-#SBATCH --export=none
-#qos is the quality of service; possible values: short (20 min); standard(24 hrs); long (48hrs); look here: https://docs.archer2.ac.uk/user-guide/scheduler/
-# cpus-per-task=1 if you are not using openMP
-
-# bioeng392: 64 with HT (see 128 procs)
 
 DESKTOP=1
 

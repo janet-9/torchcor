@@ -195,7 +195,7 @@ if __name__ == "__main__":
     print(ionic_model.default_parameters())
     ionic_model.reset_parameters(ACh=0.000001, Cao=1.8, Cm=100.)
     simulator = AtriumSimulatorCourtemanche(ionic_model, T=simulation_time, dt=dt, apply_rcm=True, device=device, dtype=dtype)
-    simulator.load_mesh(path=f"{home_directory}/Data/atrium/Case_1/Case_1")
+    simulator.load_mesh(path=f"{home_directory}/Data/atrium/Case_10/Case_10")
     simulator.add_material_property(material_config)
     simulator.set_stimulus_region(path=f"{home_directory}/Data/atrium/Case_10/Case_10.vtx")
     simulator.add_stimulus(stim_config)

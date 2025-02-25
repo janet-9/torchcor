@@ -1,5 +1,5 @@
-from monodomain.atrium_mitchell import AtriumSimulatorMitchell
-from monodomain.atrium_courtemanche import AtriumSimulatorCourtemanche
+from demo.atrium_mitchell import AtriumSimulatorMitchell
+from demo.atrium_courtemanche import AtriumSimulatorCourtemanche
 
 from monodomain.ventricle import VentricleSimulator
 
