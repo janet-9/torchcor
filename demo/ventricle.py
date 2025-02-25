@@ -14,8 +14,20 @@ from core.reorder import RCM as RCM
 import time
 from mesh.triangulation import Triangulation
 from mesh.stimulus import Stimulus
-from monodomain.tools import load_stimulus_region
 
+def load_stimulus_region(vtxfile: str) -> np.ndarray:
+    """ load_stimulus_region(vtxfile) reads the file vtxfile to
+    extract point IDs where stimulus will be applied
+    """
+    with open(vtxfile,'r') as fstim:
+        nodes = fstim.read()
+        nodes = nodes.strip().split()
+    npt       = int(nodes[0])
+    nodes     = nodes[2:]
+    pointlist = -1.0*np.ones(shape=npt,dtype=int)
+    for jj,inod in enumerate(nodes):
+        pointlist[jj] = int(inod)
+    return(pointlist.astype(int))
 
 class VentricleSimulator:
     def __init__(self, ionic_model, T, dt, apply_rcm, device=None, dtype=None):
@@ -57,7 +69,6 @@ class VentricleSimulator:
         mesh.readMesh(path)
 
         self.region_ids = torch.from_numpy(mesh.Elems()['Tetras'][:, -1]).to(dtype=torch.long, device=self.device)
-        # raise Exception(np.unique(mesh.Elems()['Tetras'][:, -1]))
         self.point_region_ids = mesh.point_region_ids()
         self.n_nodes = self.point_region_ids.shape[0]
 
@@ -164,7 +175,7 @@ class VentricleSimulator:
 
 
 if __name__ == "__main__":
-    from monodomain import VentricleSimulator
+    from demo import VentricleSimulator
     from ionic import TenTusscherPanfilov
     import torch
     from pathlib import Path
