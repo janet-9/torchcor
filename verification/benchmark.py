@@ -50,6 +50,7 @@ class Monodomain:
         self.K = None
         self.M = None
         self.A = None
+        self.theta = 1
 
         self.stimulus_region = None
         self.stimuli = []
@@ -70,7 +71,7 @@ class Monodomain:
                 mesh_size=dx
             )
             mesh = geom.generate_mesh()
-        # raise Exception(mesh)
+        
         self.vertices = torch.from_numpy(mesh.points).to(dtype=self.dtype, device=self.device)
         self.n_nodes = self.vertices.shape[0]
         self.tetrahedral = torch.from_numpy(mesh.cells_dict["tetra"]).to(dtype=torch.long, device=self.device)
@@ -101,7 +102,7 @@ class Monodomain:
         if dx == 0.2:
             tolerance = 0.01
         elif dx == 0.5:
-            tolerance = 0.15
+            tolerance = 0.06
 
         mask = (torch.abs(t_x - t_y) < tolerance) & \
                (torch.abs(t_y - t_z) < tolerance) & \
@@ -141,7 +142,7 @@ class Monodomain:
 
         self.K = K.to(device=self.device, dtype=self.dtype)
         self.M = M.to(device=self.device, dtype=self.dtype)
-        A = self.M * self.Cm * self.Chi + self.K * self.dt
+        A = self.M * self.Cm * self.Chi + self.K * self.dt * self.theta
 
         self.pcd = Preconditioner()
         self.pcd.create_Jocobi(A)
@@ -163,19 +164,20 @@ class Monodomain:
         n_total_iter = 0
         self.activation_time = torch.zeros_like(self.diagonal_indices, dtype=torch.float32)
 
+        u_plot = []
         for n in range(1, self.nt + 1):
             ctime += self.dt
 
-            du = self.ionic_model.differentiate(u)
+            du = self.ionic_model.differentiate(u) / 100
             
             b = u * self.Cm + self.dt * du
-            # b = u * self.Cm 
 
-            # apply the stimulus for 2
+            # apply the stimulus for 2 mm
             if ctime <= 2.0:
-                b += self.dt * stimulus
+                b += self.dt * stimulus / self.Chi
 
-            b = self.M @ b * self.Chi
+            b = self.Chi * self.M @ b 
+            b -= (1 - self.theta) * self.dt * self.K @ u
             
             u, n_iter = cg.solve(self.A, b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
             n_total_iter += n_iter
@@ -222,9 +224,12 @@ if __name__ == "__main__":
     il = 0.17 
     it = 0.019 
     el = 0.62 
-    et = 0.2  
+    et = 0.2 
     material_config = {"diffusl": il * el * (1 / (il + el)),
                        "diffust": it * et * (1 / (it + et))}
+    
+    # material_config = {"diffusl": 0,
+    #                    "diffust": 0}
 
     simulator = Monodomain(ionic_model, 
                            T=150, 
@@ -232,9 +237,10 @@ if __name__ == "__main__":
                            apply_rcm=False, 
                            device=device)
     
-    for dx in [0.1, 0.2, 0.5]:
-        simulator.Chi = 1.4
-        simulator.Cm = 1
+    for dx in [0.5, 0.2, 0.1]:
+        simulator.Chi = 140
+        simulator.Cm = 0.01
+        simulator.theta = 1
         simulator.load_mesh(dx=dx)
         simulator.add_material_property(material_config)
         simulator.assemble()
@@ -262,10 +268,11 @@ if __name__ == "__main__":
     for x in x_space:
         plt.axvline(x=x, color='gray', linestyle='--', linewidth=0.7) 
 
-    plt.ylim(0, 50)
-    y_space = np.linspace(0, 50, 5).tolist()
+    plt.ylim(0, 150)
+    y_space = np.linspace(0, 150, 4).tolist()
     plt.yticks(y_space)
     for y in y_space:
         plt.axhline(y=y, color='gray', linestyle='--', linewidth=0.7)   
-    plt.title(f"Cm={simulator.Cm}, Chi={simulator.Chi}")    
+    plt.title(f"Cm={simulator.Cm}, Chi={simulator.Chi}")  
+    plt.legend()  
     plt.savefig(f"activation_time.png")

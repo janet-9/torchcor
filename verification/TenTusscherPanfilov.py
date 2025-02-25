@@ -454,7 +454,7 @@ if __name__ == "__main__":
     import numpy as np
     dt = 0.02
     stimulus = 20
-    device = torch.device(f"cuda:3" if torch.cuda.is_available() else "cpu")
+    device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
     ionic = TenTusscherPanfilov(cell_type="EPI", 
                                 dt=dt, 
                                 device=device, 
