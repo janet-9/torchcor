@@ -42,7 +42,7 @@ cd $WORKDIR
 MESHFNAME="/home/bzhou6/Data/ventricle/biv"
 
 LOPTF=${WORKDIR}'/petsc_cg_opts'
-CGSTR="-parab_use_pt 0 -cg_precond 1 -cg_maxit_parab 100 -cg_tol_parab 1e-5 -cg_norm_parab 1 -parab_options_file ${LOPTF}"
+CGSTR="-parab_use_pt 1 -cg_precond 1 -cg_maxit_parab 100 -cg_tol_parab 1e-5 -cg_norm_parab 0 -parab_options_file ${LOPTF}"
 CARPSTR="${CARPDIR}/${CARPBIN} +F parameters.par -meshname ${MESHFNAME} ${CGSTR}"
 
 

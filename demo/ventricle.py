@@ -14,20 +14,24 @@ from core.reorder import RCM as RCM
 import time
 from mesh.triangulation import Triangulation
 from mesh.stimulus import Stimulus
+from decimal import Decimal
+
 
 def load_stimulus_region(vtxfile: str) -> np.ndarray:
     """ load_stimulus_region(vtxfile) reads the file vtxfile to
     extract point IDs where stimulus will be applied
     """
-    with open(vtxfile,'r') as fstim:
-        nodes = fstim.read()
+    with open(vtxfile, 'r') as f:
+        nodes = f.read()
         nodes = nodes.strip().split()
-    npt       = int(nodes[0])
-    nodes     = nodes[2:]
-    pointlist = -1.0*np.ones(shape=npt,dtype=int)
-    for jj,inod in enumerate(nodes):
-        pointlist[jj] = int(inod)
-    return(pointlist.astype(int))
+    
+    n_nodes = int(nodes[0])
+    nodes = nodes[2:]
+    pointlist = -1.0 * np.ones(shape=n_nodes, dtype=int)
+    for i, node in enumerate(nodes):
+        pointlist[i] = int(node)
+    
+    return pointlist.astype(int)
 
 class VentricleSimulator:
     def __init__(self, ionic_model, T, dt, apply_rcm, device=None, dtype=None):
@@ -143,16 +147,17 @@ class VentricleSimulator:
         ts_per_frame = int(plot_interval / self.dt)
         visualization = VTK3D(self.vertices.cpu().numpy(), self.triangles.cpu().numpy())
 
-        ctime = 0
+        t = Decimal('0')
         solving_time = time.time()
         n_total_iter = 0
+        running_iter = []
         for n in range(1, self.nt + 1):
-            ctime += self.dt
+            t += Decimal(f'{self.dt}')
             du = self.ionic_model.differentiate(u) / 100
 
             b = u * self.Cm + self.dt * du
             for stimulus in self.stimuli:
-                I0 = stimulus.stimApp(ctime) / self.Chi
+                I0 = stimulus.stimApp(float(t)) / self.Chi
                 b += self.dt * I0
             
             b = self.Chi * self.M @ b 
@@ -164,11 +169,18 @@ class VentricleSimulator:
             if n_iter == max_iter:
                 raise Exception(f"The solution did not converge at {n}th timestep")
             if verbose:
-                print(f"{n} / {self.nt + 1}: {n_iter}; {round(time.time() - solving_time, 2)}")
-            
-            if n % ts_per_frame == 0:
-                visualization.save_frame(color_values=self.rcm.inverse(u).cpu().numpy() if self.rcm is not None else u.cpu().numpy(),
-                                         frame_path=f"./vtk_files_{self.n_nodes}_{self.rcm is not None}/frame_{n}.vtk")
+                running_iter.append(n_iter)
+                if t % plot_interval == 0:
+                    print(f"{t:6.2f}: mn {min(running_iter):2d} mx {max(running_iter):2d} "
+                          f"avg {sum(running_iter)/len(running_iter):5.3f} its {sum(running_iter):5d} "
+                          f"ttits {n_total_iter:6d}")
+
+                    running_iter.clear()
+
+
+            # if n % ts_per_frame == 0:
+            #     visualization.save_frame(color_values=self.rcm.inverse(u).cpu().numpy() if self.rcm is not None else u.cpu().numpy(),
+            #                              frame_path=f"./vtk_files_{self.n_nodes}_{self.rcm is not None}/frame_{n}.vtk")
         
         print(f"Ran {n_total_iter} iterations in {round(time.time() - solving_time, 2)} seconds")
 

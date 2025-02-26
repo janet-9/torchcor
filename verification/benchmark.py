@@ -227,9 +227,6 @@ if __name__ == "__main__":
     et = 0.2 
     material_config = {"diffusl": il * el * (1 / (il + el)),
                        "diffust": it * et * (1 / (it + et))}
-    
-    # material_config = {"diffusl": 0,
-    #                    "diffust": 0}
 
     simulator = Monodomain(ionic_model, 
                            T=150, 
