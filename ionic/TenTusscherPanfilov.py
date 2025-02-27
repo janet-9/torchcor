@@ -173,7 +173,7 @@ class TenTusscherPanfilov:
         self.Xr1 = torch.tensor([self.Xr1_init])
         self.Xr2 = torch.tensor([self.Xr2_init])
         self.Xs = torch.tensor([self.Xs_init])
-        self.D = torch.tensor([1])
+        self.D = torch.tensor([self.d_init])
 
         self.dt = dt
         self.device = device
@@ -195,14 +195,8 @@ class TenTusscherPanfilov:
         Nao3 = ((self.Nao*self.Nao)*self.Nao)
         RTONF = ((self.Rconst*self.T)/self.Fconst)
         invKmCa_Cao = (1./(self.KmCa+self.Cao))
-        inverseVcF = (1./(self.Vc*self.Fconst))
-        inverseVcF2 = (1./((2.*self.Vc)*self.Fconst))
-        inverseVssF2 = (1./((2.*self.Vss)*self.Fconst))
-        pmf_INaK = (self.knak*(self.Ko/(self.Ko+self.KmK)))
-        sqrt_Ko = (sqrt((self.Ko/5.4)))
         F_RT = (1./RTONF)
         invKmNai3_Nao3 = (1./(KmNai3+Nao3))
-        invVcF_Cm = (inverseVcF*self.CAPACITANCE)
         pmf_INaCa = ((self.knaca*invKmNai3_Nao3)*invKmCa_Cao)
 
         # construct the CaSS lookup table
@@ -323,7 +317,7 @@ class TenTusscherPanfilov:
 
     def initialize(self, n_nodes: int):
         V = torch.full((n_nodes,), self.V_init, device=self.device, dtype=self.dtype)
-
+    
         self.GCaL = torch.full((n_nodes,), self.GCaL_init, device=self.device, dtype=self.dtype)
         self.GKr = torch.full((n_nodes,), self.GKr_init, device=self.device, dtype=self.dtype)
         self.GKs = torch.full((n_nodes,), self.GKs_init, device=self.device, dtype=self.dtype)
@@ -331,7 +325,7 @@ class TenTusscherPanfilov:
         self.CaSR = torch.full((n_nodes,), self.CaSR_init, device=self.device, dtype=self.dtype)
         self.CaSS = torch.full((n_nodes,), self.CaSS_init, device=self.device, dtype=self.dtype)
         self.Cai = torch.full((n_nodes,), self.Cai_init, device=self.device, dtype=self.dtype)
-        self.Cai *= 1e3
+        # self.Cai *= 1e3
         self.F = torch.full((n_nodes,), self.F_init, device=self.device, dtype=self.dtype)
         self.F2 = torch.full((n_nodes,), self.F2_init, device=self.device, dtype=self.dtype)
         self.FCaSS = torch.full((n_nodes,), self.FCaSS_init, device=self.device, dtype=self.dtype)
@@ -346,24 +340,21 @@ class TenTusscherPanfilov:
         self.Xr1 = torch.full((n_nodes,), self.Xr1_init, device=self.device, dtype=self.dtype)
         self.Xr2 = torch.full((n_nodes,), self.Xr2_init, device=self.device, dtype=self.dtype)
         self.Xs = torch.full((n_nodes,), self.Xs_init, device=self.device, dtype=self.dtype)
-        self.D = (1./(1.+(torch.exp((((-8.+self.D_CaL_off)-(V))/7.5)))))
+        self.D = torch.full((n_nodes,), self.d_init, device=self.device, dtype=self.dtype)   # (1./(1.+(torch.exp((((-8.+self.D_CaL_off)-(V))/7.5)))))
 
         return V
 
     def differentiate(self, V):
-        self.Cai *= 1e-3
+        # self.Cai *= 1e-3
 
-        KmNai3 = ((self.KmNai*self.KmNai)*self.KmNai)
-        Nao3 = ((self.Nao*self.Nao)*self.Nao)
+        # Define the constants that depend on the parameters.
         RTONF = ((self.Rconst*self.T)/self.Fconst)
-        invKmCa_Cao = (1./(self.KmCa+self.Cao))
         inverseVcF = (1./(self.Vc*self.Fconst))
         inverseVcF2 = (1./((2.*self.Vc)*self.Fconst))
         inverseVssF2 = (1./((2.*self.Vss)*self.Fconst))
         pmf_INaK = (self.knak*(self.Ko/(self.Ko+self.KmK)))
         sqrt_Ko = (sqrt((self.Ko/5.4)))
         F_RT = (1./RTONF)
-        invKmNai3_Nao3 = (1./(KmNai3+Nao3))
         invVcF_Cm = (inverseVcF*self.CAPACITANCE)
 
         V_row = self.interpolate(V, self.V_tab, self.V_T_mn, self.V_T_mx, self.V_T_res, self.V_T_step, self.V_T_mx_idx)
@@ -453,7 +444,7 @@ class TenTusscherPanfilov:
         self.Xr2 = Xr2_rush_larsen_A+Xr2_rush_larsen_B*self.Xr2
         self.Xs = Xs_rush_larsen_A+Xs_rush_larsen_B*self.Xs
 
-        self.Cai *= 1e3
+        # self.Cai *= 1e3
 
         return -Iion
 
@@ -461,9 +452,9 @@ class TenTusscherPanfilov:
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import numpy as np
-    dt = 0.01
-    stimulus = 50
-    device = torch.device(f"cuda:3" if torch.cuda.is_available() else "cpu")
+    dt = 0.02
+    stimulus = 20
+    device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
     ionic = TenTusscherPanfilov(cell_type="EPI", 
                                 dt=dt, 
                                 device=device, 
@@ -472,33 +463,40 @@ if __name__ == "__main__":
     V = ionic.initialize(n_nodes=1)
 
 
-    solutions = []
-    Cai = []
-    CaSS = []
+    V_list = []
+    Cai_list = []
+    CaSS_list = []
+    dV_list = []
 
     ctime = 0.0
-    for _ in range(int(800/dt)):
+    for _ in range(int(1000/dt)):
+        V_list.append([ctime, V.item()])
+        Cai_list.append([ctime, ionic.Cai.item()])
+        CaSS_list.append([ctime, ionic.CaSS.item()])
+
         dV = ionic.differentiate(V)
         V = V + dt * dV
         ctime += dt
-        if ctime <= 2.0: 
+        if ctime >= 0 and ctime <= (0+2.0): 
             V = V + dt * stimulus
-        
-        solutions.append([ctime, V.item()])
-        Cai.append([ctime, ionic.Cai.item()])
-        CaSS.append([ctime, ionic.CaSS.item()])
+        dV_list.append([ctime, dV.item()])
     
     plt.figure()
-    solutions = np.array(solutions)    
-    plt.plot(solutions[:, 0],solutions[:, 1])
-    plt.savefig("ttp.png")
+    V_list = np.array(V_list)    
+    plt.plot(V_list[:, 0], V_list[:, 1])
+    plt.savefig("V.png")
 
     plt.figure()
-    Cai = np.array(Cai)    
-    plt.plot(Cai[:,0], Cai[:,1])
+    dV_list = np.array(dV_list)    
+    plt.plot(dV_list[:, 0], dV_list[:, 1])
+    plt.savefig("dV.png")
+
+    plt.figure()
+    Cai_list = np.array(Cai_list)    
+    plt.plot(Cai_list[:,0], Cai_list[:,1])
     plt.savefig("Cai.png")
 
     plt.figure()
-    CaSS = np.array(CaSS)    
-    plt.plot(CaSS[:,0], CaSS[:,1])
+    CaSS_list = np.array(CaSS_list)    
+    plt.plot(CaSS_list[:,0], CaSS_list[:,1])
     plt.savefig("CaSS.png")

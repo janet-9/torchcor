@@ -26,6 +26,8 @@ class Preconditioner:
 
         self.PC = 1.0 / PC
 
+        # raise Exception(A[sparse_indices[0][diagonal_mask[1000]], sparse_indices[1][1000]], PC[1000])
+
     # def create_scaled_Jacobi(self, A):
     #     self.create_Jocobi(A)
     #

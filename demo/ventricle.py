@@ -15,6 +15,7 @@ import time
 from mesh.triangulation import Triangulation
 from mesh.stimulus import Stimulus
 from decimal import Decimal
+from tools import save_coo_matrix
 
 
 def load_stimulus_region(vtxfile: str) -> np.ndarray:
@@ -132,6 +133,9 @@ class VentricleSimulator:
         self.M = M.to(device=self.device, dtype=self.dtype)
         A = self.M * self.Cm * self.Chi + self.K * self.dt * self.theta
 
+        A = A.coalesce()
+        # save_coo_matrix(A, "A.pt")
+
         self.pcd = Preconditioner()
         self.pcd.create_Jocobi(A)
         self.A = A.to_sparse_csr()
@@ -149,22 +153,46 @@ class VentricleSimulator:
 
         t = Decimal('0')
         solving_time = time.time()
+        running_time = time.time()
         n_total_iter = 0
         running_iter = []
+        total_du_time = 0
+        running_du_time = []
+        total_solver_time = 0
+        running_solver_time = []
+
         for n in range(1, self.nt + 1):
             t += Decimal(f'{self.dt}')
+            torch.cuda.synchronize()
+            start_time_du = time.time()
+            
             du = self.ionic_model.differentiate(u) / 100
+            
+            torch.cuda.synchronize()
+            end_time_du = time.time()
+            execution_time_du = end_time_du - start_time_du
+            total_du_time += execution_time_du
+            running_du_time.append(execution_time_du)
 
             b = u * self.Cm + self.dt * du
             for stimulus in self.stimuli:
                 I0 = stimulus.stimApp(float(t)) / self.Chi
                 b += self.dt * I0
-            
+
             b = self.Chi * self.M @ b 
             b -= (1 - self.theta) * self.dt * self.K @ u
-            
+
+            torch.cuda.synchronize()
+            start_time_solve = time.time()
             u, n_iter = cg.solve(self.A, b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
             n_total_iter += n_iter
+            torch.cuda.synchronize()
+            end_time_solve = time.time()
+            execution_time_solve = end_time_solve - start_time_solve
+            total_solver_time += execution_time_solve
+            running_solver_time.append(execution_time_solve)
+            
+            # torch.save(b.cpu(), "b.pt")
 
             if n_iter == max_iter:
                 raise Exception(f"The solution did not converge at {n}th timestep")
@@ -173,16 +201,20 @@ class VentricleSimulator:
                 if t % plot_interval == 0:
                     print(f"{t:6.2f}: mn {min(running_iter):2d} mx {max(running_iter):2d} "
                           f"avg {sum(running_iter)/len(running_iter):5.3f} its {sum(running_iter):5d} "
-                          f"ttits {n_total_iter:6d}")
+                          f"ttits {n_total_iter:6d} Iion {sum(running_du_time)} cg {sum(running_solver_time)} running {time.time() - running_time}")
 
                     running_iter.clear()
+                    running_du_time.clear()
+                    running_solver_time.clear()
+                    running_time = time.time()
+                    
 
 
-            # if n % ts_per_frame == 0:
-            #     visualization.save_frame(color_values=self.rcm.inverse(u).cpu().numpy() if self.rcm is not None else u.cpu().numpy(),
-            #                              frame_path=f"./vtk_files_{self.n_nodes}_{self.rcm is not None}/frame_{n}.vtk")
+            if n % ts_per_frame == 0:
+                visualization.save_frame(color_values=self.rcm.inverse(u).cpu().numpy() if self.rcm is not None else u.cpu().numpy(),
+                                         frame_path=f"./vtk_files_{self.n_nodes}_{self.rcm is not None}/frame_{n}.vtk")
         
-        print(f"Ran {n_total_iter} iterations in {round(time.time() - solving_time, 2)} seconds")
+        print(f"Ran {n_total_iter} iterations in {round(time.time() - solving_time, 2)} seconds; total du {total_du_time}; total solver {total_solver_time}")
 
 
 

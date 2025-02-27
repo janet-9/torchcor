@@ -157,10 +157,10 @@ class Monodomain:
         plt.xlabel("Time (mm)")
         plt.ylabel("Normalized error between V and w")
         plt.title("Solution Difference Over Time")
-        plt.savefig("solution_diff.png")
+        plt.savefig("solution_diff)1e-5.png")
 
 if __name__ == "__main__":
-    dt = 0.0005  # ms
+    dt = 0.00001  # ms
 
     device = torch.device(f"cuda:3" if torch.cuda.is_available() else "cpu")
 
