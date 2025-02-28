@@ -2,7 +2,7 @@ import torch
 from math import exp, sqrt
 
 
-@torch.jit.script
+# @torch.jit.script
 class TenTusscherPanfilov:
     def __init__(self, cell_type: str, dt: float, device: torch.device, dtype: torch.dtype = torch.float64):
         self.cell_type = "EPI" if cell_type is None else cell_type
@@ -179,6 +179,7 @@ class TenTusscherPanfilov:
         self.device = device
         self.dtype = dtype
 
+        self.V_row = None
 
 
     def interpolate(self, X, table, mn: float, mx: float, res: float, step: float, mx_idx: int):
@@ -344,7 +345,7 @@ class TenTusscherPanfilov:
 
         return V
 
-    def differentiate(self, V):
+    def differentiate(self, V, mask=None):
         # self.Cai *= 1e-3
 
         # Define the constants that depend on the parameters.
@@ -357,7 +358,15 @@ class TenTusscherPanfilov:
         F_RT = (1./RTONF)
         invVcF_Cm = (inverseVcF*self.CAPACITANCE)
 
-        V_row = self.interpolate(V, self.V_tab, self.V_T_mn, self.V_T_mx, self.V_T_res, self.V_T_step, self.V_T_mx_idx)
+        if mask is not None:
+            masked_V = V[mask]
+            masked_V_row = self.interpolate(masked_V, self.V_tab, self.V_T_mn, self.V_T_mx, self.V_T_res, self.V_T_step, self.V_T_mx_idx)
+            self.V_row[mask] = masked_V_row
+            
+        else:
+            self.V_row = self.interpolate(V, self.V_tab, self.V_T_mn, self.V_T_mx, self.V_T_res, self.V_T_step, self.V_T_mx_idx)
+        V_row = self.V_row
+        
         CaSS_row = self.interpolate(self.CaSS, self.CaSS_tab, self.CaSS_T_mn, self.CaSS_T_mx, self.CaSS_T_res, self.CaSS_T_step, self.CaSS_T_mx_idx)
         
         Eca = ((0.5*RTONF)*(torch.log((self.Cao/self.Cai))))
