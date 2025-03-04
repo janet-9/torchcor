@@ -2,6 +2,8 @@ import sys
 import os
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir)
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+sys.path.append(parent_dir)
 
 import torch
 from core.assemble import Matrices3D
@@ -212,7 +214,7 @@ class VentricleSimulator:
 
 
 if __name__ == "__main__":
-    from demo import VentricleSimulator
+    from torchcor.ventricle import VentricleSimulator
     from ionic import TenTusscherPanfilov
     import torch
     from pathlib import Path

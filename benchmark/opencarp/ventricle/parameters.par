@@ -104,12 +104,12 @@ stimulus[4].vtx_file = /home/bzhou6/Data/ventricle/RV_mod
 # Solver
 #===================================
 dt                       = 10               # Defines the time step size to solve the numeric equations for. NOTE: [us]
-tend                     = 1000             # Defines the point in time when the simulation stops.                 [ms]
+tend                     = 500             # Defines the point in time when the simulation stops.                 [ms]
 simID   = "results"
 
 #===================================
 # Output
 #===================================
 timedt                   = 10             # Defines the temporal interval between progress updates made to the terminal. (For informational purposes only).
-spacedt                  = 10              # Defines the temporal interval to output data to files.
+spacedt                  = 500              # Defines the temporal interval to output data to files.
 gridout_i                = 0
