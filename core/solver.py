@@ -4,18 +4,22 @@ from core.preconditioner import Preconditioner
 
 @torch.jit.script
 class ConjugateGradient:
-    def __init__(self, preconditioner: Preconditioner):
+    def __init__(self, preconditioner: Preconditioner, dtype: torch.dtype = torch.float64) -> None:
         self.preconditioner = preconditioner
+        self.dtype = dtype
         self.x = torch.empty(0)
         self.x_prev = torch.empty(0)
-
+        self.A = torch.empty(0)
+        
         self.r = torch.empty(0)
         self.z = torch.empty(0)
         self.p = torch.empty(0)
         self.Ap = torch.empty(0)
 
-    def initialize(self, x): # Initial guess
-        self.x = x.clone()
+
+    def initialize(self, A: torch.Tensor, x: torch.Tensor) -> None:
+        self.A = A.to(self.dtype)
+        self.x = x.to(self.dtype).clone()
         self.x_prev = x.clone()
 
         self.r = torch.empty_like(self.x)
@@ -23,23 +27,29 @@ class ConjugateGradient:
         self.p = torch.empty_like(self.x)
         self.Ap = torch.empty_like(self.x)
 
-    def initial_guess(self):
+    def initial_guess(self) -> None:
         x_clone = self.x.clone()
         self.x.mul_(2).sub_(self.x_prev)
         self.x_prev.copy_(x_clone)
 
-    def solve(self, A, b, a_tol: float=1e-6, r_tol: float = 1e-6, max_iter: int = 100):
+    def solve(self, 
+              b: torch.Tensor, 
+              a_tol: float = 1e-6, 
+              r_tol: float = 1e-6, 
+              max_iter: int = 100) -> tuple[torch.Tensor, int]:
+        b_dtype = b.dtype
+        b = b.to(self.dtype)
         n_iter: int = 0
 
-        # self.initial_guess()
+        self.initial_guess()
         
-        self.r.copy_(b - A @ self.x) 
+        self.r.copy_(b - self.A @ self.x) 
         self.z.copy_(self.preconditioner.apply(self.r))  
         self.p.copy_(self.z) 
         b_norm = torch.linalg.vector_norm(self.preconditioner.apply(b))
 
         for i in range(max_iter):
-            self.Ap.copy_(A @ self.p)  
+            self.Ap.copy_(self.A @ self.p)  
             rz_scala = torch.dot(self.r, self.z)
             alpha = rz_scala / torch.dot(self.p, self.Ap)  
 
@@ -57,4 +67,4 @@ class ConjugateGradient:
             self.p.mul_(beta).add_(self.z)
             n_iter += 1
 
-        return self.x.clone(), n_iter
+        return self.x.to(b_dtype), n_iter

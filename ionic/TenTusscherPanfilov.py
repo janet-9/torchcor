@@ -2,7 +2,7 @@ import torch
 from math import exp, sqrt
 
 
-# @torch.jit.script
+@torch.jit.script
 class TenTusscherPanfilov:
     def __init__(self, cell_type: str, dt: float, device: torch.device, dtype: torch.dtype = torch.float64):
         self.cell_type = "EPI" if cell_type is None else cell_type
@@ -345,7 +345,7 @@ class TenTusscherPanfilov:
 
         return V
 
-    def differentiate(self, V, mask=None):
+    def differentiate(self, V):
         # self.Cai *= 1e-3
 
         # Define the constants that depend on the parameters.
@@ -358,15 +358,7 @@ class TenTusscherPanfilov:
         F_RT = (1./RTONF)
         invVcF_Cm = (inverseVcF*self.CAPACITANCE)
 
-        if mask is not None:
-            masked_V = V[mask]
-            masked_V_row = self.interpolate(masked_V, self.V_tab, self.V_T_mn, self.V_T_mx, self.V_T_res, self.V_T_step, self.V_T_mx_idx)
-            self.V_row[mask] = masked_V_row
-            
-        else:
-            self.V_row = self.interpolate(V, self.V_tab, self.V_T_mn, self.V_T_mx, self.V_T_res, self.V_T_step, self.V_T_mx_idx)
-        V_row = self.V_row
-        
+        V_row = self.interpolate(V, self.V_tab, self.V_T_mn, self.V_T_mx, self.V_T_res, self.V_T_step, self.V_T_mx_idx)
         CaSS_row = self.interpolate(self.CaSS, self.CaSS_tab, self.CaSS_T_mn, self.CaSS_T_mx, self.CaSS_T_res, self.CaSS_T_step, self.CaSS_T_mx_idx)
         
         Eca = ((0.5*RTONF)*(torch.log((self.Cao/self.Cai))))
@@ -413,8 +405,7 @@ class TenTusscherPanfilov:
         self.Ki = self.Ki+diff_Ki*self.dt
         self.Nai = self.Nai+diff_Nai*self.dt
         self.R_ = self.R_+diff_R_*self.dt
-    
-    
+        
         # Complete Rush Larsen Update
         FCaSS_rush_larsen_B = CaSS_row[:, self.FCaSS_rush_larsen_B_idx]
         R_rush_larsen_B = V_row[:, self.R_rush_larsen_B_idx]

@@ -50,7 +50,7 @@ class Monodomain:
         self.K = None
         self.M = None
         self.A = None
-        self.theta = 1
+        self.theta = 0.5
 
         self.stimulus_region = None
         self.stimuli = []
@@ -147,6 +147,8 @@ class Monodomain:
         self.pcd = Preconditioner()
         self.pcd.create_Jocobi(A)
         self.A = A.to_sparse_csr()
+        self.M = self.M.to_sparse_csr()
+        self.K = self.K.to_sparse_csr()
 
     def solve(self, a_tol, r_tol, max_iter, plot_interval=10, verbose=True):
         u = self.ionic_model.initialize(self.n_nodes)
@@ -157,8 +159,8 @@ class Monodomain:
         if self.rcm is not None:
             u = self.rcm.reorder(u)
 
-        cg = ConjugateGradient(self.pcd)
-        cg.initialize(x=u)
+        cg = ConjugateGradient(self.pcd, dtype=self.dtype)
+        cg.initialize(A=self.A, x=u)
 
         ctime = 0
         n_total_iter = 0
@@ -179,7 +181,7 @@ class Monodomain:
             b = self.Chi * self.M @ b 
             b -= (1 - self.theta) * self.dt * self.K @ u
             
-            u, n_iter = cg.solve(self.A, b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
+            u, n_iter = cg.solve(b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
             n_total_iter += n_iter
 
             self.activation_time[(u[self.diagonal_indices] > 0) & (self.activation_time == 0)] = ctime
@@ -199,8 +201,9 @@ if __name__ == "__main__":
     dt = 0.005  # ms
 
     device = torch.device(f"cuda:3" if torch.cuda.is_available() else "cpu")
+    dtype = torch.float32
 
-    ionic_model = TenTusscherPanfilov(cell_type="EPI", dt=dt, device=device)
+    ionic_model = TenTusscherPanfilov(cell_type="EPI", dt=dt, device=device, dtype=dtype)
     ionic_model.V_init = -85.23
     ionic_model.Xr1_init = 0.00621
     ionic_model.Xr2_init = 0.4712
@@ -232,7 +235,8 @@ if __name__ == "__main__":
                            T=150, 
                            dt=dt, 
                            apply_rcm=False, 
-                           device=device)
+                           device=device, 
+                           dtype=dtype)
     
     for dx in [0.5, 0.2, 0.1]:
         simulator.Chi = 140

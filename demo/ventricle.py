@@ -1,7 +1,5 @@
 import sys
 import os
-import numpy as np
-
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir)
 
@@ -15,24 +13,8 @@ import time
 from mesh.triangulation import Triangulation
 from mesh.stimulus import Stimulus
 from decimal import Decimal
-from tools import save_coo_matrix
+from tools import load_stimulus_region
 
-
-def load_stimulus_region(vtxfile: str) -> np.ndarray:
-    """ load_stimulus_region(vtxfile) reads the file vtxfile to
-    extract point IDs where stimulus will be applied
-    """
-    with open(vtxfile, 'r') as f:
-        nodes = f.read()
-        nodes = nodes.strip().split()
-    
-    n_nodes = int(nodes[0])
-    nodes = nodes[2:]
-    pointlist = -1.0 * np.ones(shape=n_nodes, dtype=int)
-    for i, node in enumerate(nodes):
-        pointlist[i] = int(node)
-    
-    return pointlist.astype(int)
 
 class VentricleSimulator:
     def __init__(self, ionic_model, T, dt, apply_rcm, device=None, dtype=None):
@@ -40,7 +22,7 @@ class VentricleSimulator:
             if torch.cuda.is_available() else "cpu"
         self.dtype = dtype if dtype is not None else torch.float64
 
-        self.T = T  # ms = 2.4s
+        self.T = T  # ms
         self.dt = dt  # ms
         self.nt = int(T // dt)
         self.rcm = RCM(device=device, dtype=dtype) if apply_rcm else None
@@ -129,10 +111,9 @@ class VentricleSimulator:
         matrices = Matrices3D(vertices=rcm_vertices, tetrahedrons=rcm_triangles, device=self.device, dtype=self.dtype)
         K, M = matrices.assemble_matrices(sigma)
 
-        self.K = K.to(device=self.device, dtype=self.dtype).coalesce()
-        self.M = M.to(device=self.device, dtype=self.dtype).coalesce()
+        self.K = K.to(device=self.device, dtype=self.dtype)
+        self.M = M.to(device=self.device, dtype=self.dtype)
         A = self.M * self.Cm * self.Chi + self.K * self.dt * self.theta
-
         A = A.coalesce()
         # save_coo_matrix(A, "A.pt")
 
@@ -145,12 +126,11 @@ class VentricleSimulator:
 
     def solve(self, a_tol, r_tol, max_iter, plot_interval=10, verbose=True):
         u = self.ionic_model.initialize(self.n_nodes)
-        u_prior = u.clone()
         if self.rcm is not None:
             u = self.rcm.reorder(u)
 
-        cg = ConjugateGradient(self.pcd)
-        cg.initialize(x=u)
+        cg = ConjugateGradient(self.pcd, dtype=torch.float32)
+        cg.initialize(A=self.A, x=u)
 
         ts_per_frame = int(plot_interval / self.dt)
         visualization = VTK3D(self.vertices.cpu().numpy(), self.triangles.cpu().numpy())
@@ -171,13 +151,6 @@ class VentricleSimulator:
             t += Decimal(f'{self.dt}')
             torch.cuda.synchronize()
             start_time_du = time.time()
-            
-            # if n > 1:
-            #     mask = torch.abs(u - u_prior) > 0.005
-            #     du = self.ionic_model.differentiate(u, mask) / 100
-            # else:
-            #     du = self.ionic_model.differentiate(u) / 100
-            # print(u[mask].min().item(), u[mask].max().item())
 
             du = self.ionic_model.differentiate(u) / 100
             
@@ -192,8 +165,6 @@ class VentricleSimulator:
                 I0 = stimulus.stimApp(float(t)) / self.Chi
                 b += self.dt * I0
             
-            
-
             torch.cuda.synchronize()
             start_time_stimulus = time.time()
             b = self.Chi * self.M @ b
@@ -202,16 +173,11 @@ class VentricleSimulator:
             end_time_stimulus = time.time()
             execution_time_stimulus = end_time_stimulus - start_time_stimulus
             running_stimulus_time.append(execution_time_stimulus)
-            
-            
-            
 
             torch.cuda.synchronize()
             start_time_solve = time.time()
 
-            # u_prior[~mask] = u[~mask].clone()
-
-            u, n_iter = cg.solve(self.A, b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
+            u, n_iter = cg.solve(b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
             n_total_iter += n_iter
             torch.cuda.synchronize()
             end_time_solve = time.time()
@@ -236,8 +202,6 @@ class VentricleSimulator:
                     running_solver_time.clear()
                     running_stimulus_time.clear()
                     running_time = time.time()
-                    
-
 
             # if n % ts_per_frame == 0:
             #     visualization.save_frame(color_values=self.rcm.inverse(u).cpu().numpy() if self.rcm is not None else u.cpu().numpy(),
@@ -313,10 +277,11 @@ if __name__ == "__main__":
 
 
     device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
+    dtype = torch.float32
     home_dir = Path.home()
 
-    ionic_model = TenTusscherPanfilov(cell_type="ENDO", dt=dt, device=device)
-    simulator = VentricleSimulator(ionic_model, T=simulation_time, dt=dt, apply_rcm=True, device=device)
+    ionic_model = TenTusscherPanfilov(cell_type="ENDO", dt=dt, device=device, dtype=dtype)
+    simulator = VentricleSimulator(ionic_model, T=simulation_time, dt=dt, apply_rcm=True, device=device, dtype=dtype)
     simulator.load_mesh(path=f"{home_dir}/Data/ventricle/biv")
     simulator.add_material_property(material_config)
 
