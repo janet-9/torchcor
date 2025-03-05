@@ -446,7 +446,7 @@ class TenTusscherPanfilov:
 
         # self.Cai *= 1e3
 
-        return -Iion / 100
+        return -Iion
 
 
 if __name__ == "__main__":

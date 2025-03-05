@@ -90,7 +90,7 @@ class Monodomain:
         
 
     def step(self, u, t, a_tol, r_tol, max_iter):
-        du = self.ionic_model.differentiate(u) 
+        du = self.ionic_model.differentiate(u) / 100
         b = u * self.Cm + self.dt * du
 
         Istim = self.stimuli.apply(t) / self.Chi

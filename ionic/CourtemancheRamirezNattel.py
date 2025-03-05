@@ -496,7 +496,7 @@ class CourtemancheRamirezNattel:
         self.xr = xr_rush_larsen_A + xr_rush_larsen_B * self.xr
         self.xs = xs_rush_larsen_A + xs_rush_larsen_B * self.xs
 
-        return -Iion / 100
+        return -Iion
 
 
 
