@@ -10,9 +10,9 @@ from core.solver import ConjugateGradient
 from core.visualize import VTK3DSurface
 from core.reorder import RCM as RCM
 import time
-from mesh.triangulation import Triangulation
-from mesh.materialproperties import MaterialProperties
-from mesh.stimulus import Stimulus
+from tools.triangulation import Triangulation
+from tools.materialproperties import MaterialProperties
+from tools.stimulus import Stimulus
 from monodomain.tools import load_stimulus_region
 
 

@@ -2,8 +2,8 @@ import numpy as np
 import pickle
 import os
 from time import time
-from mesh.carpmeshreader import CarpMeshReader
-from mesh.carpmeshwriter import CarpMeshWriter
+from tools.carpmeshreader import CarpMeshReader
+from tools.carpmeshwriter import CarpMeshWriter
 
 
 def element_contravariant_basis(elemtype: str,VertPts : np.ndarray,localcoords: list=[]):

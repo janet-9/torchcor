@@ -12,8 +12,8 @@ from core.solver import ConjugateGradient
 from core.visualize import VTK3D
 from core.reorder import RCM as RCM
 import time
-from mesh.triangulation import Triangulation
-from mesh.stimulus import Stimulus
+from tools.triangulation import Triangulation
+from tools.stimulus import Stimulus
 from decimal import Decimal
 from tools import load_stimulus_region
 

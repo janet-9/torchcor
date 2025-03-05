@@ -10,10 +10,10 @@ from core.solver import ConjugateGradient
 from core.visualize import VTK3D
 from core.reorder import RCM as RCM
 import time
-from mesh.triangulation import Triangulation
-from mesh.stimulus import Stimulus
+from tools.triangulation import Triangulation
+from tools.stimulus import Stimulus
 from decimal import Decimal
-from tools import load_stimulus_region
+from utils import load_stimulus_region
 
 
 class VentricleSimulator:
@@ -58,7 +58,7 @@ class VentricleSimulator:
         self.region_ids = torch.from_numpy(mesh.Elems()['Tetras'][:, -1]).to(dtype=torch.long, device=self.device)
         self.point_region_ids = mesh.point_region_ids()
         self.n_nodes = self.point_region_ids.shape[0]
-
+        # raise Exception(self.region_ids.shape, self.point_region_ids.shape)
         self.vertices = torch.from_numpy(mesh.Pts()).to(dtype=self.dtype, device=self.device) / 1000
         self.triangles = torch.from_numpy(mesh.Elems()['Tetras'][:, :-1]).to(dtype=torch.long, device=self.device)
         self.fibers = torch.from_numpy(mesh.Fibres()).to(dtype=self.dtype, device=self.device)
@@ -129,8 +129,8 @@ class VentricleSimulator:
         if self.rcm is not None:
             u = self.rcm.reorder(u)
 
-        cg = ConjugateGradient(self.pcd, dtype=torch.float32)
-        cg.initialize(A=self.A, x=u)
+        cg = ConjugateGradient(self.pcd, A=self.A, dtype=torch.float32)
+        cg.initialize(x=u)
 
         ts_per_frame = int(plot_interval / self.dt)
         visualization = VTK3D(self.vertices.cpu().numpy(), self.triangles.cpu().numpy())
@@ -212,7 +212,7 @@ class VentricleSimulator:
 
 
 if __name__ == "__main__":
-    from demo import VentricleSimulator
+    from demo.ventricle import VentricleSimulator
     from ionic import TenTusscherPanfilov
     import torch
     from pathlib import Path

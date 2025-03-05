@@ -4,12 +4,13 @@ from core.preconditioner import Preconditioner
 
 @torch.jit.script
 class ConjugateGradient:
-    def __init__(self, preconditioner: Preconditioner, dtype: torch.dtype = torch.float64) -> None:
+    def __init__(self, preconditioner: Preconditioner, A: torch.Tensor, dtype: torch.dtype = torch.float64) -> None:
         self.preconditioner = preconditioner
         self.dtype = dtype
+        self.A = A
+
         self.x = torch.empty(0)
         self.x_prev = torch.empty(0)
-        self.A = torch.empty(0)
         
         self.r = torch.empty(0)
         self.z = torch.empty(0)
@@ -17,8 +18,8 @@ class ConjugateGradient:
         self.Ap = torch.empty(0)
 
 
-    def initialize(self, A: torch.Tensor, x: torch.Tensor) -> None:
-        self.A = A.to(self.dtype)
+    def initialize(self, x: torch.Tensor) -> None:
+        self.A = self.A.to(self.dtype)
         self.x = x.to(self.dtype).clone()
         self.x_prev = x.clone()
 
@@ -48,7 +49,7 @@ class ConjugateGradient:
         self.p.copy_(self.z) 
         b_norm = torch.linalg.vector_norm(self.preconditioner.apply(b))
 
-        for i in range(max_iter):
+        for _ in range(max_iter):
             self.Ap.copy_(self.A @ self.p)  
             rz_scala = torch.dot(self.r, self.z)
             alpha = rz_scala / torch.dot(self.p, self.Ap)  

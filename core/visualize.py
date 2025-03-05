@@ -4,7 +4,6 @@ import matplotlib.animation as animation
 import torch
 import pyvista as pv
 from pathlib import Path
-from mesh.igbreader import IGBReader
 
 class GIF2D:
     def __init__(self, frames, vertices, triangles, dt, ts_per_frame):
@@ -155,3 +154,5 @@ class VTK3D:
         file_path = Path(frame_path)
         file_path.parent.mkdir(parents=True, exist_ok=True)
         grid.save(frame_path)
+
+
