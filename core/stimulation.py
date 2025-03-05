@@ -10,6 +10,8 @@ class StimConfig:
     start: float
     duration: float
     intensity: float
+    period: float
+    times: float
 
 
 class Stimuli:
@@ -33,20 +35,23 @@ class Stimuli:
         
         return torch.from_numpy(region).to(dtype=torch.long, device=self.device)
     
-    def add(self, vtx_filepath, name, start, duration, intensity):
+    def add(self, vtx_filepath, name, start, duration, intensity, period=1, times=1):
         region = self.load_stimulus_region(vtx_filepath)
         bool_region = torch.zeros((self.n_nodes,), device=self.device, dtype=self.dtype)
         bool_region[region] = 1.0
 
-        sc = StimConfig(name, bool_region * intensity, start, duration, intensity)
+        sc = StimConfig(name, bool_region * intensity, start, duration, intensity, period, times)
         self.stimulus_list.append(sc)
 
 
     def apply(self, t):
         applied_stimulus = []
         for stim in self.stimulus_list:
-            if t >= stim.start and t <= stim.start + stim.duration:
-                applied_stimulus.append(stim.stimulus)
+            p_t = t % stim.period
+            t_t = t / stim.period
+            if t_t <= stim.times:
+                if p_t >= stim.start and p_t <= stim.start + stim.duration:
+                    applied_stimulus.append(stim.stimulus)
 
         if len(applied_stimulus) > 0:
             return torch.stack(applied_stimulus).sum(dim=0)
