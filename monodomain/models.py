@@ -53,20 +53,22 @@ class Monodomain:
         self.regions = torch.from_numpy(regions).to(dtype=torch.int, device=self.device)
         self.fibres = torch.from_numpy(fibres).to(dtype=self.dtype, device=self.device)
 
+        print(self.nodes.shape, self.elems.shape, self.regions.shape, self.fibres.shape)
+
         self.stimuli = Stimuli(self.n_nodes, self.device, self.dtype)
         self.conductivity = Conductivity(self.regions, dtype=self.dtype)
 
-    def add_stimulus(self, vtx_filepath, name, start, duration, intensity):
-        self.stimuli.add(vtx_filepath, name, start, duration, intensity)
+    def add_stimulus(self, vtx_filepath, start, duration, intensity, period=1, count=1):
+        self.stimuli.add(vtx_filepath, start, duration, intensity, period, count)
 
-    def add_condutivity(self, region_ids, il, it, el, et):
+    def add_condutivity(self, region_ids, il, it, el=None, et=None):
         self.conductivity.add(region_ids, il, it, el, et)
 
     def assemble(self):
         sigma = self.conductivity.calculate_sigma(self.fibres)
 
         if self.elems.shape[1] == 3:
-            matrices = Matrices3DSurface(vertices=self.nodes, tetrahedrons=self.elems, device=self.device, dtype=self.dtype)
+            matrices = Matrices3DSurface(vertices=self.nodes, triangles=self.elems, device=self.device, dtype=self.dtype)
         else:
             matrices = Matrices3D(vertices=self.nodes, tetrahedrons=self.elems, device=self.device, dtype=self.dtype)
 
@@ -88,38 +90,42 @@ class Monodomain:
         
 
     def step(self, u, t, a_tol, r_tol, max_iter):
-        du = self.ionic_model.differentiate(u) / 100
-
+        du = self.ionic_model.differentiate(u) 
         b = u * self.Cm + self.dt * du
+
         Istim = self.stimuli.apply(t) / self.Chi
         b += self.dt * Istim
+
         b = self.Chi * self.M @ b
         b -= (1 - self.theta) * self.dt * self.K @ u
 
         u, n_iter = self.cg.solve(b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
-
+        
         return u, n_iter
 
     def solve(self, a_tol, r_tol, max_iter, plot_interval=10, verbose=True):
         u = self.ionic_model.initialize(self.n_nodes)
         self.cg.initialize(x=u)
 
-        # ts_per_frame = int(plot_interval / self.dt)
-        # visualization = VTK3D(self.nodes.cpu().numpy(), self.elems.cpu().numpy())
+        ts_per_frame = int(plot_interval / self.dt)
+        if self.elems.shape[1] == 3:
+            visualization = VTK3DSurface(self.nodes.cpu().numpy(), self.elems.cpu().numpy())
+        else:
+            visualization = VTK3D(self.nodes.cpu().numpy(), self.elems.cpu().numpy())
 
         t = 0
         solving_time = time.time()
         n_total_iter = 0
         for n in range(1, self.nt + 1):
             t += self.dt
-
+            
             u, n_iter = self.step(u, t, a_tol, r_tol, max_iter)
             n_total_iter += n_iter
+            print(f"{round(t, 2)} / {self.T}: {n_iter}")
+            if n % ts_per_frame == 0:
+                visualization.save_frame(color_values=u.cpu().numpy(),
+                                         frame_path=f"./vtk_files_{self.n_nodes}/frame_{n}.vtk")
 
-            # if n % ts_per_frame == 0:
-            #     visualization.save_frame(color_values=u.cpu().numpy(),
-            #                              frame_path=f"./vtk_files_{self.n_nodes}/frame_{n}.vtk")
-        
         print(f"Ran {n_total_iter} iterations in {round(time.time() - solving_time, 2)} seconds;")
 
     def save(self, dir, format="igb"):
@@ -145,11 +151,11 @@ if __name__ == "__main__":
     simulator.add_condutivity([34, 35], il=0.5272, it=0.2076, el=1.0732, et=0.4227)
     simulator.add_condutivity([44, 45, 46], il=0.9074, it=0.3332, el=0.9074, et=0.3332)
 
-    simulator.add_stimulus(f"{home_dir}/Data/ventricle/LV_sf.vtx", name="LV_sf", start=0.0, duration=1.0, intensity=100)
-    simulator.add_stimulus(f"{home_dir}/Data/ventricle/LV_pf.vtx", name="LV_pf", start=0.0, duration=1.0, intensity=100)
-    simulator.add_stimulus(f"{home_dir}/Data/ventricle/LV_af.vtx", name="LV_af", start=0.0, duration=1.0, intensity=100)
-    simulator.add_stimulus(f"{home_dir}/Data/ventricle/RV_sf.vtx", name="RV_sf", start=5.0, duration=1.0, intensity=100)
-    simulator.add_stimulus(f"{home_dir}/Data/ventricle/RV_mod.vtx", name="RV_mod", start=5.0, duration=1.0, intensity=100)
+    simulator.add_stimulus(f"{home_dir}/Data/ventricle/LV_sf.vtx", start=0.0, duration=1.0, intensity=100)
+    simulator.add_stimulus(f"{home_dir}/Data/ventricle/LV_pf.vtx", start=0.0, duration=1.0, intensity=100)
+    simulator.add_stimulus(f"{home_dir}/Data/ventricle/LV_af.vtx", start=0.0, duration=1.0, intensity=100)
+    simulator.add_stimulus(f"{home_dir}/Data/ventricle/RV_sf.vtx", start=5.0, duration=1.0, intensity=100)
+    simulator.add_stimulus(f"{home_dir}/Data/ventricle/RV_mod.vtx", start=5.0, duration=1.0, intensity=100)
 
     simulator.assemble()
     simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=1000, plot_interval=10, verbose=True)

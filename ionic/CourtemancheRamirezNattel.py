@@ -3,7 +3,7 @@ from math import log, exp, expm1
 
 @torch.jit.script
 class CourtemancheRamirezNattel:
-    def __init__(self, dt: float, device: torch.device, dtype: torch.dtype = torch.float64):
+    def __init__(self, dt: float, device: torch.device, dtype: torch.dtype = torch.float32):
         # Constants
         self.C_B1a = 3.79138232501097e-05
         self.C_B1b = 0.0811764705882353
@@ -496,7 +496,7 @@ class CourtemancheRamirezNattel:
         self.xr = xr_rush_larsen_A + xr_rush_larsen_B * self.xr
         self.xs = xs_rush_larsen_A + xs_rush_larsen_B * self.xs
 
-        return -Iion
+        return -Iion / 100
 
 
 

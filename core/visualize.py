@@ -126,7 +126,7 @@ class VTK3DSurface:
         # Cell type for triangles
         cell_type = np.full(self.n_triangles, 5, dtype=int)
         # Create the unstructured grid
-        grid = pv.UnstructuredGrid(cells, cell_type, self.vertices.numpy())
+        grid = pv.UnstructuredGrid(cells, cell_type, self.vertices)
         grid.point_data["colors"] = color_values
 
         # Save the grid to the specified file path

@@ -7,7 +7,7 @@ class ConjugateGradient:
     def __init__(self, preconditioner: Preconditioner, A: torch.Tensor, dtype: torch.dtype = torch.float64) -> None:
         self.preconditioner = preconditioner
         self.dtype = dtype
-        self.A = A
+        self.A = A.to_sparse_csr()
 
         self.x = torch.empty(0)
         self.x_prev = torch.empty(0)
@@ -59,7 +59,7 @@ class ConjugateGradient:
             
             self.z.copy_(self.preconditioner.apply(self.r))
             z_new_norm = torch.linalg.vector_norm(self.z)
-            
+            # raise Exception(z_new_norm.item() / b_norm.item(), r_tol)
             if z_new_norm.item() < a_tol or (z_new_norm.item() / b_norm.item()) < r_tol:
                 break
 

@@ -9,9 +9,13 @@ class Conductivity:
         self.sigma_l = torch.zeros_like(self.regions, dtype=self.dtype)
         self.sigma_t = torch.zeros_like(self.regions, dtype=self.dtype)
     
-    def add(self, region_ids, il, it, el, et):
-        l = il * el * (1 / (il + el))
-        t = it * et * (1 / (it + et))
+    def add(self, region_ids, il, it, el=None, et=None):
+        if el == None and et == None:
+            l = il
+            t = it
+        else:
+            l = il * el * (1 / (il + el))
+            t = it * et * (1 / (it + et))
 
         for id in region_ids:
             mask = self.regions == id

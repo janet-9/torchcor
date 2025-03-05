@@ -4,7 +4,7 @@ from math import exp, sqrt
 
 @torch.jit.script
 class TenTusscherPanfilov:
-    def __init__(self, cell_type: str, dt: float, device: torch.device, dtype: torch.dtype = torch.float64):
+    def __init__(self, cell_type: str, dt: float, device: torch.device, dtype: torch.dtype = torch.float32):
         self.cell_type = "EPI" if cell_type is None else cell_type
         # Constants
         self.CaSR_init = 1.3
@@ -446,7 +446,7 @@ class TenTusscherPanfilov:
 
         # self.Cai *= 1e3
 
-        return -Iion
+        return -Iion / 100
 
 
 if __name__ == "__main__":

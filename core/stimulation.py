@@ -5,13 +5,13 @@ import torch
 
 @dataclass
 class StimConfig:
-    name: str
+    vtx_filepath: str
     stimulus: torch.Tensor
     start: float
     duration: float
     intensity: float
     period: float
-    times: float
+    count: float
 
 
 class Stimuli:
@@ -35,12 +35,12 @@ class Stimuli:
         
         return torch.from_numpy(region).to(dtype=torch.long, device=self.device)
     
-    def add(self, vtx_filepath, name, start, duration, intensity, period=1, times=1):
+    def add(self, vtx_filepath, start, duration, intensity, period=1, count=1):
         region = self.load_stimulus_region(vtx_filepath)
         bool_region = torch.zeros((self.n_nodes,), device=self.device, dtype=self.dtype)
         bool_region[region] = 1.0
 
-        sc = StimConfig(name, bool_region * intensity, start, duration, intensity, period, times)
+        sc = StimConfig(vtx_filepath, bool_region * intensity, start, duration, intensity, period, count)
         self.stimulus_list.append(sc)
 
 
@@ -49,10 +49,9 @@ class Stimuli:
         for stim in self.stimulus_list:
             p_t = t % stim.period
             t_t = t / stim.period
-            if t_t <= stim.times:
+            if t_t <= stim.count:
                 if p_t >= stim.start and p_t <= stim.start + stim.duration:
                     applied_stimulus.append(stim.stimulus)
-
         if len(applied_stimulus) > 0:
             return torch.stack(applied_stimulus).sum(dim=0)
         else:
@@ -61,9 +60,10 @@ class Stimuli:
 
 if __name__ == "__main__":
     stim = Stimuli(n_nodes=1000000, device=torch.device("cuda:0"), dtype=torch.float64)
-    stim.add("/home/bzhou6/Data/atrium/Case_1/Case_1.vtx",
-             name="s1",
+    stim.add(vtx_filepath="/home/bzhou6/Data/atrium/Case_1/Case_1.vtx",
              start=0,
-             duration=100,
-             intensity=100)
-    print(stim.apply(1).shape)
+             duration=2,
+             intensity=1,
+             period=800,
+             count=3)
+    print(stim.apply(0).sum())
