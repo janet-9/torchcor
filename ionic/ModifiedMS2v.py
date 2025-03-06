@@ -2,13 +2,17 @@ import torch
 
 
 class ModifiedMS2v:
-    def __init__(self, dt, device, dtype):
+    def __init__(self, dt, device=None, dtype=torch.float64):
         self.tau_in = 0.1
         self.tau_out = 9.0
         self.tau_open = 100.0
         self.tau_close = 120.0
         self.u_gate = 0.13
         self.u_crit = 0.13
+
+        self.vmin = -80.0
+        self.vmax = 20.0
+        self.DV  = self.vmax - self.vmin
 
         self.H = None
         self.dt = dt
@@ -18,42 +22,53 @@ class ModifiedMS2v:
     def construct_tables(self):
         pass
 
-    def initialize(self, npt):
-        self.H = torch.full(size=(npt,), fill_value=1.0, device=self.device, dtype=self.dtype)
-        return self.H
+    def to_dimensionless(self, U):
+        return (U - self.vmin) / self.DV
+
+    def derivative_to_dimensional(self, dU):
+        return self.DV * dU
+
+    def initialize(self, n_nodes):
+        self.H = torch.full(size=(n_nodes,), fill_value=1.0, device=self.device, dtype=self.dtype)
+        u = torch.full(size=(n_nodes,), fill_value=self.vmin, device=self.device, dtype=self.dtype)
+        return u
 
     def differentiate(self, U):
-        J_in = -1.0 * self.H * U * (U - self.u_crit) * (1 - U) / self.tau_in
-        J_out = (1 - self.H) * U / self.tau_out
-        dU = - (J_in + J_out)
-
-        dH = torch.where(U > self.u_gate, -self.H / self.tau_close, (1 - self.H) / self.tau_open)
+        Uad = self.to_dimensionless(U)
+        J_in = -1.0 * self.H * Uad * (Uad - self.u_crit) * (1.0 - Uad) / self.tau_in
+        J_out = (1.0 - self.H) * Uad / self.tau_out
+        dU = -self.derivative_to_dimensional(J_in + J_out)
+        dH = torch.where(Uad > self.u_gate, -self.H / self.tau_close, (1 - self.H) / self.tau_open)
         self.H += self.dt * dH
 
-        return dU / 100
-
-    def set_attribute(self, name, value):
-        setattr(self, name, value)
-
-    def get_attribute(self, name: str):
-        return getattr(self, name, None)
-    
-
-
-class ModifiedMS2vRL(ModifiedMS2v):
-    def __init__(self, device=None, dtype=torch.float64):
-        super().__init__(device, dtype)
-
-    def differentiate(self, U):
-        # Compute ionic currents
-        Uad   = self.to_dimensionless(U)
-        J_in  =  -1.0 * self.H * Uad * (Uad-self._u_crit) * (1.0-Uad)/self._tau_in
-        J_out =  (1.0-self.H)*Uad/self._tau_out
-        dU    = - self.derivative_to_dimensional(J_in +J_out)
-
-        # Rush–Larsen update for H
-        H_inf = torch.where(U > self.u_gate, 0.0, 1.0)  # Steady-state gating variable
-        tau_H = torch.where(U > self.u_gate, self.tau_close, self.tau_open)  # Time constant
-        self.H = H_inf + (self.H - H_inf) * torch.exp(-self.dt / tau_H)
-
         return dU
+
+
+
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+    import numpy as np
+    dt = 0.02
+    stimulus = 50
+    device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
+    ionic = ModifiedMS2v(dt=dt, 
+                                device=device, 
+                                dtype=torch.float64)
+    ionic.construct_tables()
+    V = ionic.initialize(n_nodes=1)
+
+    V_list = []
+    ctime = 0.0
+    for _ in range(int(1000/dt)):
+        V_list.append([ctime, V.item()])
+
+        dV = ionic.differentiate(V)
+        V = V + dt * dV
+        ctime += dt
+        if ctime >= 0 and ctime <= (0+2.0): 
+            V = V + dt * stimulus
+    
+    plt.figure()
+    V_list = np.array(V_list)    
+    plt.plot(V_list[:, 0], V_list[:, 1])
+    plt.savefig("V.png")

@@ -1,5 +1,3 @@
-
-
 import sys
 import os
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -43,9 +41,9 @@ class Monodomain:
         self.theta = 0.5
 
 
-    def load_mesh(self, path="/Users/bei/Project/FinitePDE/data/Case_1"):
+    def load_mesh(self, path="/Users/bei/Project/FinitePDE/data/Case_1", unit_conversion=1000):
         reader = MeshReader(path)
-        nodes, elems, regions, fibres = reader.read(unit_conversion=1000)
+        nodes, elems, regions, fibres = reader.read(unit_conversion=unit_conversion)
         
         self.n_nodes = nodes.shape[0]
         self.nodes = torch.from_numpy(nodes).to(dtype=self.dtype, device=self.device)
@@ -138,7 +136,7 @@ if __name__ == "__main__":
     import torch
     from pathlib import Path
 
-    simulation_time = 500
+    simulation_time = 1000
     dt = 0.01
 
     device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
@@ -151,11 +149,11 @@ if __name__ == "__main__":
     simulator.add_condutivity([34, 35], il=0.5272, it=0.2076, el=1.0732, et=0.4227)
     simulator.add_condutivity([44, 45, 46], il=0.9074, it=0.3332, el=0.9074, et=0.3332)
 
-    simulator.add_stimulus(f"{home_dir}/Data/ventricle/LV_sf.vtx", start=0.0, duration=1.0, intensity=100)
-    simulator.add_stimulus(f"{home_dir}/Data/ventricle/LV_pf.vtx", start=0.0, duration=1.0, intensity=100)
-    simulator.add_stimulus(f"{home_dir}/Data/ventricle/LV_af.vtx", start=0.0, duration=1.0, intensity=100)
-    simulator.add_stimulus(f"{home_dir}/Data/ventricle/RV_sf.vtx", start=5.0, duration=1.0, intensity=100)
-    simulator.add_stimulus(f"{home_dir}/Data/ventricle/RV_mod.vtx", start=5.0, duration=1.0, intensity=100)
+    simulator.add_stimulus(f"{home_dir}/Data/ventricle/LV_sf.vtx", start=0.0, duration=1.0, intensity=100, period=500, count=2)
+    simulator.add_stimulus(f"{home_dir}/Data/ventricle/LV_pf.vtx", start=0.0, duration=1.0, intensity=100, period=500, count=2)
+    simulator.add_stimulus(f"{home_dir}/Data/ventricle/LV_af.vtx", start=0.0, duration=1.0, intensity=100, period=500, count=2)
+    simulator.add_stimulus(f"{home_dir}/Data/ventricle/RV_sf.vtx", start=5.0, duration=1.0, intensity=100, period=500, count=2)
+    simulator.add_stimulus(f"{home_dir}/Data/ventricle/RV_mod.vtx", start=5.0, duration=1.0, intensity=100, period=500, count=2)
 
     simulator.assemble()
     simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=1000, plot_interval=10, verbose=True)

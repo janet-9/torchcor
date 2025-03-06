@@ -35,6 +35,7 @@ class Stimuli:
         
         return torch.from_numpy(region).to(dtype=torch.long, device=self.device)
     
+    
     def add(self, vtx_filepath, start, duration, intensity, period=1, count=1):
         region = self.load_stimulus_region(vtx_filepath)
         bool_region = torch.zeros((self.n_nodes,), device=self.device, dtype=self.dtype)
