@@ -197,65 +197,6 @@ class CourtemancheRamirezNattel:
         self.f_Ca_rush_larsen_B = exp(((-self.dt)/self.tau_f_Ca))
         self.u_rush_larsen_B = exp(((-self.dt)/self.tau_u))
 
-    def default_parameters(self):
-        return {
-            "ACh": self.ACh,
-            "Cao": self.Cao,
-            "Cm": self.Cm,
-            "GACh": self.GACh,
-            "GCaL": self.GCaL,
-            "GK1": self.GK1,
-            "GKr": self.GKr,
-            "GKs": self.GKs,
-            "GNa": self.GNa,
-            "GbCa": self.GbCa,
-            "GbNa": self.GbNa,
-            "Gto": self.Gto,
-            "Ko": self.Ko,
-            "Nao": self.Nao,
-            "factorGKur": self.factorGKur,
-            "factorGrel": self.factorGrel,
-            "factorGtr": self.factorGtr,
-            "factorGup": self.factorGup,
-            "factorhGate": self.factorhGate,
-            "factormGate": self.factormGate,
-            "factoroaGate": self.factoroaGate,
-            "factorxrGate": self.factorxrGate,
-            "maxCaup": self.maxCaup,
-            "maxINaCa": self.maxINaCa,
-            "maxINaK": self.maxINaK,
-            "maxIpCa": self.maxIpCa,
-            "maxIup": self.maxIup}
-
-    def reset_parameters(self, ACh: float = 0.000001, Cao: float = 1.8, Cm: float = 100., GACh: float = 0., GCaL: float = 0.1238, GK1: float = 0.09, GKr: float = 0.0294, GKs: float = 0.129, GNa: float = 7.8, GbCa: float = 0.00113, GbNa: float = 0.000674, Gto: float = 0.1652, Ko: float = 5.4, Nao: float = 140., factorGKur: float = 1., factorGrel: float = 1., factorGtr: float = 1., factorGup: float = 1., factorhGate: float = 0., factormGate: float = 0., factoroaGate: float = 0., factorxrGate: float = 1., maxCaup: float = 15., maxINaCa: float = 1600., maxINaK: float = 0.60, maxIpCa: float = 0.275, maxIup: float = 0.005):
-        self.ACh = ACh
-        self.Cao = Cao
-        self.Cm = Cm
-        self.GACh = GACh
-        self.GCaL = GCaL
-        self.GK1 = GK1
-        self.GKr = GKr
-        self.GKs = GKs
-        self.GNa = GNa
-        self.GbCa = GbCa
-        self.GbNa = GbNa
-        self.Gto = Gto
-        self.Ko = Ko
-        self.Nao = Nao
-        self.factorGKur = factorGKur
-        self.factorGrel = factorGrel
-        self.factorGtr = factorGtr
-        self.factorGup = factorGup
-        self.factorhGate = factorhGate
-        self.factormGate = factormGate
-        self.factoroaGate = factoroaGate
-        self.factorxrGate = factorxrGate
-        self.maxCaup = maxCaup
-        self.maxINaCa = maxINaCa
-        self.maxINaK = maxINaK
-        self.maxIpCa = maxIpCa
-        self.maxIup = maxIup
-
 
     def interpolate(self, X, table, mn: float, mx: float, res: float, step: float, mx_idx: int):
         X = torch.clamp(X, mn, mx)
@@ -385,6 +326,8 @@ class CourtemancheRamirezNattel:
         self.fn_tab = fn_tab
 
     def initialize(self, n_nodes: int):
+        self.construct_tables()
+        
         V = torch.full((n_nodes,), self.V_init, device=self.device, dtype=self.dtype)
 
         self.Ca_rel = torch.full((n_nodes,), self.Ca_rel_init, device=self.device, dtype=self.dtype)
@@ -501,11 +444,28 @@ class CourtemancheRamirezNattel:
 
 
 if __name__ == "__main__":
-    n_nodes = 100
-    dt = 0.001
-    device = "cpu"
-    cm = CourtemancheRamirezNattel(dt, device, torch.float64)
-    cm.construct_tables()
-    V = cm.initialize(n_nodes)
-    du = cm.differentiate(V)
-    print(du)
+    import matplotlib.pyplot as plt
+    import numpy as np
+    dt = 0.02
+    stimulus = 50
+    device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
+    ionic = CourtemancheRamirezNattel(dt=dt, 
+                                      device=device, 
+                                      dtype=torch.float32)
+    V = ionic.initialize(n_nodes=1)
+
+    V_list = []
+    ctime = 0.0
+    for _ in range(int(1000/dt)):
+        V_list.append([ctime, V.item()])
+
+        dV = ionic.differentiate(V)
+        V = V + dt * dV
+        ctime += dt
+        if ctime >= 0 and ctime <= (0+2.0): 
+            V = V + dt * stimulus
+    
+    plt.figure()
+    V_list = np.array(V_list)    
+    plt.plot(V_list[:, 0], V_list[:, 1])
+    plt.savefig("V_CourtemancheRamirezNattel.png")

@@ -317,6 +317,8 @@ class TenTusscherPanfilov:
 
 
     def initialize(self, n_nodes: int):
+        self.construct_tables()
+        
         V = torch.full((n_nodes,), self.V_init, device=self.device, dtype=self.dtype)
     
         self.GCaL = torch.full((n_nodes,), self.GCaL_init, device=self.device, dtype=self.dtype)
@@ -458,8 +460,7 @@ if __name__ == "__main__":
     ionic = TenTusscherPanfilov(cell_type="EPI", 
                                 dt=dt, 
                                 device=device, 
-                                dtype=torch.float64)
-    ionic.construct_tables()
+                                dtype=torch.float32)
     V = ionic.initialize(n_nodes=1)
 
 
@@ -484,7 +485,7 @@ if __name__ == "__main__":
     plt.figure()
     V_list = np.array(V_list)    
     plt.plot(V_list[:, 0], V_list[:, 1])
-    plt.savefig("V.png")
+    plt.savefig("V_TenTusscherPanfilov.png")
 
     plt.figure()
     dV_list = np.array(dV_list)    

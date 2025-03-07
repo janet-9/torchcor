@@ -19,12 +19,15 @@ ionic_model.tau_close = 185.0
 
 # ionic_model = CourtemancheRamirezNattel(dt, device=device, dtype=torch.float32)
 
+case_name = "Case_1"
+mesh_dir = f"{home_dir}/Data/left_atrium_100/{case_name}"
+
 simulator = Monodomain(ionic_model, T=simulation_time, dt=dt, device=device, dtype=torch.float32)
 # simulator.Chi = 1000
-simulator.load_mesh(path=f"{home_dir}/Data/atrium/Case_10", unit_conversion=1000)
+simulator.load_mesh(path=mesh_dir, unit_conversion=1000)
 simulator.add_condutivity(region_ids=[1, 2, 3, 4, 5, 6], il=1.75, it=0.4375)
 
-simulator.add_stimulus(f"{home_dir}/Data/atrium/Case_10/Case_10.vtx", 
+simulator.add_stimulus(f"{mesh_dir}/{case_name}.vtx", 
                        start=0.0, 
                        duration=2.0, 
                        intensity=50, 

@@ -19,7 +19,6 @@ class Monodomain:
         self.nt = int(T // dt)
 
         self.ionic_model = ionic_model
-        self.ionic_model.construct_tables()
 
         self.pcd = None
         self.cg = None

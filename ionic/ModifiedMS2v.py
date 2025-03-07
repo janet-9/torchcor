@@ -1,8 +1,8 @@
 import torch
 
-
+@torch.jit.script
 class ModifiedMS2v:
-    def __init__(self, dt, device=None, dtype=torch.float64):
+    def __init__(self, dt: float, device: torch.device, dtype: torch.dtype = torch.float32):
         self.tau_in = 0.1
         self.tau_out = 9.0
         self.tau_open = 100.0
@@ -14,26 +14,23 @@ class ModifiedMS2v:
         self.vmax = 20.0
         self.DV  = self.vmax - self.vmin
 
-        self.H = None
+        self.H = torch.tensor(1.0, device=device, dtype=dtype) 
         self.dt = dt
         self.device = device
         self.dtype = dtype
 
-    def construct_tables(self):
-        pass
-
-    def to_dimensionless(self, U):
+    def to_dimensionless(self, U: torch.Tensor) -> torch.Tensor:
         return (U - self.vmin) / self.DV
 
-    def derivative_to_dimensional(self, dU):
+    def derivative_to_dimensional(self, dU: torch.Tensor) -> torch.Tensor:
         return self.DV * dU
 
-    def initialize(self, n_nodes):
+    def initialize(self, n_nodes: int) -> torch.Tensor:
         self.H = torch.full(size=(n_nodes,), fill_value=1.0, device=self.device, dtype=self.dtype)
         u = torch.full(size=(n_nodes,), fill_value=self.vmin, device=self.device, dtype=self.dtype)
         return u
 
-    def differentiate(self, U):
+    def differentiate(self, U: torch.Tensor) -> torch.Tensor:
         Uad = self.to_dimensionless(U)
         J_in = -1.0 * self.H * Uad * (Uad - self.u_crit) * (1.0 - Uad) / self.tau_in
         J_out = (1.0 - self.H) * Uad / self.tau_out
@@ -54,7 +51,6 @@ if __name__ == "__main__":
     ionic = ModifiedMS2v(dt=dt, 
                                 device=device, 
                                 dtype=torch.float64)
-    ionic.construct_tables()
     V = ionic.initialize(n_nodes=1)
 
     V_list = []
