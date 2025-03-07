@@ -200,11 +200,7 @@ class Monodomain:
 if __name__ == "__main__":
     dt = 0.005  # ms
 
-    device = torch.device(
-    f"cuda:0" if torch.cuda.is_available() else 
-    ("mps" if torch.backends.mps.is_available() else "cpu")
-    )   
-    print(device)
+    device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
     dtype = torch.float32
 
     ionic_model = TenTusscherPanfilov(cell_type="EPI", dt=dt, device=device, dtype=dtype)
