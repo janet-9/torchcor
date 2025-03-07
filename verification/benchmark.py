@@ -159,8 +159,8 @@ class Monodomain:
         if self.rcm is not None:
             u = self.rcm.reorder(u)
 
-        cg = ConjugateGradient(self.pcd, dtype=self.dtype)
-        cg.initialize(A=self.A, x=u)
+        cg = ConjugateGradient(self.pcd, self.A, dtype=self.dtype)
+        cg.initialize(x=u)
 
         ctime = 0
         n_total_iter = 0
@@ -200,7 +200,7 @@ class Monodomain:
 if __name__ == "__main__":
     dt = 0.005  # ms
 
-    device = torch.device(f"cuda:3" if torch.cuda.is_available() else "cpu")
+    device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
     dtype = torch.float32
 
     ionic_model = TenTusscherPanfilov(cell_type="EPI", dt=dt, device=device, dtype=dtype)
@@ -237,8 +237,8 @@ if __name__ == "__main__":
                            apply_rcm=False, 
                            device=device, 
                            dtype=dtype)
-    
-    for dx in [0.5, 0.2, 0.1]:
+    fig, ax = plt.subplots(figsize=(6, 4))
+    for dx in [0.5]:
         simulator.Chi = 140
         simulator.Cm = 0.01
         simulator.theta = 1
@@ -258,22 +258,35 @@ if __name__ == "__main__":
         elif simulator.dx == 0.5:
             color = 'blue'
 
-        plt.plot(simulator.diagonal_distance.cpu().numpy().tolist(), 
+        ax.plot(simulator.diagonal_distance.cpu().numpy().tolist(), 
                  simulator.activation_time.cpu().numpy().tolist(), 
                  color=color,
                  label=f'dx = {simulator.dx}')
     
-    plt.xlim(0, 21.4)
-    x_space = np.linspace(0, 21.4, 5).tolist()
-    plt.xticks(x_space)
-    for x in x_space:
-        plt.axvline(x=x, color='gray', linestyle='--', linewidth=0.7) 
+    # ax.set_title("Trigonometric Functions", fontsize=20, fontweight='bold', family='Helvetica')
+    ax.set_xlabel("distance (mm)", fontsize=14, fontweight='normal', family='Helvetica')
+    ax.set_ylabel("activation time (ms)", fontsize=14, fontweight='normal', family='Helvetica')
 
-    plt.ylim(0, 150)
+    ax.set_xlim(0, 21.4)
+    x_space = np.linspace(0, 21.4, 5).tolist()
+    ax.set_xticks(x_space)
+    for x in x_space:
+        ax.axvline(x=x, color='gray', linestyle='--', linewidth=0.7) 
+
+    ax.set_ylim(0, 150)
     y_space = np.linspace(0, 150, 4).tolist()
-    plt.yticks(y_space)
+    ax.set_yticks(y_space)
     for y in y_space:
         plt.axhline(y=y, color='gray', linestyle='--', linewidth=0.7)   
-    plt.title(f"Cm={simulator.Cm}, Chi={simulator.Chi}")  
-    plt.legend()  
-    plt.savefig(f"activation_time.png")
+
+    # Add a legend
+    ax.legend(fontsize=12, loc='upper right', frameon=False, handlelength=1.5, borderpad=1, labelspacing=1)
+
+    # Adjust tick parameters for readability
+    ax.tick_params(axis='both', which='major', labelsize=12)
+    ax.tick_params(axis='both', which='minor', labelsize=10)
+
+    # Adjust layout to ensure everything fits
+    plt.tight_layout()
+    plt.savefig("activation_time.png")
+    plt.show()
