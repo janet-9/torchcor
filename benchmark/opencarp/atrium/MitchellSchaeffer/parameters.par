@@ -14,9 +14,9 @@ parab_solve    = 1
 #       TEMPORAL        #
 #########################
 dt      = 10         #in microseconds; PDEnsorflow uses milliseconds
-tend    = 2400
+tend    = 1500
 timedt  = 100
-spacedt = 2400 #1 in ms  #writes the solution every spacedt times set to tend to not write the solution
+spacedt = 1500 #1 in ms  #writes the solution every spacedt times set to tend to not write the solution
 simID   = "Courtemanche"
 
 #######################################
@@ -32,7 +32,6 @@ imp_region[0].ID[2]            = 3
 imp_region[0].ID[3]            = 4
 imp_region[0].ID[4]            = 5   
 imp_region[0].ID[5]            = 6   
-imp_region[0].cellSurfVolRatio = 1.0
 imp_region[0].im               = "Courtemanche"
 imp_region[0].im_param         = "" # V_gate=0.1,a_crit=0.1,tau_in=0.15,tau_out=1.5,tau_open=105,tau_close=185
 #######################################

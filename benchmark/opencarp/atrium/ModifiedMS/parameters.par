@@ -15,10 +15,10 @@ parab_solve    = 1
 #       TEMPORAL        #
 #########################
 dt      = 10         #in microseconds; PDEnsorflow uses milliseconds
-tend    = 2400
+tend    = 1500
 timedt  = 100
-spacedt = 2400 #1 in ms  #writes the solution every spacedt times set to tend to not write the solution
-simID   = "leftAtrium"
+spacedt = 1500 #1 in ms  #writes the solution every spacedt times set to tend to not write the solution
+simID   = "Case_1"
 
 #######################################
 # IMP regions definition (cell model) #
@@ -51,8 +51,8 @@ gregion[0].ID[2]   = 3
 gregion[0].ID[3]   = 4      
 gregion[0].ID[4]   = 5
 gregion[0].ID[5]   = 6
-gregion[0].g_il   = 1.75
-gregion[0].g_it   = 0.4375
+gregion[0].g_il   = 0.4
+gregion[0].g_it   = 0.4
 
 num_stim =  1
 ##############################
@@ -63,10 +63,10 @@ stimulus[0].dump_vtx_file = 0
 stimulus[0].name          = "S1"
 stimulus[0].start         = 0.0
 stimulus[0].npls          = 3
-stimulus[0].bcl           = 800
+stimulus[0].bcl           = 500
 stimulus[0].duration      = 2.0
 stimulus[0].strength      = 50.0
-stimulus[0].vtx_file      = "/data/left_atrium_100/Case_1/Case_1"
+stimulus[0].vtx_file      = "/home/bzhou6/Data/atrium/Case_1"
 ##############################
 
 
