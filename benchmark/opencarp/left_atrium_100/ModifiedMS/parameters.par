@@ -34,7 +34,7 @@ imp_region[0].ID[4]            = 5
 imp_region[0].ID[5]            = 6   
 imp_region[0].cellSurfVolRatio = 1.0
 imp_region[0].im               = "mMS"
-imp_region[0].im_param         = "V_gate=0.1,a_crit=0.1,tau_in=0.15,tau_out=1.5,tau_open=105,tau_close=185,Vmin=-80,Vmax=20"
+imp_region[0].im_param         = "V_gate=0.1,a_crit=0.1,tau_in=0.15,tau_out=1.5,tau_open=105,tau_close=185,V_min=-80,V_max=20"
 #######################################
 
 
@@ -66,7 +66,7 @@ stimulus[0].npls          = 3
 stimulus[0].bcl           = 800
 stimulus[0].duration      = 2.0
 stimulus[0].strength      = 50.0
-stimulus[0].vtx_file      = "Case_1"
+stimulus[0].vtx_file      = "/data/left_atrium_100/Case_1/Case_1"
 ##############################
 
 
