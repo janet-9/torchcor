@@ -204,17 +204,7 @@ if __name__ == "__main__":
     f"cuda:0" if torch.cuda.is_available() else 
     ("mps" if torch.backends.mps.is_available() else "cpu")
     )   
-    torch.cuda.set_device(device)
-    if torch.cuda.is_available():
-        device_id = torch.cuda.current_device()
-        gpu_name = torch.cuda.get_device_name(device_id)
-        gpu_properties = torch.cuda.get_device_properties(device_id)
-        total_memory = gpu_properties.total_memory / (1024 ** 3)  # Convert bytes to GB
-
-        print(f"GPU: {gpu_name}")
-        print(f"Total Memory: {total_memory:.2f} GB")
-    else:
-        print("No GPU available.")
+    print(device)
     dtype = torch.float32
 
     ionic_model = TenTusscherPanfilov(cell_type="EPI", dt=dt, device=device, dtype=dtype)
