@@ -57,11 +57,11 @@ simulator.load_mesh(path=mesh_dir, unit_conversion=1000)
 simulator.add_condutivity(region_ids=[1, 2, 3, 4, 5, 6], il=0.4, it=0.4)
 
 simulator.add_stimulus(f"{mesh_dir}/{case_name}.vtx", 
-                    start=0.0, 
-                    duration=2.0, 
-                    intensity=50, 
-                    period=500, 
-                    count=3)
+                       start=0.0, 
+                       duration=2.0, 
+                       intensity=50, 
+                       period=500, 
+                       count=3)
 
 simulator.assemble()
 simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=100, plot_interval=10, verbose=True)
