@@ -66,7 +66,7 @@ stimulus[0].npls          = 3
 stimulus[0].bcl           = 500
 stimulus[0].duration      = 2.0
 stimulus[0].strength      = 50.0
-stimulus[0].vtx_file      = "/home/bzhou6/Data/atrium/Case_1"
+stimulus[0].vtx_file      = "/home/bzhou6/Data/atrium/Case_1/Case_1"
 ##############################
 
 
