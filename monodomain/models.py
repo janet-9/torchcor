@@ -54,7 +54,7 @@ class Monodomain:
         
         self.n_nodes = nodes.shape[0]
         self.nodes = torch.from_numpy(nodes).to(dtype=self.dtype, device=self.device)
-        self.elems = torch.from_numpy(elems).to(dtype=torch.long, device=self.device)
+        self.elems = torch.from_numpy(elems).to(dtype=torch.int, device=self.device)
         self.regions = torch.from_numpy(regions).to(dtype=torch.int, device=self.device)
         self.fibres = torch.from_numpy(fibres).to(dtype=self.dtype, device=self.device)
 

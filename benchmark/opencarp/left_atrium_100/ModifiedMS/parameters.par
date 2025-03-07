@@ -1,5 +1,6 @@
 # Parameter file for mMS sensitivity analysis 
 # Homogeneous parameters are used here 
+# make_dynamic_model.sh mMS.model
 
 #####################
 # GLOBAL PARAMETERS #
