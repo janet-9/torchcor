@@ -6,7 +6,19 @@ from pathlib import Path
 simulation_time = 2400
 dt = 0.01
 
-device = torch.device(f"cuda:2" if torch.cuda.is_available() else "cpu")
+device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
+torch.cuda.set_device(device)
+if torch.cuda.is_available():
+    device_id = torch.cuda.current_device()
+    gpu_name = torch.cuda.get_device_name(device_id)
+    gpu_properties = torch.cuda.get_device_properties(device_id)
+    total_memory = gpu_properties.total_memory / (1024 ** 3)  # Convert bytes to GB
+
+    print(f"GPU: {gpu_name}")
+    print(f"Total Memory: {total_memory:.2f} GB")
+else:
+    print("No GPU available.")
+
 home_dir = Path.home()
 
 ionic_model = ModifiedMS2v(dt, device=device, dtype=torch.float32)

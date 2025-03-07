@@ -42,7 +42,6 @@ class Monodomain:
         self.Cm = 0.01  
         self.theta = 0.5
 
-        torch.cuda.set_device(device)
         nvmlInit()
         device_id = torch.cuda.current_device()
         self.gpu_handle = nvmlDeviceGetHandleByIndex(device_id)
