@@ -1,1 +1,0 @@
-./run.slurm: line 63: /usr/local/lib/opencarp/lib/petsc/bin/mpirun: No such file or directory

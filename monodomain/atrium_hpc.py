@@ -3,7 +3,7 @@ from ionic import ModifiedMS2v, CourtemancheRamirezNattel
 import torch
 from pathlib import Path
 
-simulation_time = 2400
+simulation_time = 1500
 dt = 0.01
 
 device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
@@ -54,13 +54,13 @@ mesh_dir = f"/data/home/acw554/Data/atrium/{case_name}/"
 
 simulator = Monodomain(ionic_model, T=simulation_time, dt=dt, device=device, dtype=torch.float32)
 simulator.load_mesh(path=mesh_dir, unit_conversion=1000)
-simulator.add_condutivity(region_ids=[1, 2, 3, 4, 5, 6], il=1.75, it=0.4375)
+simulator.add_condutivity(region_ids=[1, 2, 3, 4, 5, 6], il=0.4, it=0.4)
 
 simulator.add_stimulus(f"{mesh_dir}/{case_name}.vtx", 
                     start=0.0, 
                     duration=2.0, 
                     intensity=50, 
-                    period=800, 
+                    period=500, 
                     count=3)
 
 simulator.assemble()

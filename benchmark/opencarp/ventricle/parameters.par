@@ -105,7 +105,7 @@ stimulus[4].vtx_file = /home/bzhou6/Data/ventricle/RV_mod
 #===================================
 dt                       = 10               # Defines the time step size to solve the numeric equations for. NOTE: [us]
 tend                     = 500             # Defines the point in time when the simulation stops.                 [ms]
-simID   = "results"
+simID   = "biv"
 
 #===================================
 # Output
