@@ -3,7 +3,7 @@ from ionic import ModifiedMS2v, CourtemancheRamirezNattel
 import torch
 from pathlib import Path
 
-simulation_time = 300
+simulation_time = 2400
 dt = 0.01
 
 device = torch.device(f"cuda:2" if torch.cuda.is_available() else "cpu")
@@ -31,8 +31,8 @@ simulator.add_stimulus(f"{mesh_dir}/{case_name}.vtx",
                        start=0.0, 
                        duration=2.0, 
                        intensity=50, 
-                       period=300, 
-                       count=1)
+                       period=800, 
+                       count=3)
 
 simulator.assemble()
-simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=1000, plot_interval=10, verbose=True)
+simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=100, plot_interval=10, verbose=True)
