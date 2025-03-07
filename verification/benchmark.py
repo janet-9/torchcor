@@ -200,7 +200,10 @@ class Monodomain:
 if __name__ == "__main__":
     dt = 0.005  # ms
 
-    device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device(
+    f"cuda:0" if torch.cuda.is_available() else 
+    ("mps" if torch.backends.mps.is_available() else "cpu")
+    )   
     torch.cuda.set_device(device)
     if torch.cuda.is_available():
         device_id = torch.cuda.current_device()
