@@ -1,9 +1,12 @@
 import sys
 import os
+import warnings
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir)
+warnings.filterwarnings("ignore", message="Sparse CSR tensor support is in beta state")
 
 import torch
+from pynvml import nvmlInit, nvmlDeviceGetHandleByIndex, nvmlDeviceGetUtilizationRates, nvmlDeviceGetMemoryInfo
 import time
 from core import *
 
@@ -39,6 +42,11 @@ class Monodomain:
         self.Cm = 0.01  
         self.theta = 0.5
 
+        torch.cuda.set_device(device)
+        nvmlInit()
+        device_id = torch.cuda.current_device()
+        self.gpu_handle = nvmlDeviceGetHandleByIndex(device_id)
+
 
     def load_mesh(self, path="/Users/bei/Project/FinitePDE/data/Case_1", unit_conversion=1000):
         reader = MeshReader(path)
@@ -49,8 +57,6 @@ class Monodomain:
         self.elems = torch.from_numpy(elems).to(dtype=torch.long, device=self.device)
         self.regions = torch.from_numpy(regions).to(dtype=torch.int, device=self.device)
         self.fibres = torch.from_numpy(fibres).to(dtype=self.dtype, device=self.device)
-
-        print(self.nodes.shape, self.elems.shape, self.regions.shape, self.fibres.shape)
 
         self.stimuli = Stimuli(self.n_nodes, self.device, self.dtype)
         self.conductivity = Conductivity(self.regions, dtype=self.dtype)
@@ -102,6 +108,9 @@ class Monodomain:
 
     def solve(self, a_tol, r_tol, max_iter, plot_interval=10, verbose=True):
         u = self.ionic_model.initialize(self.n_nodes)
+        gpu_utilisation_list = []
+        gpu_memory_list = []
+
         self.cg.initialize(x=u)
 
         ts_per_frame = int(plot_interval / self.dt)
@@ -118,12 +127,21 @@ class Monodomain:
             
             u, n_iter = self.step(u, t, a_tol, r_tol, max_iter)
             n_total_iter += n_iter
-            print(f"{round(t, 2)} / {self.T}: {n_iter}")
+            # print(f"{round(t, 2)} / {self.T}: {n_iter}")
             # if n % ts_per_frame == 0:
             #     visualization.save_frame(color_values=u.cpu().numpy(),
             #                              frame_path=f"./vtk_files_{self.n_nodes}/frame_{n}.vtk")
 
-        print(f"Ran {n_total_iter} iterations in {round(time.time() - solving_time, 2)} seconds;")
+            if n % ts_per_frame == 0:
+                gpu_utilisation_list.append(nvmlDeviceGetUtilizationRates(self.gpu_handle).gpu)
+                gpu_memory_list.append(nvmlDeviceGetMemoryInfo(self.gpu_handle).used / 1e9)
+
+        print(self.n_nodes, 
+              round(time.time() - solving_time, 2),
+              n_total_iter,
+              f"{round(sum(gpu_utilisation_list)/len(gpu_utilisation_list), 2)}",
+              f"{round(sum(gpu_memory_list)/len(gpu_memory_list), 2)}")
+        # print(f"Ran {n_total_iter} iterations in {round(time.time() - solving_time, 2)} seconds;")
 
     def save(self, dir, format="igb"):
         pass
@@ -138,7 +156,7 @@ if __name__ == "__main__":
     simulation_time = 1000
     dt = 0.01
 
-    device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device(f"cuda:2" if torch.cuda.is_available() else "cpu")
     dtype = torch.float32
     home_dir = Path.home()
 
