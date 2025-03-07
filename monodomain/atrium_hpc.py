@@ -27,7 +27,7 @@ ionic_model.tau_out = 1.5
 ionic_model.tau_open = 105.0
 ionic_model.tau_close = 185.0
 
-ionic_model = CourtemancheRamirezNattel(dt, device=device, dtype=torch.float32)
+# ionic_model = CourtemancheRamirezNattel(dt, device=device, dtype=torch.float32)
 
 # for i in range(1, 101):
 #     case_name = f"Case_{i}"
