@@ -1,1 +1,1 @@
-from torchcor.device import set_device
+from torchcor.device import set_device, get_device

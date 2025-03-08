@@ -6,14 +6,15 @@ import warnings
 warnings.filterwarnings("ignore", message="Sparse CSR tensor support is in beta state")
 
 import torch
+import torchcor as tc
 from pynvml import nvmlInit, nvmlDeviceGetHandleByIndex, nvmlDeviceGetUtilizationRates, nvmlDeviceGetMemoryInfo
 import time
 from torchcor.core import *
 
 
 class Monodomain:
-    def __init__(self, ionic_model, T, dt, device=torch.device("cuda"), dtype=None):
-        self.device = torch.device(f"cuda:{torch.cuda.current_device()}") if device is None else device
+    def __init__(self, ionic_model, T, dt, device=tc.get_device(), dtype=None):
+        self.device = device
         self.dtype = dtype if dtype is not None else torch.float32
         
         self.T = T  # ms

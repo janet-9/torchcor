@@ -7,7 +7,15 @@ name = "torchcor"
 version = "0.1.2"
 description = "Efficient EP simulations on GPUs"
 authors = [{ name = "Bei Zhou", email = "bei.zhou@imperial.ac.uk" }]
-dependencies = []
+dependencies = [
+    "torch",
+    "matplotlib", 
+    "numpy",       
+    "pygmsh",      
+    "pynvml",      
+    "pyvista",     
+    "scipy"       
+]
 
 [tool.setuptools]
 packages = ["torchcor", "torchcor.core", "torchcor.ionic", "torchcor.simulator"]  # Explicitly list packages

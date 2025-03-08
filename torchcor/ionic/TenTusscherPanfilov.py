@@ -1,10 +1,11 @@
 import torch
+import torchcor as tc
 from math import exp, sqrt
 
 
 @torch.jit.script
 class TenTusscherPanfilov:
-    def __init__(self, cell_type: str, dt: float, device: torch.device = torch.device("cuda"), dtype: torch.dtype = torch.float32):
+    def __init__(self, cell_type: str, dt: float, device: torch.device = tc.get_device(), dtype: torch.dtype = torch.float32):
         self.name = "TenTusscherPanfilov"
 
         self.cell_type = "EPI" if cell_type is None else cell_type
@@ -178,7 +179,7 @@ class TenTusscherPanfilov:
         self.D = torch.tensor([self.d_init])
 
         self.dt = dt
-        self.device = torch.device(f"cuda:{torch.cuda.current_device()}") if device.type != "cuda" else device
+        self.device = device
         self.dtype = dtype
 
         self.V_row = None

@@ -1,9 +1,10 @@
 import torch
+import torchcor as tc
 from math import log, exp, expm1
 
 @torch.jit.script
 class CourtemancheRamirezNattel:
-    def __init__(self, dt: float, device: torch.device = torch.device("cuda"), dtype: torch.dtype = torch.float32):
+    def __init__(self, dt: float, device: torch.device = tc.get_device(), dtype: torch.dtype = torch.float32):
         self.name = "CourtemancheRamirezNattel"
         # Constants
         self.C_B1a = 3.79138232501097e-05
@@ -192,7 +193,7 @@ class CourtemancheRamirezNattel:
         self.xs = torch.tensor([self.xs_init])
 
         self.dt = dt
-        self.device = torch.device(f"cuda:{torch.cuda.current_device()}") if device != torch.device("cuda") else device
+        self.device = device
         self.dtype = dtype
 
         self.f_Ca_rush_larsen_B = exp(((-self.dt)/self.tau_f_Ca))

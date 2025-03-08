@@ -20,3 +20,15 @@ def set_device(name=None, verbose=True):
     else:
         if verbose:
             print("No GPU available. Using CPU instead.")
+
+
+
+def get_device():
+    device = torch.device(f"cuda" if torch.cuda.is_available() else "cpu")
+
+    if device.type == "cuda":
+        device_id = torch.cuda.current_device()
+        return torch.device(f"cuda:{device_id}")
+    else:
+        return torch.device("cpu")
+    

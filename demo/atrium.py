@@ -1,9 +1,9 @@
-import torchcor
+import torchcor as tc
 from torchcor.simulator import Monodomain
 from torchcor.ionic import ModifiedMS2v, CourtemancheRamirezNattel
 from pathlib import Path
 
-# torchcor.set_device("cuda:0")
+tc.set_device("cuda:0")
 simulation_time = 1500
 dt = 0.01
 
