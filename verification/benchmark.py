@@ -261,7 +261,7 @@ if __name__ == "__main__":
         ax.plot(simulator.diagonal_distance.cpu().numpy().tolist(), 
                  simulator.activation_time.cpu().numpy().tolist(), 
                  color=color,
-                 label=f'dx = {simulator.dx}')
+                 label=rf'$\Delta x = {simulator.dx}$')
     
     # ax.set_title("Trigonometric Functions", fontsize=20, fontweight='bold', family='Helvetica')
     ax.set_xlabel("distance (mm)", fontsize=14, fontweight='normal', family='Helvetica')
@@ -288,5 +288,4 @@ if __name__ == "__main__":
 
     # Adjust layout to ensure everything fits
     plt.tight_layout()
-    plt.savefig("activation_time.png")
-    plt.show()
+    plt.savefig("ttp.pdf", format="pdf")
