@@ -3,6 +3,13 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# mesh files
+*.vtk
+*.pts
+*.elem
+*.lon
+*.vtx
+
 # C extensions
 *.so
 
