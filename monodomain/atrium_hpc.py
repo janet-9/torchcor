@@ -48,7 +48,7 @@ ionic_model.tau_close = 185.0
 #     simulator.assemble()
 #     simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=100, plot_interval=10, verbose=True)
 
-case_name = f"Case_10"
+case_name = f"Case_1"
 print(case_name, end=" ")
 mesh_dir = f"/data/home/acw554/Data/atrium/{case_name}/"
 
