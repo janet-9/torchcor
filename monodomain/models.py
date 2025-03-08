@@ -127,9 +127,9 @@ class Monodomain:
             u, n_iter = self.step(u, t, a_tol, r_tol, max_iter)
             n_total_iter += n_iter
             # print(f"{round(t, 2)} / {self.T}: {n_iter}")
-            # if n % ts_per_frame == 0:
-            #     visualization.save_frame(color_values=u.cpu().numpy(),
-            #                              frame_path=f"./vtk_files_{self.n_nodes}/frame_{n}.vtk")
+            if n % ts_per_frame == 0:
+                visualization.save_frame(color_values=u.cpu().numpy(),
+                                         frame_path=f"./vtk_{self.n_nodes}/frame_{n}.vtk")
 
             if n % ts_per_frame == 0:
                 gpu_utilisation_list.append(nvmlDeviceGetUtilizationRates(self.gpu_handle).gpu)
