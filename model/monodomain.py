@@ -105,7 +105,7 @@ class Monodomain:
         
         return u, n_iter
 
-    def solve(self, a_tol, r_tol, max_iter, plot_interval=10, verbose=True):
+    def solve(self, a_tol, r_tol, max_iter, plot_interval=10, verbose=True, format=None):
         u = self.ionic_model.initialize(self.n_nodes)
         gpu_utilisation_list = []
         gpu_memory_list = []
@@ -127,20 +127,20 @@ class Monodomain:
             u, n_iter = self.step(u, t, a_tol, r_tol, max_iter)
             n_total_iter += n_iter
             # print(f"{round(t, 2)} / {self.T}: {n_iter}")
-            # if n % ts_per_frame == 0:
-            #     visualization.save_frame(color_values=u.cpu().numpy(),
-            #                              frame_path=f"./vtk_{self.n_nodes}/frame_{n}.vtk")
+            if n % ts_per_frame == 0 and format == 'vtk':
+                visualization.save_frame(color_values=u.cpu().numpy(),
+                                         frame_path=f"./vtk_{self.n_nodes}_{self.ionic_model.name}/frame_{n}.vtk")
 
             if n % ts_per_frame == 0:
                 gpu_utilisation_list.append(nvmlDeviceGetUtilizationRates(self.gpu_handle).gpu)
                 gpu_memory_list.append(nvmlDeviceGetMemoryInfo(self.gpu_handle).used / 1e9)
 
-        print(self.n_nodes, 
+        print(self.ionic_model.name,
+              self.n_nodes, 
               round(time.time() - solving_time, 2),
               n_total_iter,
               f"{round(sum(gpu_utilisation_list)/len(gpu_utilisation_list), 2)}",
               f"{round(sum(gpu_memory_list)/len(gpu_memory_list), 2)}")
-        # print(f"Ran {n_total_iter} iterations in {round(time.time() - solving_time, 2)} seconds;")
 
     def save(self, dir, format="igb"):
         pass

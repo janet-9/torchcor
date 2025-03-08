@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "torchcor"
-version = "0.1.0"
+version = "0.1.2"
 description = "Efficient EP simulations on GPUs"
 authors = [{ name = "Bei Zhou", email = "bei.zhou@imperial.ac.uk" }]
 dependencies = []
 
 [tool.setuptools]
-packages = ["torchcor", "torchcor.ionic"]  # Explicitly list packages
-package-dir = { "torchcor" = "." }
+packages = ["torchcor", "torchcor.ionic", "torchcor.model"]  # Explicitly list packages
+package-dir = { "torchcor" = ".", "torchcor.ionic" = "./ionic", "torchcor.model" = "./model"}

@@ -3,6 +3,8 @@ import torch
 @torch.jit.script
 class ModifiedMS2v:
     def __init__(self, dt: float, device: torch.device, dtype: torch.dtype = torch.float32):
+        self.name = "ModifiedMS2v"
+
         self.tau_in = 0.1
         self.tau_out = 9.0
         self.tau_open = 100.0

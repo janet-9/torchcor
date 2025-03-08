@@ -6,6 +6,7 @@ from ionic.base import BaseCellModel, BaseCellModelRL
 class MitchellSchaeffer(BaseCellModel):
     def __init__(self, device, dtype=torch.float64):
         super().__init__(mitchell_schaeffer_2003, device, dtype)
+        self.name = "MitchellSchaeffer"
 
     def compute_rates(self, states, constants):
         rates = torch.zeros_like(states)
