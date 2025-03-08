@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "TorchCor"
+version = "0.1.0"
+description = "Efficient EP simulations on GPUs"
+authors = [{ name = "Bei Zhou", email = "bei.zhou@imperial.ac.uk" }]
+dependencies = ["torch", "numpy"]
+
+[tool.setuptools]
+packages = ["TorchCor", "TorchCor.monodomain", "TorchCor.ionic"]  # Explicitly list packages
+package-dir = { "TorchCor" = "." }
