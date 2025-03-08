@@ -121,7 +121,7 @@ class Monodomain:
         u0 = compute_w(t=0, vertices=self.vertices)
         u = u0
 
-        cg = ConjugateGradient(self.pcd)
+        cg = ConjugateGradient(self.pcd, self.A)
         cg.initialize(x=u)
 
         t = 0
@@ -140,7 +140,7 @@ class Monodomain:
             # boundary condition
             b[self.dirichlet_boundary_nodes] = w[self.dirichlet_boundary_nodes]
             
-            u, n_iter = cg.solve(self.A, b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
+            u, n_iter = cg.solve(b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
             if n_iter == max_iter:
                 raise Exception(f"The solution did not converge at {n}th timestep")
             if verbose:
@@ -151,21 +151,38 @@ class Monodomain:
             diff_list.append([t, diff.item()])
 
         print(f"total iterations: {n_total_iter}")
-        plt.figure()
+        fig, ax = plt.subplots(figsize=(6, 4))
         diff_list = np.array(diff_list)    
-        plt.plot(diff_list[:, 0], diff_list[:, 1])
-        plt.xlabel("Time (mm)")
-        plt.ylabel("Normalized error between V and w")
-        plt.title("Solution Difference Over Time")
-        plt.savefig("solution_diff)1e-5.png")
+        ax.plot(diff_list[:, 0][:-200], diff_list[:, 1][:-200])
+
+        ax.set_xlabel("Time (ms)", fontsize=14, fontweight='normal', family='Helvetica')
+        ax.set_ylabel("Relative norm difference", fontsize=14, fontweight='normal', family='Helvetica')
+        
+        ax.set_xlim(0, 30)
+        x_space = np.linspace(0, 30, 5).tolist()
+        ax.set_xticks(x_space)
+        for x in x_space:
+            ax.axvline(x=x, color='gray', linestyle='--', linewidth=0.7) 
+
+        ax.set_ylim(0, 0.006)
+        y_space = np.linspace(0, 0.006, 4).tolist()
+        ax.set_yticks(y_space)
+        for y in y_space:
+            plt.axhline(y=y, color='gray', linestyle='--', linewidth=0.7)   
+        
+        ax.tick_params(axis='both', which='major', labelsize=12)
+        ax.tick_params(axis='both', which='minor', labelsize=12)
+
+        # plt.title("Solution Difference Over Time")
+        plt.savefig("solution_diff.pdf", format="pdf")
 
 if __name__ == "__main__":
-    dt = 0.00001  # ms
+    dt = 0.001  # ms
 
     device = torch.device(f"cuda:3" if torch.cuda.is_available() else "cpu")
 
     simulator = Monodomain(ionic_model=None, 
-                           T=10, 
+                           T=30, 
                            dt=dt, 
                            apply_rcm=False, 
                            device=device)

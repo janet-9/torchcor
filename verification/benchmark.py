@@ -264,8 +264,8 @@ if __name__ == "__main__":
                  label=f'dx = {simulator.dx}')
     
     # ax.set_title("Trigonometric Functions", fontsize=20, fontweight='bold', family='Helvetica')
-    ax.set_xlabel("distance (mm)", fontsize=14, fontweight='normal', family='Helvetica')
-    ax.set_ylabel("activation time (ms)", fontsize=14, fontweight='normal', family='Helvetica')
+    ax.set_xlabel("Distance (mm)", fontsize=14, fontweight='normal', family='Helvetica')
+    ax.set_ylabel("Activation time (ms)", fontsize=14, fontweight='normal', family='Helvetica')
 
     ax.set_xlim(0, 21.4)
     x_space = np.linspace(0, 21.4, 5).tolist()
@@ -284,7 +284,7 @@ if __name__ == "__main__":
 
     # Adjust tick parameters for readability
     ax.tick_params(axis='both', which='major', labelsize=12)
-    ax.tick_params(axis='both', which='minor', labelsize=10)
+    ax.tick_params(axis='both', which='minor', labelsize=12)
 
     # Adjust layout to ensure everything fits
     plt.tight_layout()
