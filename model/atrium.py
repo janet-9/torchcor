@@ -1,4 +1,4 @@
-from models import Monodomain
+from monodomain import Monodomain
 from ionic import ModifiedMS2v, CourtemancheRamirezNattel
 import torch
 from pathlib import Path
@@ -19,15 +19,17 @@ if torch.cuda.is_available():
 else:
     print("No GPU available.")
 
-ionic_model = ModifiedMS2v(dt, device=device, dtype=torch.float32)
-ionic_model.u_gate = 0.1
-ionic_model.u_crit = 0.1
-ionic_model.tau_in = 0.15
-ionic_model.tau_out = 1.5
-ionic_model.tau_open = 105.0
-ionic_model.tau_close = 185.0
+home_dir = Path.home()
 
-# ionic_model = CourtemancheRamirezNattel(dt, device=device, dtype=torch.float32)
+# ionic_model = ModifiedMS2v(dt, device=device, dtype=torch.float32)
+# ionic_model.u_gate = 0.1
+# ionic_model.u_crit = 0.1
+# ionic_model.tau_in = 0.15
+# ionic_model.tau_out = 1.5
+# ionic_model.tau_open = 105.0
+# ionic_model.tau_close = 185.0
+
+ionic_model = CourtemancheRamirezNattel(dt, device=device, dtype=torch.float32)
 
 # for i in range(1, 101):
 #     case_name = f"Case_{i}"
@@ -50,7 +52,7 @@ ionic_model.tau_close = 185.0
 
 case_name = f"Case_1"
 print(case_name, end=" ")
-mesh_dir = f"/data/home/acw554/Data/atrium/{case_name}/"
+mesh_dir = f"/home/bzhou6/Data/atrium/{case_name}/"
 
 simulator = Monodomain(ionic_model, T=simulation_time, dt=dt, device=device, dtype=torch.float32)
 simulator.load_mesh(path=mesh_dir, unit_conversion=1000)

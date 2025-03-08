@@ -13,7 +13,7 @@ import time
 from tools.triangulation import Triangulation
 from tools.materialproperties import MaterialProperties
 from tools.stimulus import Stimulus
-from monodomain.tools import load_stimulus_region
+from utils import load_stimulus_region
 
 
 class AtriumSimulatorMitchell:
@@ -163,7 +163,7 @@ class AtriumSimulatorMitchell:
 
 
 if __name__ == "__main__":
-    from monodomain import AtriumSimulatorMitchell
+    from model import AtriumSimulatorMitchell
     from ionic import MitchellSchaeffer
     import torch
     from pathlib import Path

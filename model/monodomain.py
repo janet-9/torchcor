@@ -147,7 +147,7 @@ class Monodomain:
         
 
 if __name__ == "__main__":
-    from models import Monodomain
+    from Projects.torchcor.model.monodomain import Monodomain
     from ionic import TenTusscherPanfilov
     import torch
     from pathlib import Path
