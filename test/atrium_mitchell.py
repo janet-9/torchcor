@@ -163,7 +163,7 @@ class AtriumSimulatorMitchell:
 
 
 if __name__ == "__main__":
-    from model import AtriumSimulatorMitchell
+    from simulator import AtriumSimulatorMitchell
     from ionic import MitchellSchaeffer
     import torch
     from pathlib import Path

@@ -1,22 +1,21 @@
 import sys
 import os
 import warnings
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.append(parent_dir)
+# parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+# sys.path.append(parent_dir)
 warnings.filterwarnings("ignore", message="Sparse CSR tensor support is in beta state")
 
 import torch
 from pynvml import nvmlInit, nvmlDeviceGetHandleByIndex, nvmlDeviceGetUtilizationRates, nvmlDeviceGetMemoryInfo
 import time
-from core import *
+from torchcor.core import *
 
 
 class Monodomain:
-    def __init__(self, ionic_model, T, dt, device=None, dtype=None):
-        self.device = torch.device(device) if device is not None else "cuda:0" \
-            if torch.cuda.is_available() else "cpu"
-        self.dtype = dtype if dtype is not None else torch.float64
-
+    def __init__(self, ionic_model, T, dt, device=torch.device("cuda"), dtype=None):
+        self.device = torch.device(f"cuda:{torch.cuda.current_device()}") if device is None else device
+        self.dtype = dtype if dtype is not None else torch.float32
+        
         self.T = T  # ms
         self.dt = dt  # ms
         self.nt = int(T // dt)
@@ -106,6 +105,8 @@ class Monodomain:
         return u, n_iter
 
     def solve(self, a_tol, r_tol, max_iter, plot_interval=10, verbose=True, format=None):
+        self.assemble()
+        
         u = self.ionic_model.initialize(self.n_nodes)
         gpu_utilisation_list = []
         gpu_memory_list = []
@@ -145,32 +146,3 @@ class Monodomain:
     def save(self, dir, format="igb"):
         pass
         
-
-if __name__ == "__main__":
-    from Projects.torchcor.model.monodomain import Monodomain
-    from ionic import TenTusscherPanfilov
-    import torch
-    from pathlib import Path
-
-    simulation_time = 1000
-    dt = 0.01
-
-    device = torch.device(f"cuda:2" if torch.cuda.is_available() else "cpu")
-    dtype = torch.float32
-    home_dir = Path.home()
-
-    ionic_model = TenTusscherPanfilov(cell_type="ENDO", dt=dt, device=device, dtype=dtype)
-    simulator = Monodomain(ionic_model, T=simulation_time, dt=dt, device=device, dtype=dtype)
-    simulator.load_mesh(path=f"{home_dir}/Data/ventricle/")
-    simulator.add_condutivity([34, 35], il=0.5272, it=0.2076, el=1.0732, et=0.4227)
-    simulator.add_condutivity([44, 45, 46], il=0.9074, it=0.3332, el=0.9074, et=0.3332)
-
-    simulator.add_stimulus(f"{home_dir}/Data/ventricle/LV_sf.vtx", start=0.0, duration=1.0, intensity=100, period=500, count=2)
-    simulator.add_stimulus(f"{home_dir}/Data/ventricle/LV_pf.vtx", start=0.0, duration=1.0, intensity=100, period=500, count=2)
-    simulator.add_stimulus(f"{home_dir}/Data/ventricle/LV_af.vtx", start=0.0, duration=1.0, intensity=100, period=500, count=2)
-    simulator.add_stimulus(f"{home_dir}/Data/ventricle/RV_sf.vtx", start=5.0, duration=1.0, intensity=100, period=500, count=2)
-    simulator.add_stimulus(f"{home_dir}/Data/ventricle/RV_mod.vtx", start=5.0, duration=1.0, intensity=100, period=500, count=2)
-
-    simulator.assemble()
-    simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=1000, plot_interval=10, verbose=True)
-

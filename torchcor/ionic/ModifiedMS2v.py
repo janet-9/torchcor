@@ -2,7 +2,7 @@ import torch
 
 @torch.jit.script
 class ModifiedMS2v:
-    def __init__(self, dt: float, device: torch.device, dtype: torch.dtype = torch.float32):
+    def __init__(self, dt: float, device: torch.device = torch.device("cuda"), dtype: torch.dtype = torch.float32):
         self.name = "ModifiedMS2v"
 
         self.tau_in = 0.1
@@ -18,7 +18,7 @@ class ModifiedMS2v:
 
         self.H = torch.tensor(1.0, device=device, dtype=dtype) 
         self.dt = dt
-        self.device = device
+        self.device = torch.device(f"cuda:{torch.cuda.current_device()}") if device.type != "cuda" else device
         self.dtype = dtype
 
     def to_dimensionless(self, U: torch.Tensor) -> torch.Tensor:

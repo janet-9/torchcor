@@ -1,5 +1,5 @@
 import torch
-from core.preconditioner import Preconditioner
+from torchcor.core.preconditioner import Preconditioner
 
 
 @torch.jit.script

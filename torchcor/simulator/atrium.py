@@ -65,5 +65,4 @@ simulator.add_stimulus(f"{mesh_dir}/{case_name}.vtx",
                        period=500, 
                        count=3)
 
-simulator.assemble()
 simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=100, plot_interval=10, verbose=True)

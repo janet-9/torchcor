@@ -10,5 +10,4 @@ authors = [{ name = "Bei Zhou", email = "bei.zhou@imperial.ac.uk" }]
 dependencies = []
 
 [tool.setuptools]
-packages = ["torchcor", "torchcor.ionic", "torchcor.model"]  # Explicitly list packages
-package-dir = { "torchcor" = ".", "torchcor.ionic" = "./ionic", "torchcor.model" = "./model"}
+packages = ["torchcor", "torchcor.core", "torchcor.ionic", "torchcor.simulator"]  # Explicitly list packages

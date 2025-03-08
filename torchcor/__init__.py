@@ -1,0 +1,1 @@
+from torchcor.device import set_device

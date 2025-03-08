@@ -1,1 +1,0 @@
-from torchcor.model.monodomain import Monodomain
