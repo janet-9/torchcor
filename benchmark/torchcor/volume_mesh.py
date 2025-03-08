@@ -8,7 +8,7 @@ with pygmsh.geo.Geometry() as geom:
         x0=0, x1=20,  
         y0=0, y1=7,  
         z0=0, z1=3, 
-        mesh_size=0.5,
+        mesh_size=0.04,
     )
     mesh = geom.generate_mesh(dim=3)
 
