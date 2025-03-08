@@ -8,17 +8,17 @@ sys.path.append(parent_dir)
 
 
 import torch
-from core.assemble import Matrices2D
-from core.preconditioner import Preconditioner
-from core.solver import ConjugateGradient
-from core.visualize import VTK2D, GIF2D
-from core.reorder import RCM as RCM
+from torchcor.core.assemble import Matrices2D
+from torchcor.core.preconditioner import Preconditioner
+from torchcor.core.solver import ConjugateGradient
+from torchcor.core.visualize import VTK2D, GIF2D
+from torchcor.core.reorder import RCM as RCM
 from scipy.spatial import Delaunay
 import matplotlib.pyplot as plt
 import numpy as np
 import time
 import math
-from core.boundary import apply_dirichlet_boundary_conditions
+from torchcor.core.boundary import apply_dirichlet_boundary_conditions
 
 def compute_w(t, vertices, k=2, omega_1=2 * math.pi, omega_2=math.pi, lbda=math.pi/4):
     a = omega_1 * vertices[:, 0] + omega_2 * vertices[:, 1] - lbda * t

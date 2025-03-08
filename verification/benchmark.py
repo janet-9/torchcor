@@ -8,11 +8,11 @@ sys.path.append(parent_dir)
 import pygmsh
 from TenTusscherPanfilov import TenTusscherPanfilov
 import torch
-from core.assemble import Matrices3D
-from core.preconditioner import Preconditioner
-from core.solver import ConjugateGradient
-from core.visualize import VTK3D
-from core.reorder import RCM as RCM
+from torchcor.core.assemble import Matrices3D
+from torchcor.core.preconditioner import Preconditioner
+from torchcor.core.solver import ConjugateGradient
+from torchcor.core.visualize import VTK3D
+from torchcor.core.reorder import RCM as RCM
 import numpy as np
 import time
 import matplotlib.pyplot as plt
