@@ -170,11 +170,12 @@ class Monodomain:
         for y in y_space:
             plt.axhline(y=y, color='gray', linestyle='--', linewidth=0.7)   
         
-        ax.tick_params(axis='both', which='major', labelsize=12)
-        ax.tick_params(axis='both', which='minor', labelsize=12)
+        # ax.tick_params(axis='both', which='major', labelsize=12)
+        # ax.tick_params(axis='both', which='minor', labelsize=12)
 
         # plt.title("Solution Difference Over Time")
-        plt.savefig("solution_diff.pdf", format="pdf")
+        plt.tight_layout()
+        plt.savefig("maufactured.pdf", format="pdf")
 
 if __name__ == "__main__":
     dt = 0.001  # ms
