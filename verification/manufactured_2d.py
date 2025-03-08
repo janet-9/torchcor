@@ -170,8 +170,8 @@ class Monodomain:
         for y in y_space:
             plt.axhline(y=y, color='gray', linestyle='--', linewidth=0.7)   
         
-        # ax.tick_params(axis='both', which='major', labelsize=12)
-        # ax.tick_params(axis='both', which='minor', labelsize=12)
+        ax.tick_params(axis='both', which='major', labelsize=14)
+        ax.tick_params(axis='both', which='minor', labelsize=14)
 
         # plt.title("Solution Difference Over Time")
         plt.tight_layout()

@@ -283,8 +283,8 @@ if __name__ == "__main__":
     ax.legend(fontsize=12, loc='upper right', frameon=False, handlelength=1.5, borderpad=1, labelspacing=1)
 
     # Adjust tick parameters for readability
-    ax.tick_params(axis='both', which='major', labelsize=12)
-    ax.tick_params(axis='both', which='minor', labelsize=12)
+    ax.tick_params(axis='both', which='major', labelsize=14)
+    ax.tick_params(axis='both', which='minor', labelsize=14)
 
     # Adjust layout to ensure everything fits
     plt.tight_layout()
