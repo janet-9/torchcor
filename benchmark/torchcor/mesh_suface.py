@@ -4,7 +4,7 @@ from pathlib import Path
 
 scale = 1000
 
-for mesh_size in [0.08, 0.05, 0.04, 0.03, 0.02, 0.01, 0.009, 0.008, 0.007, 0.006]:
+for mesh_size in [0.08, 0.05, 0.04, 0.03, 0.02, 0.01, 0.009, 0.008, 0.007]:
     print(mesh_size)
     with pygmsh.geo.Geometry() as geom:
         geom.add_box(

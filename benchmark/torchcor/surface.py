@@ -34,3 +34,13 @@ for n_nodes in n_nodes_list:
                         count=3)
 
     simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=100, plot_interval=10, verbose=True, format="")
+
+
+
+# ModifiedMS2v 80472 90.04 29.31 59.28 5110 58.99 7.29
+# ModifiedMS2v 205341 114.11 29.41 83.29 12022 73.15 7.58
+# ModifiedMS2v 319962 146.87 29.5 115.95 16128 81.16 7.95
+# ModifiedMS2v 569404 228.38 30.12 196.8 24409 93.0 8.7
+# ModifiedMS2v 1279134 514.36 71.74 441.16 48074 97.94 10.36
+# ModifiedMS2v 5105726 2357.02 285.74 2069.8 138076 99.0 20.3
+# ModifiedMS2v 6313331 3003.2 350.76 2650.92 161125 99.79 27.58
