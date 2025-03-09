@@ -22,19 +22,19 @@ for mesh_size in [0.3, 0.2, 0.1, 0.09, 0.08, 0.07, 0.06, 0.05, 0.04, 0.03, 0.02,
         folder = Path(f"volume/{n_nodes}")
         folder.mkdir(parents=True, exist_ok=True)
 
-        pts_file = folder / f"{n_nodes}.pts"
+        pts_file = folder / f"{0}.pts"
         with pts_file.open('w') as f:
             f.write(f"{nodes.shape[0]}\n")
             for point in nodes:
                 f.write(f"{point[0]} {point[1]} {point[2]}\n")
 
-        elem_file = folder / f"{n_nodes}.elem"
+        elem_file = folder / f"{0}.elem"
         with elem_file.open('w') as f:
             f.write(f"{elems.shape[0]}\n")
             for elem in elems:
                 f.write(f"Tt {elem[0]} {elem[1]} {elem[2]} {elem[3]} 0\n")
         
-        lon_file = folder / f"{n_nodes}.lon"
+        lon_file = folder / f"{0}.lon"
         with lon_file.open('w') as f:
             f.write(f"{1}\n")
             for _ in range(elems.shape[0]):
@@ -44,9 +44,9 @@ for mesh_size in [0.3, 0.2, 0.1, 0.09, 0.08, 0.07, 0.06, 0.05, 0.04, 0.03, 0.02,
                                 (nodes[:, 1] <= 1.5 * scale) & 
                                 (nodes[:, 2] <= 1.5 * scale)   
                                 )[0] 
-        vtx_file = folder / f"{n_nodes}.vtx"
+        vtx_file = folder / f"{0}.vtx"
         with vtx_file.open('w') as f:
             f.write(f"{len(stim_region)}\n")
-            f.write(f"intra\n")
+            f.write(f"extra\n")
             for region_id in stim_region:
                 f.write(f"{region_id}\n")
