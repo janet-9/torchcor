@@ -17,8 +17,10 @@ class ConjugateGradient:
         self.p = torch.empty(0)
         self.Ap = torch.empty(0)
 
+        self.linear_guess = True
 
-    def initialize(self, x: torch.Tensor) -> None:
+
+    def initialize(self, x: torch.Tensor, linear_guess: bool = True) -> None:
         self.A = self.A.to(self.dtype)
         self.x = x.to(self.dtype).clone()
         self.x_prev = x.clone()
@@ -27,6 +29,8 @@ class ConjugateGradient:
         self.z = torch.empty_like(self.x)
         self.p = torch.empty_like(self.x)
         self.Ap = torch.empty_like(self.x)
+
+        self.linear_guess = linear_guess
 
     def initial_guess(self) -> None:
         x_clone = self.x.clone()
@@ -41,8 +45,9 @@ class ConjugateGradient:
         b_dtype = b.dtype
         b = b.to(self.dtype)
         n_iter: int = 0
-
-        self.initial_guess()
+        
+        if self.linear_guess:
+            self.initial_guess()
         
         self.r.copy_(b - self.A @ self.x) 
         self.z.copy_(self.preconditioner.apply(self.r))  
