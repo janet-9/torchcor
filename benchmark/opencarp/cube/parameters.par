@@ -55,7 +55,7 @@ stimulus[0].stimtype = 0
 stimulus[0].duration = 2.0
 stimulus[0].strength = 50
 stimulus[0].start    = 0.0
-stimulus[0].vtx_file = /home/bzhou6/Projects/torchcor/benchmark/torchcor/volume/444870/444870
+stimulus[0].vtx_file = /home/bzhou6/Projects/torchcor/benchmark/torchcor/volume/444870/0
 
 #===================================
 # Solver
