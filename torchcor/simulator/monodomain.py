@@ -91,10 +91,24 @@ class Monodomain:
         self.cg = ConjugateGradient(self.pcd, self.A, dtype=torch.float64)
         
 
-    def step(self, u, t, a_tol, r_tol, max_iter):
+    def step(self, u, t, a_tol, r_tol, max_iter, verbose=False):
+        ionic_time = 0
+        electric_time = 0
+        if verbose:
+            torch.cuda.synchronize()
+            start_time = time.time()
+
+        ### ionic ###
         du = self.ionic_model.differentiate(u) / 100
         b = u * self.Cm + self.dt * du
+        #############
 
+        if verbose:
+            torch.cuda.synchronize()
+            ionic_time = time.time() - start_time
+            start_time = time.time()
+
+        ### electric ###
         Istim = self.stimuli.apply(t) / self.Chi
         b += self.dt * Istim
 
@@ -102,8 +116,12 @@ class Monodomain:
         b -= (1 - self.theta) * self.dt * self.K @ u
 
         u, n_iter = self.cg.solve(b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
-        
-        return u, n_iter
+        #################
+        if verbose:
+            torch.cuda.synchronize()
+            electric_time = time.time() - start_time
+
+        return u, n_iter, ionic_time, electric_time
 
     def solve(self, a_tol, r_tol, max_iter, plot_interval=10, verbose=True, format=None):
         self.assemble()
@@ -122,13 +140,17 @@ class Monodomain:
 
         t = 0
         solving_time = time.time()
+        total_ionic_time = 0
+        total_electric_time = 0
         n_total_iter = 0
         for n in range(1, self.nt + 1):
             t += self.dt
             
-            u, n_iter = self.step(u, t, a_tol, r_tol, max_iter)
+            u, n_iter, ionic_time, electric_time = self.step(u, t, a_tol, r_tol, max_iter, verbose)
             n_total_iter += n_iter
-            # print(f"{round(t, 2)} / {self.T}: {n_iter}")
+            total_ionic_time += ionic_time
+            total_electric_time += electric_time
+            
             if n % ts_per_frame == 0 and format == 'vtk':
                 visualization.save_frame(color_values=u.cpu().numpy(),
                                          frame_path=f"./vtk_{self.n_nodes}_{self.ionic_model.name}/frame_{n}.vtk")
@@ -140,6 +162,8 @@ class Monodomain:
         print(self.ionic_model.name,
               self.n_nodes, 
               round(time.time() - solving_time, 2),
+              round(total_ionic_time, 2),
+              round(total_electric_time, 2),
               n_total_iter,
               f"{round(sum(gpu_utilisation_list)/len(gpu_utilisation_list), 2)}",
               f"{round(sum(gpu_memory_list)/len(gpu_memory_list), 2)}")

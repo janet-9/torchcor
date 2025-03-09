@@ -5,7 +5,7 @@ from pathlib import Path
 
 tc.set_device("cuda:0")
 simulation_time = 500
-dt = 0.005
+dt = 0.01
 
 home_dir = Path("./volume")
 
