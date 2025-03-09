@@ -23,10 +23,11 @@ for n_nodes in n_nodes_list:
     simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=100, plot_interval=10, verbose=True, format="")
 
 
-# TenTusscherPanfilov 14706 206.52 5042 38.59 7.26
-# TenTusscherPanfilov 44831 207.85 4066 46.24 7.55
-# TenTusscherPanfilov 325186 325.17 1058 97.0 10.69
-# TenTusscherPanfilov 444870 434.72 479 98.0 13.01
-# TenTusscherPanfilov 620739 603.74 181 99.0 15.81
-# TenTusscherPanfilov 920028 941.69 53 100.0 20.0
-# TenTusscherPanfilov 1450392 1683.22 2 100.0 26.65
+# TenTusscherPanfilov 14706 109.83 88.74 20.59 7017 36.2 7.26
+# TenTusscherPanfilov 44831 110.5 89.05 20.96 6321 44.06 7.55
+# TenTusscherPanfilov 325186 166.16 106.8 58.88 3898 95.84 10.69
+# TenTusscherPanfilov 444870 220.88 142.24 78.15 3568 97.0 13.01
+# TenTusscherPanfilov 620739 305.86 195.05 110.34 3419 98.76 15.81
+# TenTusscherPanfilov 920028 476.37 293.28 182.58 3367 99.0 20.0
+# TenTusscherPanfilov 1450392 849.76 504.42 344.85 3290 99.92 26.65
+# TenTusscherPanfilov 2472555 1641.25 855.36 785.37 3660 100.0 39.99
