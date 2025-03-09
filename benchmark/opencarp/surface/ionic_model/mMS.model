@@ -1,0 +1,42 @@
+# dimensional mMS model: potential now spans between V_min and V_max mV
+# changement on data files:
+# the applied intracellular stimuli must be multilied by V_max-V_min; e.g.: Istim=(V_max-V_min)*Istim_previous 
+# Conductivity is still expressed in cm2/s and does not need to be changed
+
+V; .external(Vm); .nodal();
+Iion; .external(); .nodal();
+
+# initial state
+V_init = V_min;
+h_init = 1.0;
+
+
+# model parameters
+V_gate = 0.13; .param(); .nodal();
+a_crit = 0.13; .param(); .nodal();
+tau_in = 0.3; .param(); .nodal();
+tau_out = 5.0;  .param(); .nodal();
+tau_open = 120.0; .param(); .nodal();
+tau_close = 150.0; .param(); .nodal();
+V_min = 0.0; .param(); .nodal();
+V_max = 1.0; .param(); .nodal();
+
+# state equations
+
+Uamp = (V_max-V_min);
+U = ( V - V_min )/Uamp;
+
+diff_h = ((U<V_gate) ? ((1. - h)/tau_open) : (-h/tau_close));
+
+
+# inward currents
+J_in = (h*( (V-V_min)/Uamp )*((V-V_min)/Uamp - a_crit)*( (V_max-V)/Uamp )/tau_in);
+
+
+# outward currents
+J_out = -(1-h)*(((V-V_min)/Uamp)/tau_out);
+
+
+# ionic current
+Iion=-Uamp*(J_in+J_out);
+
