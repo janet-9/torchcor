@@ -19,7 +19,7 @@ for mesh_size in [0.08, 0.05, 0.04, 0.03, 0.02, 0.01, 0.009, 0.008, 0.007]:
         n_nodes = nodes.shape[0]
         elems = mesh.cells_dict['triangle']
 
-        folder = Path(f"surface/{n_nodes}")
+        folder = Path(f"{Path.home()}/Data/surface/{n_nodes}")
         folder.mkdir(parents=True, exist_ok=True)
 
         pts_file = folder / f"{0}.pts"

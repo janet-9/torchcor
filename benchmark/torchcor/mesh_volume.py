@@ -19,7 +19,7 @@ for mesh_size in [0.3, 0.2, 0.15, 0.12, 0.1, 0.09, 0.08, 0.07, 0.06, 0.05]:
         n_nodes = nodes.shape[0]
         elems = mesh.cells_dict['tetra']
 
-        folder = Path(f"volume/{n_nodes}")
+        folder = Path(f"{Path.home()}/Data/volume/{n_nodes}")
         folder.mkdir(parents=True, exist_ok=True)
 
         pts_file = folder / f"{0}.pts"

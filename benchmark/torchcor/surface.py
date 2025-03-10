@@ -15,7 +15,7 @@ ionic_model.tau_out = 1.5
 ionic_model.tau_open = 105.0
 ionic_model.tau_close = 185.0
 
-home_dir = Path("./surface")
+home_dir = Path(f"{Path.home()}/Data/surface")
 n_nodes_list = sorted([int(sub_dir.name) for sub_dir in home_dir.iterdir()])
 print(n_nodes_list)
 

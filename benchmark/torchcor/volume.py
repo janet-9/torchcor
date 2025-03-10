@@ -7,7 +7,7 @@ tc.set_device("cuda:0")
 simulation_time = 500
 dt = 0.01
 
-home_dir = Path("./volume")
+home_dir = Path(f"{Path.home()}/Data/volume")
 
 n_nodes_list = sorted([int(sub_dir.name) for sub_dir in home_dir.iterdir()])
 print(n_nodes_list)
