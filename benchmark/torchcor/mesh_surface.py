@@ -4,8 +4,7 @@ from pathlib import Path
 
 scale = 1000
 
-for mesh_size in [0.05, 0.04, 0.035, 0.03, 0.028, 0.025,0.022, 0.02, 0.018]:
-    print(mesh_size)
+for mesh_size in [0.04, 0.035, 0.03, 0.028, 0.025, 0.022, 0.02, 0.018, 0.016]:
     with pygmsh.geo.Geometry() as geom:
         geom.add_box(
             x0=0, x1=20,  
@@ -17,6 +16,8 @@ for mesh_size in [0.05, 0.04, 0.035, 0.03, 0.028, 0.025,0.022, 0.02, 0.018]:
 
         nodes = mesh.points * scale
         n_nodes = nodes.shape[0]
+
+        print(mesh_size, n_nodes)
         
         elems = mesh.cells_dict['triangle']
 
