@@ -116,21 +116,21 @@ class Monodomain:
         b -= (1 - self.theta) * self.dt * self.K @ u
 
         u, n_iter = self.cg.solve(b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
-        #################
+        ################
         if verbose:
             torch.cuda.synchronize()
             electric_time = time.time() - start_time
 
         return u, n_iter, ionic_time, electric_time
 
-    def solve(self, a_tol, r_tol, max_iter, plot_interval=10, verbose=True, format=None):
+    def solve(self, a_tol, r_tol, max_iter, linear_guess=True, plot_interval=10, verbose=True, format=None):
         self.assemble()
         
         u = self.ionic_model.initialize(self.n_nodes)
         gpu_utilisation_list = []
         gpu_memory_list = []
 
-        self.cg.initialize(x=u)
+        self.cg.initialize(x=u, linear_guess=linear_guess)
 
         ts_per_frame = int(plot_interval / self.dt)
         if self.elems.shape[1] == 3:

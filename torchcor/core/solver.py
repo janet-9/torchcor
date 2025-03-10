@@ -17,7 +17,7 @@ class ConjugateGradient:
         self.p = torch.empty(0)
         self.Ap = torch.empty(0)
 
-        self.linear_guess = True
+        self.linear_guess = False
 
 
     def initialize(self, x: torch.Tensor, linear_guess: bool = True) -> None:

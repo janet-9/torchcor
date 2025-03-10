@@ -20,7 +20,13 @@ for n_nodes in n_nodes_list:
 
     simulator.add_stimulus(f"{home_dir}/{n_nodes}/0.vtx", start=0.0, duration=2.0, intensity=50)
 
-    simulator.solve(a_tol=1e-5, r_tol=1e-5, max_iter=100, plot_interval=10, verbose=True, format="vtk")
+    simulator.solve(a_tol=1e-5, 
+                    r_tol=1e-5, 
+                    max_iter=100, 
+                    linear_guess=True,
+                    plot_interval=10, 
+                    verbose=True, 
+                    format="vtk")
 
 
 # TenTusscherPanfilov 14706 109.83 88.74 20.59 7017 36.2 7.26
