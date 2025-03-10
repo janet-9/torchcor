@@ -8,16 +8,15 @@ simulation_time = 1500
 dt = 0.01
 
 
+ionic_model = ModifiedMS2v(dt)
+ionic_model.u_gate = 0.1
+ionic_model.u_crit = 0.1
+ionic_model.tau_in = 0.15
+ionic_model.tau_out = 1.5
+ionic_model.tau_open = 105.0
+ionic_model.tau_close = 185.0
 
-# ionic_model = ModifiedMS2v(dt, device=device, dtype=torch.float32)
-# ionic_model.u_gate = 0.1
-# ionic_model.u_crit = 0.1
-# ionic_model.tau_in = 0.15
-# ionic_model.tau_out = 1.5
-# ionic_model.tau_open = 105.0
-# ionic_model.tau_close = 185.0
-
-ionic_model = CourtemancheRamirezNattel(dt)
+# ionic_model = CourtemancheRamirezNattel(dt)
 
 home_dir = Path.home()
 case_name = f"Case_1"
