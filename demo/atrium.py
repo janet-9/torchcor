@@ -19,7 +19,7 @@ ionic_model.tau_close = 185.0
 # ionic_model = CourtemancheRamirezNattel(dt)
 
 home_dir = Path.home()
-case_name = f"Case_1"
+case_name = f"Case_42"
 print(case_name, end=" ")
 mesh_dir = f"{Path.home()}/Data/atrium/{case_name}/"
 

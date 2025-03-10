@@ -26,7 +26,7 @@ for n_nodes in n_nodes_list:
                     linear_guess=True,
                     plot_interval=10, 
                     verbose=True, 
-                    format="vtk")
+                    format="")
 
 
 # TenTusscherPanfilov 14706 109.83 88.74 20.59 7017 36.2 7.26
