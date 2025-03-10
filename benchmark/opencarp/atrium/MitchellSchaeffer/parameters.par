@@ -14,9 +14,9 @@ parab_solve    = 1
 #       TEMPORAL        #
 #########################
 dt      = 10         #in microseconds; PDEnsorflow uses milliseconds
-tend    = 1500
+tend    = 500
 timedt  = 100
-spacedt = 1500 #1 in ms  #writes the solution every spacedt times set to tend to not write the solution
+spacedt = 500 #1 in ms  #writes the solution every spacedt times set to tend to not write the solution
 simID   = "Courtemanche"
 
 #######################################
@@ -33,7 +33,7 @@ imp_region[0].ID[3]            = 4
 imp_region[0].ID[4]            = 5   
 imp_region[0].ID[5]            = 6   
 imp_region[0].im               = "Courtemanche"
-imp_region[0].im_param         = "" # V_gate=0.1,a_crit=0.1,tau_in=0.15,tau_out=1.5,tau_open=105,tau_close=185
+imp_region[0].im_param         = "" 
 #######################################
 
 
@@ -61,8 +61,6 @@ stimulus[0].stimtype      = 0
 stimulus[0].dump_vtx_file = 0
 stimulus[0].name          = "S1"
 stimulus[0].start         = 0.0
-stimulus[0].npls          = 3
-stimulus[0].bcl           = 800
 stimulus[0].duration      = 2.0
 stimulus[0].strength      = 100.0
 stimulus[0].vtx_file      = /home/bzhou6/Data/atrium/Case_1

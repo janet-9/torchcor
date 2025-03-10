@@ -5,7 +5,7 @@ DESKTOP=1
 if [ $DESKTOP -eq 1 ]
 then
   export WORKDIR=$PWD
-  NPROCS=20 #64
+  NPROCS=64
   GROUPBASE='/usr/local/lib/opencarp'
   CARPDIR=${GROUPBASE}'/bin'
 #  EXTIMP=${WORKDIR}'/ionic_model/mMS.so'

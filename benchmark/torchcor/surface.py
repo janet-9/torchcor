@@ -4,7 +4,7 @@ from torchcor.ionic import ModifiedMS2v
 from pathlib import Path
 
 tc.set_device("cuda:0")
-simulation_time = 1500
+simulation_time = 500
 dt = 0.01
 
 ionic_model = ModifiedMS2v(dt)
@@ -29,9 +29,7 @@ for n_nodes in n_nodes_list:
     simulator.add_stimulus(f"{mesh_dir}/{0}.vtx", 
                         start=0.0, 
                         duration=2.0, 
-                        intensity=50, 
-                        period=500, 
-                        count=3)
+                        intensity=50)
 
     simulator.solve(a_tol=1e-5, 
                     r_tol=1e-5, 
