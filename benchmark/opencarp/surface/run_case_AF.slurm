@@ -54,7 +54,7 @@ cd $WORKDIR
 
 LOPTF=${WORKDIR}'/petsc_cg_opts'
 CGSTR="-parab_use_pt 0 -cg_precond 1 -cg_maxit_parab 100 -cg_tol_parab 1e-5 -cg_norm_parab 1 -parab_options_file ${LOPTF}"
-CARPSTR="${CARPDIR}/${CARPBIN} +F parameters.par -meshname /home/bzhou6/Projects/torchcor/benchmark/torchcor/surface/444870/0 ${CGSTR}"
+CARPSTR="${CARPDIR}/${CARPBIN} +F parameters.par -meshname /home/bzhou6/Projects/torchcor/benchmark/torchcor/surface/80472/0 ${CGSTR}"
 
 
 if [ $DESKTOP -eq 1 ]
