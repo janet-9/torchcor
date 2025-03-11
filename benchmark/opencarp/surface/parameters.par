@@ -27,8 +27,12 @@ num_imp_regions = 1
 #######################################
 imp_region[0].num_IDs          = 1
 imp_region[0].ID[0]            = 0
-imp_region[0].im               = "mMS"
-imp_region[0].im_param         = "V_gate=0.1,a_crit=0.1,tau_in=0.15,tau_out=1.5,tau_open=105,tau_close=185,V_min=-80,V_max=20"
+
+# imp_region[0].im               = "mMS"
+# imp_region[0].im_param         = "V_gate=0.1,a_crit=0.1,tau_in=0.15,tau_out=1.5,tau_open=105,tau_close=185,V_min=-80,V_max=20"
+
+imp_region[0].im               = "Courtemanche"
+imp_region[0].im_param         = ""
 #######################################
 
 
