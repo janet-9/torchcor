@@ -14,10 +14,10 @@ parab_solve    = 1
 #       TEMPORAL        #
 #########################
 dt      = 10         #in microseconds; PDEnsorflow uses milliseconds
-tend    = 1500
+tend    = 500
 timedt  = 10
-spacedt = 1500 #1 in ms  #writes the solution every spacedt times set to tend to not write the solution
-simID   = "Case_1"
+spacedt = 500 #1 in ms  #writes the solution every spacedt times set to tend to not write the solution
+simID   = "Case_42"
 
 #######################################
 # IMP regions definition (cell model) #
@@ -25,13 +25,8 @@ simID   = "Case_1"
 num_imp_regions = 1
 #######################################
 imp_region[0].name             = "tissue" 
-imp_region[0].num_IDs          = 6
-imp_region[0].ID[0]            = 1
-imp_region[0].ID[1]            = 2   
-imp_region[0].ID[2]            = 3   
-imp_region[0].ID[3]            = 4
-imp_region[0].ID[4]            = 5   
-imp_region[0].ID[5]            = 6   
+imp_region[0].num_IDs          = 1
+imp_region[0].ID[0]            = 0
 imp_region[0].im               = "Courtemanche"
 imp_region[0].im_param         = ""
 #######################################
@@ -43,13 +38,8 @@ imp_region[0].im_param         = ""
 num_gregions = 1
 ########################################
 gregion[0].name    = "tissue" 
-gregion[0].num_IDs = 6
-gregion[0].ID[0]   = 1      
-gregion[0].ID[1]   = 2      
-gregion[0].ID[2]   = 3      
-gregion[0].ID[3]   = 4      
-gregion[0].ID[4]   = 5
-gregion[0].ID[5]   = 6
+gregion[0].num_IDs = 1
+gregion[0].ID[0]   = 0
 gregion[0].g_il   = 0.4
 gregion[0].g_it   = 0.4
 
@@ -63,7 +53,7 @@ stimulus[0].name          = "S1"
 stimulus[0].start         = 0.0
 stimulus[0].duration      = 2.0
 stimulus[0].strength      = 50.0
-stimulus[0].vtx_file      = /home/bzhou6/Data/atrium/Case_1/Case_1
+stimulus[0].vtx_file      = /home/bzhou6/Data/atrium/Case_42/Case_42
 ##############################
 
 
