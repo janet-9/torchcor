@@ -237,7 +237,7 @@ if __name__ == "__main__":
                            apply_rcm=False, 
                            device=device, 
                            dtype=dtype)
-    fig, ax = plt.subplots(figsize=(6, 4))
+    plt.subplots(figsize=(6, 4))
     for dx in [0.5, 0.2, 0.1]:
         simulator.Chi = 140
         simulator.Cm = 0.01
@@ -258,34 +258,20 @@ if __name__ == "__main__":
         elif simulator.dx == 0.5:
             color = 'blue'
 
-        ax.plot(simulator.diagonal_distance.cpu().numpy().tolist(), 
+        plt.plot(simulator.diagonal_distance.cpu().numpy().tolist(), 
                  simulator.activation_time.cpu().numpy().tolist(), 
                  color=color,
                  label=f'dx = {simulator.dx}')
+
+
+    # Labels and title
+    plt.xlabel("Distance (mm)", fontsize=14)
+    plt.ylabel("Activation time (ms)", fontsize=14)
+
+    plt.xticks([0, 5, 10, 16, 21.4], fontsize=14)
+    plt.yticks([10, 20, 30, 40, 50], fontsize=14)
     
-    # ax.set_title("Trigonometric Functions", fontsize=20, fontweight='bold', family='Helvetica')
-    ax.set_xlabel("Distance (mm)", fontsize=14, fontweight='normal', family='Helvetica')
-    ax.set_ylabel("Activation time (ms)", fontsize=14, fontweight='normal', family='Helvetica')
-
-    ax.set_xlim(0, 21.4)
-    x_space = np.linspace(0, 21.4, 5).tolist()
-    ax.set_xticks(x_space)
-    for x in x_space:
-        ax.axvline(x=x, color='gray', linestyle='--', linewidth=0.7) 
-
-    ax.set_ylim(0, 150)
-    y_space = np.linspace(0, 150, 4).tolist()
-    ax.set_yticks(y_space)
-    for y in y_space:
-        plt.axhline(y=y, color='gray', linestyle='--', linewidth=0.7)   
-
-    # Add a legend
-    ax.legend(fontsize=12, loc='upper right', frameon=False, handlelength=1.5, borderpad=1, labelspacing=1)
-
-    # Adjust tick parameters for readability
-    ax.tick_params(axis='both', which='major', labelsize=14)
-    ax.tick_params(axis='both', which='minor', labelsize=14)
-
-    # Adjust layout to ensure everything fits
+    plt.legend(fontsize=14) 
+    plt.grid(True, linestyle='--', alpha=0.5)
     plt.tight_layout()
     plt.savefig("activation_time.pdf", format="pdf")

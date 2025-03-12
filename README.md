@@ -3,6 +3,8 @@ TorchCor is a high-performance Python library for cardiac electrophysiology (CEP
 
 
 
+<img src="https://github.com/sagebei/torchcor/blob/main/docs/biv.png" width="200" />
+
 
 
 
