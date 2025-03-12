@@ -18,7 +18,7 @@ dt      = 10         #in microseconds; PDEnsorflow uses milliseconds
 tend    = 500
 timedt  = 100
 spacedt = 500 #1 in ms  #writes the solution every spacedt times set to tend to not write the solution
-simID   = "Case_42"
+simID   = "Case_18"
 
 #######################################
 # IMP regions definition (cell model) #
@@ -26,8 +26,13 @@ simID   = "Case_42"
 num_imp_regions = 1
 #######################################
 imp_region[0].name             = "tissue" 
-imp_region[0].num_IDs          = 1
-imp_region[0].ID[0]            = 0
+imp_region[0].num_IDs          = 6
+imp_region[0].ID[0]            = 1
+imp_region[0].ID[1]            = 2   
+imp_region[0].ID[2]            = 3   
+imp_region[0].ID[3]            = 4
+imp_region[0].ID[4]            = 5   
+imp_region[0].ID[5]            = 6   
 imp_region[0].im               = "mMS"
 imp_region[0].im_param         = "V_gate=0.1,a_crit=0.1,tau_in=0.15,tau_out=1.5,tau_open=105,tau_close=185,V_min=-80,V_max=20"
 #######################################
@@ -54,7 +59,7 @@ stimulus[0].name          = "S1"
 stimulus[0].start         = 0.0
 stimulus[0].duration      = 2.0
 stimulus[0].strength      = 50.0
-stimulus[0].vtx_file      = "/home/bzhou6/Data/atrium/Case_42/Case_42"
+stimulus[0].vtx_file      = "/home/bzhou6/Data/atrium/Case_18/Case_18"
 ##############################
 
 

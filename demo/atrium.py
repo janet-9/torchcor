@@ -26,7 +26,7 @@ mesh_dir = f"{Path.home()}/Data/atrium/{case_name}/"
 
 simulator = Monodomain(ionic_model, T=simulation_time, dt=dt)
 simulator.load_mesh(path=mesh_dir, unit_conversion=1000)
-simulator.add_condutivity(region_ids=[0], il=0.4, it=0.4)
+simulator.add_condutivity(region_ids=[1, 2, 3, 4, 5, 6], il=0.4, it=0.4)
 
 simulator.add_stimulus(f"{mesh_dir}/{case_name}.vtx", 
                        start=0.0, 

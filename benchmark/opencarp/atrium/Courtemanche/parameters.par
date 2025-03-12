@@ -25,8 +25,13 @@ simID   = "Case_42"
 num_imp_regions = 1
 #######################################
 imp_region[0].name             = "tissue" 
-imp_region[0].num_IDs          = 1
-imp_region[0].ID[0]            = 0
+imp_region[0].num_IDs          = 6
+imp_region[0].ID[0]            = 1
+imp_region[0].ID[1]            = 2   
+imp_region[0].ID[2]            = 3   
+imp_region[0].ID[3]            = 4
+imp_region[0].ID[4]            = 5   
+imp_region[0].ID[5]            = 6   
 imp_region[0].im               = "Courtemanche"
 imp_region[0].im_param         = ""
 #######################################
@@ -53,7 +58,7 @@ stimulus[0].name          = "S1"
 stimulus[0].start         = 0.0
 stimulus[0].duration      = 2.0
 stimulus[0].strength      = 50.0
-stimulus[0].vtx_file      = /home/bzhou6/Data/atrium/Case_42/Case_42
+stimulus[0].vtx_file      = /home/bzhou6/Data/atrium/Case_18/Case_18
 ##############################
 
 
