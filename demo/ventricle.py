@@ -27,5 +27,5 @@ simulator.solve(a_tol=1e-5,
                 linear_guess=True,
                 plot_interval=10, 
                 verbose=True, 
-                format="vtk")
+                format="")
 
