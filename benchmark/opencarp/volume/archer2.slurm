@@ -3,7 +3,7 @@
 #SBATCH --account e348
 #SBATCH --partition=standard
 #SBATCH --qos=standard
-#SBATCH --time=19:59:59 
+#SBATCH --time=00:19:59 
 #SBATCH --nodes=1
 #SBATCH --tasks-per-node=128
 #SBATCH --cpus-per-task=1
