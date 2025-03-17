@@ -1,0 +1,72 @@
+#===================================
+# Source (EP) Model
+#===================================
+# TO BE SPECIFIED IN THE MAIN SCIPT
+#    (Short)(2): Pseudo-bidomain
+#    (Short)(1): Bidomain
+#    (Short)(0): Monodomain
+
+mass_lumping   = 0
+bidomain       = 0
+bidm_eqv_mono  = 0
+parab_solve    = 1
+
+#===================================
+# Ionic Model
+#===================================
+# imp_region: assignment of active electrophysiological properties
+num_imp_regions          = 1
+
+# ------------------------------------------------------------------------------
+# Ventricular Myocytes
+# ------------------------------------------------------------------------------
+imp_region[0].num_IDs    = 1
+imp_region[0].ID[0]      = 0
+imp_region[0].im         = tenTusscherPanfilov
+imp_region[0].im_param   = "flags=ENDO"
+
+#===================================
+# Conductivities
+#===================================
+# gregion: assignement of passive tissue properties
+meshformat               = 0 # 0: carp_txt file, 1: binary file
+num_gregions             = 1
+
+
+# ------------------------------------------------------------------------------
+# Ventricles
+# ------------------------------------------------------------------------------
+# R-D settings
+gregion[0].num_IDs       = 1
+gregion[0].ID[0]         = 0
+gregion[0].g_il          = 0.17 # CV = 0.63m/s # [S/m] Conductivity along the fibre direction (l=longitudinal) in the intracellular space
+gregion[0].g_el          = 0.62 # [S/m] Conductivity along the fibre direction (l=longitudinal) in the extracellular space
+gregion[0].g_it          = 0.019 # CV = 0.30m/s # [S/m] Conductivity transverse to the fibre direction (t=trasversal) in the intracellular space
+gregion[0].g_et          = 0.2 # [S/m] Conductivity transverse to the fibre direction (t=trasversal) in the extracellular space
+
+
+#===================================
+# Stimulation
+#===================================
+num_stim             = 1
+
+stimulus[0].name     = small_cube
+stimulus[0].stimtype = 0
+stimulus[0].duration = 2.0
+stimulus[0].strength = 50
+stimulus[0].start    = 0.0
+stimulus[0].vtx_file = /home/bzhou6/Data/volume/5148517/0
+
+#===================================
+# Solver
+#===================================
+dt                       = 10               # Defines the time step size to solve the numeric equations for. NOTE: [us]
+tend                     = 500             # Defines the point in time when the simulation stops.                 [ms]
+simID   = "biv"
+
+#===================================
+# Output
+#===================================
+timedt                   = 10             # Defines the temporal interval between progress updates made to the terminal. (For informational purposes only).
+spacedt                  = 500              # Defines the temporal interval to output data to files.
+gridout_i                = 0
