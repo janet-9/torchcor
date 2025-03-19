@@ -10,7 +10,7 @@ dt = 0.01
 home_dir = Path(f"{Path.home()}/Data/volume")
 
 # n_nodes_list = sorted([int(sub_dir.name) for sub_dir in home_dir.iterdir()])
-n_nodes_list = [3866726]
+n_nodes_list = [3157665]
 print(n_nodes_list)
 
 for n_nodes in n_nodes_list:
