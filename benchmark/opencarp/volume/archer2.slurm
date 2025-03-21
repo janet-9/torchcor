@@ -3,8 +3,8 @@
 #SBATCH --account e348
 #SBATCH --partition=standard
 #SBATCH --qos=standard
-#SBATCH --time=00:19:59 
-#SBATCH --nodes=1
+#SBATCH --time=23:59:59 
+#SBATCH --nodes=2
 #SBATCH --tasks-per-node=128
 #SBATCH --cpus-per-task=1
 #SBATCH --export=none
@@ -50,7 +50,7 @@ fi
 ####################################
 cd $WORKDIR
 
-MESHFNAME="/work/e348/e348/bzhou6/Data/volume/5148517"
+MESHFNAME="/work/e348/e348/bzhou6/Data/volume/3157665"
 
 LOPTF=${WORKDIR}'/petsc_cg_opts'
 CGSTR="-parab_use_pt 1 -cg_precond 1 -cg_maxit_parab 100 -cg_tol_parab 1e-5 -cg_norm_parab 0 -parab_options_file ${LOPTF}"
