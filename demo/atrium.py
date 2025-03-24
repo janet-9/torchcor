@@ -36,7 +36,7 @@ simulator.add_stimulus(f"{mesh_dir}/{case_name}.vtx",
 simulator.solve(a_tol=1e-5, 
                 r_tol=1e-5, 
                 max_iter=100, 
+                calculate_AT_RT=True,
                 linear_guess=True,
-                plot_interval=10, 
-                verbose=True,
-                format="vtk")
+                snapshot_interval=10, 
+                verbose=True)

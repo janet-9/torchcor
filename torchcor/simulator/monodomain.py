@@ -1,8 +1,4 @@
-import sys
-import os
 import warnings
-# parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-# sys.path.append(parent_dir)
 warnings.filterwarnings("ignore", message="Sparse CSR tensor support is in beta state")
 
 import torch
@@ -10,6 +6,7 @@ import torchcor as tc
 from pynvml import nvmlInit, nvmlDeviceGetHandleByIndex, nvmlDeviceGetUtilizationRates, nvmlDeviceGetMemoryInfo
 import time
 from torchcor.core import *
+from pathlib import Path
 
 
 class Monodomain:
@@ -46,8 +43,12 @@ class Monodomain:
         device_id = torch.cuda.current_device()
         self.gpu_handle = nvmlDeviceGetHandleByIndex(device_id)
 
+        self.mesh_path = None
 
-    def load_mesh(self, path="/Users/bei/Project/FinitePDE/data/Case_1", unit_conversion=1000):
+
+    def load_mesh(self, path="Data/ventricle/Case_1", unit_conversion=1000):
+        self.mesh_path = Path(path)
+
         reader = MeshReader(path)
         nodes, elems, regions, fibres = reader.read(unit_conversion=unit_conversion)
         
@@ -123,51 +124,102 @@ class Monodomain:
 
         return u, n_iter, ionic_time, electric_time
 
-    def solve(self, a_tol, r_tol, max_iter, linear_guess=True, plot_interval=10, verbose=True, format=None):
+    def solve(self, a_tol, r_tol, max_iter, calculate_AT_RT=True, linear_guess=True, snapshot_interval=1, verbose=True):
         self.assemble()
         
         u = self.ionic_model.initialize(self.n_nodes)
-        gpu_utilisation_list = []
-        gpu_memory_list = []
-
+        u_initial = u.clone()
         self.cg.initialize(x=u, linear_guess=linear_guess)
-
-        ts_per_frame = int(plot_interval / self.dt)
-        if self.elems.shape[1] == 3:
-            visualization = VTK3DSurface(self.nodes.cpu().numpy(), self.elems.cpu().numpy())
-        else:
-            visualization = VTK3D(self.nodes.cpu().numpy(), self.elems.cpu().numpy())
+        ts_per_frame = int(snapshot_interval / self.dt)
+    
+        if calculate_AT_RT:
+            activation_time = torch.zeros_like(u_initial, dtype=torch.float32)
+            u_peak = torch.zeros_like(u_initial, dtype=torch.float32)
+            repolarization_time = torch.zeros_like(u_initial, dtype=torch.float32)
 
         t = 0
         solving_time = time.time()
         total_ionic_time = 0
         total_electric_time = 0
         n_total_iter = 0
+        gpu_utilisation_list = []
+        gpu_memory_list = []
+        solution_list = []
         for n in range(1, self.nt + 1):
             t += self.dt
             
+            ### CG step ###
             u, n_iter, ionic_time, electric_time = self.step(u, t, a_tol, r_tol, max_iter, verbose)
             n_total_iter += n_iter
             total_ionic_time += ionic_time
             total_electric_time += electric_time
             
-            if n % ts_per_frame == 0 and format == 'vtk':
-                visualization.save_frame(color_values=u.cpu().numpy(),
-                                         frame_path=f"./vtk_{self.n_nodes}_{self.ionic_model.name}/frame_{n}.vtk")
+            ### calculate AT and RT ###
+            if calculate_AT_RT:
+                activation_time[(u > 0) & (activation_time == 0)] = t
 
+                mask_peak_update = (u > u_peak) & (activation_time > 0)
+                u_peak[mask_peak_update] = u[mask_peak_update]
+                repolarization_threshold = u_initial + 0.1 * (u_peak - u_initial)
+                repolarization_time[(u < repolarization_threshold) &
+                                    (repolarization_time == 0) &
+                                    (activation_time > 0)] = t
+            
+            ### keep track of GPU usage ###
             if n % ts_per_frame == 0:
+                solution_list.append(u)
+
                 gpu_utilisation_list.append(nvmlDeviceGetUtilizationRates(self.gpu_handle).gpu)
                 gpu_memory_list.append(nvmlDeviceGetMemoryInfo(self.gpu_handle).used / 1e9)
+                
+                if verbose:
+                    print(f"t: {round(t, 1)}/{self.T}", 
+                          f"time elapsed:", round(time.time() - solving_time, 2),
+                          f"total CG iter:", n_total_iter,
+                          flush=True)
 
-        print(self.ionic_model.name,
-              self.n_nodes, 
-              round(time.time() - solving_time, 2),
-              round(total_ionic_time, 2),
-              round(total_electric_time, 2),
-              n_total_iter,
-              f"{round(sum(gpu_utilisation_list)/len(gpu_utilisation_list), 2)}",
-              f"{round(sum(gpu_memory_list)/len(gpu_memory_list), 2)}")
+        ### save AT, RT, and solutions to disk ###
+        dir_path = self.mesh_path / "torchcor"
+        dir_path.mkdir(exist_ok=True)
+        if calculate_AT_RT:
+            torch.save(activation_time.cpu(), dir_path / "ATs.pt")
+            torch.save(repolarization_time.cpu(), dir_path / "RTs.pt")
+        if snapshot_interval < self.T:
+            torch.save(torch.stack(solution_list, dim=0).cpu(), dir_path / "solutions.pt")
 
-    def save(self, dir, format="igb"):
-        pass
+        ### print log info to console ###
+        if verbose:
+            print(self.ionic_model.name,
+                  self.n_nodes, 
+                  round(time.time() - solving_time, 2),
+                  round(total_ionic_time, 2),
+                  round(total_electric_time, 2),
+                  n_total_iter,
+                  f"{round(sum(gpu_utilisation_list)/len(gpu_utilisation_list), 2)}",
+                  f"{round(sum(gpu_memory_list)/len(gpu_memory_list), 2)}",
+                  flush=True)
+
+    def pt_to_vtk(self):
+        start_time = time.time()
+
+        if self.elems.shape[1] == 3:
+            visualization = VTK3DSurface(self.nodes.cpu().numpy(), self.elems.cpu().numpy())
+        else:
+            visualization = VTK3D(self.nodes.cpu().numpy(), self.elems.cpu().numpy())
         
+        dir_path = self.mesh_path / "torcor"
+        solutions = torch.load(dir_path / "solutions.pt").numpy()
+        n_solutions = solutions.shape[0]
+        for i in range(n_solutions):
+            visualization.save_frame(color_values=solutions[i],
+                                     frame_path=dir_path / f"solutions_vtk/frame_{i}.vtk")
+        
+
+        ATs = torch.load(dir_path / "ATs.pt").numpy()
+        visualization.save_frame(color_values=ATs,
+                                 frame_path=dir_path / "ATs.vtk")
+        RTs = torch.load(dir_path / "RTs.pt").numpy()
+        visualization.save_frame(color_values=RTs,
+                                 frame_path=dir_path / "RTs.vtk")
+
+        print(f"Saved vtk files in {round(time.time() - start_time, 2)}", flush=True)
