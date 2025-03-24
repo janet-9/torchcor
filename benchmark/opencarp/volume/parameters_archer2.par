@@ -55,7 +55,7 @@ stimulus[0].stimtype = 0
 stimulus[0].duration = 2.0
 stimulus[0].strength = 50
 stimulus[0].start    = 0.0
-stimulus[0].vtx_file = /home/bzhou6/Data/volume/3157665/0
+stimulus[0].vtx_file = /work/e348/e348/bzhou6/Data/volume/3157665/0
 
 #===================================
 # Solver
