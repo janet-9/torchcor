@@ -50,7 +50,7 @@ fi
 ####################################
 cd $WORKDIR
 
-MESHFNAME="/work/e348/e348/bzhou6/Data/volume/3157665"
+MESHFNAME="/work/e348/e348/bzhou6/Data/volume/3157665/0"
 
 LOPTF=${WORKDIR}'/petsc_cg_opts'
 CGSTR="-parab_use_pt 1 -cg_precond 1 -cg_maxit_parab 100 -cg_tol_parab 1e-5 -cg_norm_parab 0 -parab_options_file ${LOPTF}"
