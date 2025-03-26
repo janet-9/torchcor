@@ -22,12 +22,13 @@ simulator.add_stimulus(case_dir / "LV_af.vtx", start=0.0, duration=1.0, intensit
 simulator.add_stimulus(case_dir / "RV_sf.vtx", start=5.0, duration=1.0, intensity=100)
 simulator.add_stimulus(case_dir / "RV_mod.vtx", start=5.0, duration=1.0, intensity=100)
 
-simulator.solve(a_tol=1e-5, 
-                r_tol=1e-5, 
-                max_iter=100, 
-                calculate_AT_RT=True,
-                linear_guess=True,
-                snapshot_interval=10, 
-                verbose=True)
+# simulator.solve(a_tol=1e-5, 
+#                 r_tol=1e-5, 
+#                 max_iter=100, 
+#                 calculate_AT_RT=True,
+#                 linear_guess=True,
+#                 snapshot_interval=1, 
+#                 verbose=True)
 
-simulator.pt_to_vtk()
+# simulator.pt_to_vtk()
+simulator.calculate_phie()
