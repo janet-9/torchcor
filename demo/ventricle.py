@@ -31,4 +31,4 @@ simulator.add_stimulus(case_dir / "RV_mod.vtx", start=5.0, duration=1.0, intensi
 #                 verbose=True)
 
 # simulator.pt_to_vtk()
-simulator.calculate_phie()
+simulator.phie_recovery()

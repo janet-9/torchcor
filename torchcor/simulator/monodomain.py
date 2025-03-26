@@ -226,7 +226,7 @@ class Monodomain:
         print(f"Saved vtk files in {round(time.time() - start_time, 2)}", flush=True)
 
 
-    def calculate_phie(self):
+    def phie_recovery(self):
         Vm = torch.load(self.result_path / "Vm.pt").to(self.device)
 
         sigma = self.conductivity.calculate_sigma_phie(self.fibres)
@@ -235,7 +235,7 @@ class Monodomain:
         else:
             matrices = Matrices3D(vertices=self.nodes, tetrahedrons=self.elems, device=self.device, dtype=self.dtype)
         K, _ = matrices.assemble_matrices(sigma)
-        
+
         pcd = Preconditioner()
         pcd.create_Jocobi(K)
         cg = ConjugateGradient(pcd, K, dtype=torch.float64)
