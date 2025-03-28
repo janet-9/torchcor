@@ -8,7 +8,7 @@
 
 mass_lumping   = 0
 bidomain       = 0
-bidm_eqv_mono  = 0
+bidm_eqv_mono  = 1
 parab_solve    = 1
 
 #===================================
