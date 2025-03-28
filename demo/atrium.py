@@ -38,5 +38,5 @@ simulator.solve(a_tol=1e-5,
                 max_iter=100, 
                 calculate_AT_RT=True,
                 linear_guess=True,
-                snapshot_interval=10, 
+                snapshot_interval=1, 
                 verbose=True)
