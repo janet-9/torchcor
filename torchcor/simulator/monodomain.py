@@ -136,9 +136,9 @@ class Monodomain:
         ts_per_frame = int(snapshot_interval / self.dt)
     
         if calculate_AT_RT:
-            activation_time = torch.zeros_like(u_initial, dtype=torch.float32)
-            u_peak = torch.zeros_like(u_initial, dtype=torch.float32)
-            repolarization_time = torch.zeros_like(u_initial, dtype=torch.float32)
+            activation_time = torch.zeros_like(u_initial)
+            u_peak = torch.zeros_like(u_initial)
+            repolarization_time = torch.zeros_like(u_initial)
 
         t = 0
         solving_time = time.time()

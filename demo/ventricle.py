@@ -2,6 +2,7 @@ import torchcor as tc
 from torchcor.simulator import Monodomain
 from torchcor.ionic import TenTusscherPanfilov
 from pathlib import Path
+import torch
 
 tc.set_device("cuda:0")
 simulation_time = 600
@@ -10,8 +11,8 @@ dt = 0.01
 home_dir = Path.home()
 case_dir = home_dir / "Data/ventricle/Case_1"
 
-ionic_model = TenTusscherPanfilov(cell_type="ENDO", dt=dt)
-simulator = Monodomain(ionic_model, T=simulation_time, dt=dt)
+ionic_model = TenTusscherPanfilov(cell_type="ENDO", dt=dt, dtype=torch.float64)
+simulator = Monodomain(ionic_model, T=simulation_time, dt=dt, dtype=torch.float64)
 simulator.load_mesh(path=case_dir)
 simulator.add_condutivity([34, 35], il=0.5272, it=0.2076, el=1.0732, et=0.4227)
 simulator.add_condutivity([44, 45, 46], il=0.9074, it=0.3332, el=0.9074, et=0.3332)
