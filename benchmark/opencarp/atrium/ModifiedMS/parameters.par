@@ -54,7 +54,6 @@ num_stim =  1
 #        Stimulus S1         #
 ##############################
 stimulus[0].stimtype      = 0
-stimulus[0].dump_vtx_file = 0
 stimulus[0].name          = "S1"
 stimulus[0].start         = 0.0
 stimulus[0].duration      = 2.0
