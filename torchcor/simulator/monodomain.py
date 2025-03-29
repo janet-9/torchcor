@@ -16,7 +16,7 @@ class Monodomain:
         
         self.T = T  # ms
         self.dt = dt  # ms
-        self.nt = int(T // dt)
+        self.nt = int(T / dt)
 
         self.ionic_model = ionic_model
 
@@ -49,9 +49,7 @@ class Monodomain:
 
     def load_mesh(self, path="Data/ventricle/Case_1", unit_conversion=1000):
         self.mesh_path = Path(path)
-        self.result_path = self.mesh_path / "torchcor"
-        self.result_path.mkdir(exist_ok=True)
-
+        
         reader = MeshReader(path)
         nodes, elems, regions, fibres = reader.read(unit_conversion=unit_conversion)
         
@@ -127,7 +125,10 @@ class Monodomain:
 
         return u, n_iter, ionic_time, electric_time
 
-    def solve(self, a_tol, r_tol, max_iter, calculate_AT_RT=True, linear_guess=True, snapshot_interval=1, verbose=True):
+    def solve(self, a_tol, r_tol, max_iter, calculate_AT_RT=True, linear_guess=True, snapshot_interval=1, verbose=True, result_folder=""):
+        self.result_path = self.mesh_path / result_folder
+        self.result_path.mkdir(exist_ok=True)
+
         self.assemble()
         
         u = self.ionic_model.initialize(self.n_nodes)
@@ -147,7 +148,7 @@ class Monodomain:
         n_total_iter = 0
         gpu_utilisation_list = []
         gpu_memory_list = []
-        solution_list = []
+        solution_list = [u_initial]
         for n in range(1, self.nt + 1):
             t += self.dt
             
@@ -170,7 +171,7 @@ class Monodomain:
             
             ### keep track of GPU usage ###
             if n % ts_per_frame == 0:
-                solution_list.append(u)
+                solution_list.append(u.clone())
 
                 gpu_utilisation_list.append(nvmlDeviceGetUtilizationRates(self.gpu_handle).gpu)
                 gpu_memory_list.append(nvmlDeviceGetMemoryInfo(self.gpu_handle).used / 1e9)
@@ -205,21 +206,21 @@ class Monodomain:
         start_time = time.time()
 
         if self.elems.shape[1] == 3:
-            visualization = VTK3DSurface(self.nodes.cpu().numpy(), self.elems.cpu().numpy())
+            visualization = VTK3DSurface(self.nodes, self.elems)
         else:
-            visualization = VTK3D(self.nodes.cpu().numpy(), self.elems.cpu().numpy())
+            visualization = VTK3D(self.nodes, self.elems)
         
-        solutions = torch.load(self.result_path / "Vm.pt").numpy()
+        solutions = torch.load(self.result_path / "Vm.pt", map_location=torch.device('cpu'))
         n_solutions = solutions.shape[0]
         for i in range(n_solutions):
             visualization.save_frame(color_values=solutions[i],
                                      frame_path=self.result_path / f"Vm_vtk/frame_{i}.vtk")
         
 
-        ATs = torch.load(self.result_path / "ATs.pt").numpy()
+        ATs = torch.load(self.result_path / "ATs.pt")
         visualization.save_frame(color_values=ATs,
                                  frame_path=self.result_path / "ATs.vtk")
-        RTs = torch.load(self.result_path / "RTs.pt").numpy()
+        RTs = torch.load(self.result_path / "RTs.pt")
         visualization.save_frame(color_values=RTs,
                                  frame_path=self.result_path / "RTs.vtk")
 

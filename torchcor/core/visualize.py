@@ -92,11 +92,12 @@ class GIF3DSurface:
 
 class VTK2D:
     def __init__(self, vertices, triangles):
-        self.vertices = vertices  
-        self.triangles = triangles
+        self.vertices = vertices.cpu().numpy() if isinstance(vertices, torch.Tensor) else vertices  
+        self.triangles = triangles.cpu().numpy() if isinstance(triangles, torch.Tensor) else triangles  
         self.n_triangles = triangles.shape[0]
 
     def save_frame(self, color_values, frame_path):
+        color_values = color_values.cpu().numpy() if isinstance(color_values, torch.Tensor) else color_values 
         # Convert 2D vertices to 3D by adding a zero z-coordinate
         vertices_3d = np.hstack((self.vertices, np.zeros((self.vertices.shape[0], 1))))
         # Create the cells array in VTK format (triangular cells)
@@ -116,11 +117,12 @@ class VTK2D:
 
 class VTK3DSurface:
     def __init__(self, vertices, triangles):
-        self.vertices = vertices
-        self.triangles = triangles
+        self.vertices = vertices.cpu().numpy() if isinstance(vertices, torch.Tensor) else vertices  
+        self.triangles = triangles.cpu().numpy() if isinstance(triangles, torch.Tensor) else triangles  
         self.n_triangles = triangles.shape[0]
 
     def save_frame(self, color_values, frame_path):
+        color_values = color_values.cpu().numpy() if isinstance(color_values, torch.Tensor) else color_values 
         # Cells array indicating triangles (3 vertices per triangle)
         cells = np.hstack((np.full((self.n_triangles, 1), 3, dtype=int), self.triangles)).flatten().astype(int)
         # Cell type for triangles
@@ -137,11 +139,13 @@ class VTK3DSurface:
 
 class VTK3D:
     def __init__(self, vertices, tetrahedrons):
-        self.vertices = vertices
-        self.tetrahedrons = tetrahedrons
+        self.vertices = vertices.cpu().numpy() if isinstance(vertices, torch.Tensor) else vertices  
+        self.tetrahedrons = tetrahedrons.cpu().numpy() if isinstance(tetrahedrons, torch.Tensor) else tetrahedrons  
         self.n_tetrahedrons = tetrahedrons.shape[0]
 
     def save_frame(self, color_values, frame_path):
+        color_values = color_values.cpu().numpy() if isinstance(color_values, torch.Tensor) else color_values  
+
         cells = np.hstack((np.full((self.n_tetrahedrons, 1), 4, dtype=int), self.tetrahedrons)).flatten().astype(int)
         cell_type = np.full(self.n_tetrahedrons, 10, dtype=int)
         grid = pv.UnstructuredGrid(cells, cell_type, self.vertices)
