@@ -36,7 +36,10 @@ class Stimuli:
         return torch.from_numpy(region).to(dtype=torch.long, device=self.device)
     
     
-    def add(self, vtx_filepath, start, duration, intensity, period=1, count=1):
+    def add(self, vtx_filepath, start, duration, intensity, period=None, count=1):
+        if period is None:
+            raise Exception("period is unspecified.")
+        
         region = self.load_stimulus_region(vtx_filepath)
         bool_region = torch.zeros((self.n_nodes,), device=self.device, dtype=self.dtype)
         bool_region[region] = 1.0
@@ -53,6 +56,7 @@ class Stimuli:
             if t_t <= stim.count:
                 if p_t >= stim.start and p_t <= stim.start + stim.duration:
                     applied_stimulus.append(stim.stimulus)
+        
         if len(applied_stimulus) > 0:
             return torch.stack(applied_stimulus).sum(dim=0)
         else:

@@ -2,8 +2,9 @@ import torchcor as tc
 from torchcor.simulator import Monodomain
 from torchcor.ionic import TenTusscherPanfilov
 from pathlib import Path
+import torch
 
-tc.set_device("cuda:0")
+tc.set_device("cuda:1")
 dtype = tc.float32
 simulation_time = 600
 dt = 0.01
@@ -30,7 +31,7 @@ simulator.solve(a_tol=1e-5,
                 linear_guess=False,
                 snapshot_interval=1, 
                 verbose=True,
-                result_folder=str(dtype)[-2:])
+                result_folder="equal")
 
 # simulator.pt_to_vtk()
 # simulator.phie_recovery()

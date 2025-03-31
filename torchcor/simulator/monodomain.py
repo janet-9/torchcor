@@ -62,7 +62,9 @@ class Monodomain:
         self.stimuli = Stimuli(self.n_nodes, self.device, self.dtype)
         self.conductivity = Conductivity(self.regions, dtype=self.dtype)
 
-    def add_stimulus(self, vtx_filepath, start, duration, intensity, period=1, count=1):
+    def add_stimulus(self, vtx_filepath, start, duration, intensity, period=None, count=1):
+        if period is None:
+            period = self.T
         self.stimuli.add(vtx_filepath, start, duration, intensity, period, count)
 
     def add_condutivity(self, region_ids, il, it, el=None, et=None):
