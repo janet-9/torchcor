@@ -33,5 +33,5 @@ simulator.solve(a_tol=1e-5,
                 verbose=True,
                 result_folder="equal")
 
-# simulator.pt_to_vtk()
+simulator.pt_to_vtk()
 # simulator.phie_recovery()
