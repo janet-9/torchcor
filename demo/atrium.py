@@ -27,7 +27,7 @@ simulator.add_condutivity(region_ids=[1, 2, 3, 4, 5, 6], il=0.4, it=0.4)
 
 simulator.add_stimulus(f"{mesh_dir}/{case_name}.vtx", 
                        start=0.0, 
-                       duration=2.0, 
+                       duration=1.0, 
                        intensity=50)
 
 simulator.solve(a_tol=1e-5, 

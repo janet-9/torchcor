@@ -79,10 +79,11 @@ class Monodomain:
             matrices = Matrices3D(vertices=self.nodes, tetrahedrons=self.elems, device=self.device, dtype=self.dtype)
 
         K, M = matrices.assemble_matrices(sigma)
-
+        
+        K = K / self.Chi
         self.K = K.to(device=self.device, dtype=self.dtype)
         self.M = M.to(device=self.device, dtype=self.dtype)
-        A = self.M * self.Cm * self.Chi + self.K * self.dt * self.theta
+        A = self.M * self.Cm + self.K * self.dt * self.theta
         A = A.coalesce()
 
         self.pcd = Preconditioner()
@@ -113,10 +114,10 @@ class Monodomain:
             start_time = time.time()
 
         ### electric ###
-        Istim = self.stimuli.apply(t) / self.Chi
+        Istim = self.stimuli.apply(t) / 100
         b += self.dt * Istim
 
-        b = self.Chi * self.M @ b
+        b = self.M @ b
         b -= (1 - self.theta) * self.dt * self.K @ u
 
         u, n_iter = self.cg.solve(b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)

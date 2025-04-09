@@ -140,9 +140,10 @@ class Monodomain:
         matrices = Matrices3D(vertices=rcm_vertices, tetrahedrons=rcm_tetrahedral, device=self.device, dtype=self.dtype)
         K, M = matrices.assemble_matrices(sigma)
 
+        K = K / self.Chi
         self.K = K.to(device=self.device, dtype=self.dtype)
         self.M = M.to(device=self.device, dtype=self.dtype)
-        A = self.M * self.Cm * self.Chi + self.K * self.dt * self.theta
+        A = self.M * self.Cm + self.K * self.dt * self.theta
 
         self.pcd = Preconditioner()
         self.pcd.create_Jocobi(A)
@@ -176,9 +177,9 @@ class Monodomain:
 
             # apply the stimulus for 2 mm
             if ctime <= 2.0:
-                b += self.dt * stimulus / self.Chi
+                b += self.dt * stimulus / 100
 
-            b = self.Chi * self.M @ b 
+            b = self.M @ b 
             b -= (1 - self.theta) * self.dt * self.K @ u
             
             u, n_iter = cg.solve(b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)

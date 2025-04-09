@@ -61,5 +61,10 @@ stimulus[0].strength      = 50.0
 stimulus[0].vtx_file      = "/home/bzhou6/Data/atrium/Case_1/Case_1"
 ##############################
 
-
-
+num_LATs = 1
+lats[0].measurand = 0
+lats[0].all = 0
+lats[0].mode = 0
+lats[0].threshold = 0
+lats[0].method = 1
+lats[0].ID = "activation"
