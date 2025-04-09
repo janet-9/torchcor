@@ -35,23 +35,29 @@ imp_region[0].im_param   = "flags=ENDO"
 #===================================
 # gregion: assignement of passive tissue properties
 meshformat               = 0 # 0: carp_txt file, 1: binary file
-num_gregions             = 1
+num_gregions             = 2
 
 
 # ------------------------------------------------------------------------------
 # Ventricles
 # ------------------------------------------------------------------------------
 # R-D settings
-gregion[0].num_IDs       = 5
+gregion[0].num_IDs       = 2
 gregion[0].ID[0]         = 34       # RV
 gregion[0].ID[1]         = 35       # LV
-gregion[0].ID[2]         = 44       # RV
-gregion[0].ID[3]         = 45       # LV
-gregion[0].ID[4]         = 46       # LV
-gregion[0].g_il          = 0.3 # CV = 0.63m/s # [S/m] Conductivity along the fibre direction (l=longitudinal) in the intracellular space
-gregion[0].g_el          = 0.3 # [S/m] Conductivity along the fibre direction (l=longitudinal) in the extracellular space
-gregion[0].g_it          = 0.3 # CV = 0.30m/s # [S/m] Conductivity transverse to the fibre direction (t=trasversal) in the intracellular space
-gregion[0].g_et          = 0.3 # [S/m] Conductivity transverse to the fibre direction (t=trasversal) in the extracellular space
+gregion[0].g_il          = 0.5272 # CV = 0.63m/s # [S/m] Conductivity along the fibre direction (l=longitudinal) in the intracellular space
+gregion[0].g_el          = 1.0732 # [S/m] Conductivity along the fibre direction (l=longitudinal) in the extracellular space
+gregion[0].g_it          = 0.2076 # CV = 0.30m/s # [S/m] Conductivity transverse to the fibre direction (t=trasversal) in the intracellular space
+gregion[0].g_et          = 0.4227 # [S/m] Conductivity transverse to the fibre direction (t=trasversal) in the extracellular space
+
+gregion[1].num_IDs       = 3
+gregion[1].ID[0]         = 44 #RV_subendo
+gregion[1].ID[1]         = 45 #LV_subendo
+gregion[1].ID[2]         = 46 #RVseptum_subendo
+gregion[1].g_il          = 0.9074
+gregion[1].g_el          = 0.9074
+gregion[1].g_it          = 0.3332
+gregion[1].g_et          = 0.3332
 
 
 #===================================
