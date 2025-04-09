@@ -3,7 +3,7 @@ from torchcor.simulator import Monodomain
 from torchcor.ionic import ModifiedMS2v, CourtemancheRamirezNattel
 from pathlib import Path
 
-tc.set_device("cuda:0")
+tc.set_device("cuda:3")
 dtype = tc.float32
 simulation_time = 500
 dt = 0.01
@@ -27,7 +27,7 @@ simulator.add_condutivity(region_ids=[1, 2, 3, 4, 5, 6], il=0.4, it=0.4)
 
 simulator.add_stimulus(f"{mesh_dir}/{case_name}.vtx", 
                        start=0.0, 
-                       duration=1.0, 
+                       duration=2.0, 
                        intensity=50)
 
 simulator.solve(a_tol=1e-5, 
