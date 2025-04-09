@@ -3,7 +3,7 @@ from torchcor.simulator import Monodomain
 from torchcor.ionic import ModifiedMS2v, CourtemancheRamirezNattel
 from pathlib import Path
 
-tc.set_device("cuda:3")
+tc.set_device("cuda:0")
 dtype = tc.float32
 simulation_time = 500
 dt = 0.01
