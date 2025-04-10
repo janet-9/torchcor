@@ -5,7 +5,7 @@ from pathlib import Path
 
 tc.set_device("cuda:0")
 dtype = tc.float32
-simulation_time = 500
+simulation_time = 10
 dt = 0.01
 
 ionic_model = ModifiedMS2v(dt, dtype=dtype)
@@ -39,4 +39,5 @@ simulator.solve(a_tol=1e-5,
                 verbose=True,
                 result_folder=str(dtype)[-2:])
 
-# simulator.pt_to_vtk()
+simulator.pt_to_vtk()
+simulator.phie_recovery()

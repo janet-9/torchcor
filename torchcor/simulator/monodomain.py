@@ -239,6 +239,7 @@ class Monodomain:
         else:
             matrices = Matrices3D(vertices=self.nodes, tetrahedrons=self.elems, device=self.device, dtype=self.dtype)
         K, _ = matrices.assemble_matrices(sigma)
+        K = K / self.Chi
 
         pcd = Preconditioner()
         pcd.create_Jocobi(K)
@@ -253,7 +254,8 @@ class Monodomain:
             
             b = -K @ V
             phi_e, n_iter = cg.solve(b, a_tol=1e-5, r_tol=1e-5, max_iter=10000)
-            print(n_iter)
+            
+            print(phi_e.min().item(), phi_e.max().item(), n_iter)
             phi_e /= phi_e.sum()
             phie_list.append(phi_e)
         

@@ -184,7 +184,7 @@ class Monodomain:
 if __name__ == "__main__":
     dt = 0.01  # ms
 
-    device = torch.device(f"cuda:3" if torch.cuda.is_available() else "cpu")
+    device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
 
     simulator = Monodomain(ionic_model=None, 
                            T=300, 
