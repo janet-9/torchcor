@@ -3,9 +3,9 @@ from torchcor.simulator import Monodomain
 from torchcor.ionic import ModifiedMS2v, CourtemancheRamirezNattel
 from pathlib import Path
 
-tc.set_device("cuda:0")
+tc.set_device("cuda:1")
 dtype = tc.float32
-simulation_time = 10
+simulation_time = 500
 dt = 0.01
 
 ionic_model = ModifiedMS2v(dt, dtype=dtype)
@@ -39,5 +39,5 @@ simulator.solve(a_tol=1e-5,
                 verbose=True,
                 result_folder=str(dtype)[-2:])
 
-simulator.pt_to_vtk()
+# simulator.pt_to_vtk()
 simulator.phie_recovery()

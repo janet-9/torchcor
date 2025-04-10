@@ -14,7 +14,7 @@ class Conductivity:
     
     def add(self, region_ids, il, it, el=None, et=None):
         # sigma_l and sigma_t for monodomain
-        if el == None and et == None:
+        if el is None and et is None:
             l = il
             t = it
         else:
@@ -26,7 +26,7 @@ class Conductivity:
             self.sigma_t[mask] = t
 
         # sigma_l and sigma_t for K_ie (phi_e)
-        if el == None and et == None:
+        if el is None and et is None:
             phie_l = il
             phie_t = it
         else:

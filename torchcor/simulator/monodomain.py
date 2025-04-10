@@ -230,7 +230,7 @@ class Monodomain:
         print(f"Saved vtk files in {round(time.time() - start_time, 2)}", flush=True)
 
 
-    def phie_recovery(self):
+    def phie_recovery(self, a_tol=1e-5, r_tol=1e-5, max_iter=100):
         Vm = torch.load(self.result_path / "Vm.pt").to(self.device)
 
         sigma = self.conductivity.calculate_sigma_phie(self.fibres)
@@ -239,12 +239,12 @@ class Monodomain:
         else:
             matrices = Matrices3D(vertices=self.nodes, tetrahedrons=self.elems, device=self.device, dtype=self.dtype)
         K, _ = matrices.assemble_matrices(sigma)
-        K = K / self.Chi
+        # K = K / self.Chi
 
         pcd = Preconditioner()
         pcd.create_Jocobi(K)
         cg = ConjugateGradient(pcd, K, dtype=torch.float64)
-        cg.initialize(x=torch.zeros_like(torch.mean(Vm, dim=0)), linear_guess=True)
+        cg.initialize(x=torch.zeros_like(Vm[0]), linear_guess=True)
 
         K = K.to_sparse_csr()
         
@@ -253,12 +253,14 @@ class Monodomain:
             V = Vm[i, :]
             
             b = -K @ V
-            phi_e, n_iter = cg.solve(b, a_tol=1e-5, r_tol=1e-5, max_iter=10000)
+            phi_e, n_iter = cg.solve(b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
             
+            # phi_e -= phi_e.mean()
             print(phi_e.min().item(), phi_e.max().item(), n_iter)
-            phi_e /= phi_e.sum()
             phie_list.append(phi_e)
         
-        torch.save(torch.stack(phie_list, dim=0).cpu(), self.result_path / "Phi_e.pt")
+        phi_e_all = torch.stack(phie_list, dim=0)
+        torch.save(phi_e_all.cpu(), self.result_path / "Phi_e.pt")
+        print(phi_e_all.min().item(), phi_e_all.max().item())
         
 
