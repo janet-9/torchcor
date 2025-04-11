@@ -61,6 +61,8 @@ stimulus[0].strength      = 50.0
 stimulus[0].vtx_file      = "/home/bzhou6/Data/atrium/Case_1/Case_1"
 ##############################
 
+
+# activation time
 num_LATs = 1
 lats[0].measurand = 0
 lats[0].all = 0
@@ -68,3 +70,12 @@ lats[0].mode = 0
 lats[0].threshold = 0
 lats[0].method = 1
 lats[0].ID = "activation"
+
+# repolarization time
+num_LATs = 1
+lats[0].measurand = 0   # Vm
+lats[0].all = 0         # all activations should be detected (1) or only the first one (0)
+lats[0].mode = 1        # detect -slope threshold crossing
+lats[0].threshold = -70
+lats[0].method = 1
+lats[0].ID = "depolarization"
