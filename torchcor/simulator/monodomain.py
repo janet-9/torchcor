@@ -164,13 +164,15 @@ class Monodomain:
             ### calculate AT and RT ###
             if calculate_AT_RT:
                 activation_time[(u > 0) & (activation_time == 0)] = t
-
-                mask_peak_update = (u > u_peak) & (activation_time > 0)
-                u_peak[mask_peak_update] = u[mask_peak_update]
-                repolarization_threshold = u_initial + 0.1 * (u_peak - u_initial)
-                repolarization_time[(u < repolarization_threshold) &
-                                    (repolarization_time == 0) &
-                                    (activation_time > 0)] = t
+                
+                repolarization_time[repolarization_time > 0] = t
+                
+                # mask_peak_update = (u > u_peak) & (activation_time > 0)
+                # u_peak[mask_peak_update] = u[mask_peak_update]
+                # repolarization_threshold = u_initial + 0.1 * (u_peak - u_initial)
+                # repolarization_time[(u < repolarization_threshold) &
+                #                     (repolarization_time == 0) &
+                #                     (activation_time > 0)] = t
             
             ### keep track of GPU usage ###
             if n % ts_per_frame == 0:
