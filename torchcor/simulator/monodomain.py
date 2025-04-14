@@ -164,8 +164,7 @@ class Monodomain:
             ### calculate AT and RT ###
             if calculate_AT_RT:
                 activation_time[(u > 0) & (activation_time == 0)] = t
-                
-                repolarization_time[(activation_time > 0) & (u < -70)] = t
+                repolarization_time[(activation_time > 0) & (repolarization_time == 0) & (u < -70)] = t
 
                 # mask_peak_update = (u > u_peak) & (activation_time > 0)
                 # u_peak[mask_peak_update] = u[mask_peak_update]

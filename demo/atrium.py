@@ -40,4 +40,4 @@ simulator.solve(a_tol=1e-5,
                 result_folder=str(dtype)[-2:])
 
 # simulator.pt_to_vtk()
-simulator.phie_recovery()
+# simulator.phie_recovery()

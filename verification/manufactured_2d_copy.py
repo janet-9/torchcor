@@ -182,7 +182,7 @@ class Monodomain:
         plt.savefig("maufactured_copy.pdf", format="pdf")
 
 if __name__ == "__main__":
-    dt = 0.01  # ms
+    dt = 0.01 / 10  # ms
 
     device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
 
