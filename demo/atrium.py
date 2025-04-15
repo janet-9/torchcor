@@ -37,7 +37,7 @@ simulator.solve(a_tol=1e-5,
                 linear_guess=False,
                 snapshot_interval=1, 
                 verbose=True,
-                result_folder=str(dtype)[-2:])
+                result_path=mesh_dir / str(dtype)[-2:])
 
 # simulator.pt_to_vtk()
 # simulator.phie_recovery()

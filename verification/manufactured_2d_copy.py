@@ -28,6 +28,7 @@ def compute_r(t, vertices, A=2, omega_1=2 * math.pi, omega_2=math.pi, lbda=math.
     a = omega_1 * vertices[:, 0] + omega_2 * vertices[:, 1] - lbda * t
     return torch.cos(a) - lbda * t * torch.sin(a) - A + t * (omega_1 ** 2 + omega_2 ** 2) * torch.cos(a)
 
+
 class Monodomain:
     def __init__(self, ionic_model, T, dt, apply_rcm, device=None, dtype=None):
         self.device = torch.device(device) if device is not None else "cuda:0" \
@@ -66,8 +67,8 @@ class Monodomain:
 
     def load_mesh(self):
         L = 1  # Length of domain in x and y directions
-        self.Nx = 100
-        self.Ny = 100  # Number of grid points in x and y
+        self.Nx = 100 * 8
+        self.Ny = 100 * 8 # Number of grid points in x and y
 
         x = np.linspace(0, L, self.Nx)
         y = np.linspace(0, L, self.Ny)
@@ -179,10 +180,10 @@ class Monodomain:
         # plt.legend()
         # plt.grid(True, linestyle="--", alpha=0.5)
         plt.tight_layout()
-        plt.savefig("maufactured_copy.pdf", format="pdf")
+        plt.savefig(f"maufactured_8.pdf", format="pdf")
 
 if __name__ == "__main__":
-    dt = 0.01 / 10  # ms
+    dt = 0.01 / 8  # ms
 
     device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -194,7 +195,7 @@ if __name__ == "__main__":
     simulator.load_mesh()
     simulator.add_material_property(material_config=None)
     simulator.assemble()
-    simulator.solve(a_tol=1e-16, 
+    simulator.solve(a_tol=1e-8, 
                     r_tol=1e-8, 
                     max_iter=1000, 
                     plot_interval=dt, 

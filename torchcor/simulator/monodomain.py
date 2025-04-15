@@ -128,9 +128,9 @@ class Monodomain:
 
         return u, n_iter, ionic_time, electric_time
 
-    def solve(self, a_tol, r_tol, max_iter, calculate_AT_RT=True, linear_guess=True, snapshot_interval=1, verbose=True, result_folder=""):
-        self.result_path = self.mesh_path / result_folder
-        self.result_path.mkdir(exist_ok=True)
+    def solve(self, a_tol, r_tol, max_iter, calculate_AT_RT=True, linear_guess=True, snapshot_interval=1, verbose=True, result_path=None):
+        self.result_path = result_path
+        self.result_path.mkdir(parents=True, exist_ok=True)
 
         self.assemble()
         
@@ -141,7 +141,6 @@ class Monodomain:
     
         if calculate_AT_RT:
             activation_time = torch.zeros_like(u_initial)
-            u_peak = torch.zeros_like(u_initial)
             repolarization_time = torch.zeros_like(u_initial)
 
         t = 0
@@ -180,7 +179,7 @@ class Monodomain:
                 gpu_utilisation_list.append(nvmlDeviceGetUtilizationRates(self.gpu_handle).gpu)
                 gpu_memory_list.append(nvmlDeviceGetMemoryInfo(self.gpu_handle).used / 1e9)
                 
-                if verbose:
+                if verbose and snapshot_interval != self.T:
                     print(f"t: {round(t, 1)}/{self.T}", 
                           f"Time elapsed:", round(time.time() - solving_time, 2),
                           f"Total CG iter:", n_total_iter,
@@ -190,6 +189,11 @@ class Monodomain:
         if calculate_AT_RT:
             torch.save(activation_time.cpu(), self.result_path / "ATs.pt")
             torch.save(repolarization_time.cpu(), self.result_path / "RTs.pt")
+
+            torch.save(self.K.to_sparse_coo().cpu(), self.result_path / "K.pt")
+            torch.save(self.M.to_sparse_coo().cpu(), self.result_path / "M.pt")
+            torch.save(self.A.to_sparse_coo().cpu(), self.result_path / "A.pt")
+
         if snapshot_interval < self.T:
             torch.save(torch.stack(solution_list, dim=0).cpu(), self.result_path / "Vm.pt")
 
@@ -204,6 +208,8 @@ class Monodomain:
                   f"{round(sum(gpu_utilisation_list)/len(gpu_utilisation_list), 2)}",
                   f"{round(sum(gpu_memory_list)/len(gpu_memory_list), 2)}",
                   flush=True)
+
+        return n_total_iter
 
 
     def pt_to_vtk(self):
