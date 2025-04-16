@@ -12,7 +12,7 @@ from torchcor.core.assemble import Matrices2D
 from torchcor.core.preconditioner import Preconditioner
 from torchcor.core.solver import ConjugateGradient
 from torchcor.core.visualize import VTK2D, GIF2D
-from torchcor.core.reorder import RCM as RCM
+from torchcor.core.reorder import RCM
 from scipy.spatial import Delaunay
 import matplotlib.pyplot as plt
 import numpy as np
@@ -67,13 +67,13 @@ class Monodomain:
 
     def load_mesh(self):
         L = 1  # Length of domain in x and y directions
-        self.Nx = 100 * 8
-        self.Ny = 100 * 8 # Number of grid points in x and y
+        self.Nx = 100
+        self.Ny = 100 # Number of grid points in x and y
 
         x = np.linspace(0, L, self.Nx)
         y = np.linspace(0, L, self.Ny)
         X, Y = np.meshgrid(x, y)
-
+        
         # Flatten the X, Y, Z arrays for input to Delaunay
         vertices = np.vstack([X.flatten(), Y.flatten()]).T
 
@@ -151,16 +151,15 @@ class Monodomain:
             diff = torch.norm(u - w, p=2) / torch.norm(w, p=2)
             diff_list.append([t, diff.item()])
 
-            # if n % 1000 == 0:
-            if diff > 1:
+            if n % 100 == 0:
                 visualization = VTK2D(self.vertices, self.triangles)
                 visualization.save_frame(color_values=u,
                                         frame_path=f"./v/frame_{n}.vtk")
                 visualization.save_frame(color_values=w,
                                         frame_path=f"./w/frame_{n}.vtk")
+                visualization.save_frame(color_values=u-w,
+                                        frame_path=f"./d/frame_{n}.vtk")
             
-            
-
         print(f"total iterations: {n_total_iter}")
         fig, ax = plt.subplots(figsize=(6, 4))
         diff_list = np.array(diff_list)    
@@ -183,12 +182,12 @@ class Monodomain:
         plt.savefig(f"maufactured_8.pdf", format="pdf")
 
 if __name__ == "__main__":
-    dt = 0.01 / 8  # ms
+    dt = 0.01  # ms
 
-    device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device(f"cuda:1" if torch.cuda.is_available() else "cpu")
 
     simulator = Monodomain(ionic_model=None, 
-                           T=300, 
+                           T=50, 
                            dt=dt, 
                            apply_rcm=False, 
                            device=device)

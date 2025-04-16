@@ -34,7 +34,6 @@ for i in range(1, 101):
                 if num_pacing_points == 0:
                     continue
             
-            print(filepath, flush=True)
             simulator = Monodomain(ionic_model, T=simulation_time, dt=dt, dtype=dtype)
             simulator.load_mesh(path=mesh_dir, unit_conversion=1000)
             simulator.add_condutivity(region_ids=[1, 2, 3, 4, 5, 6], il=0.4, it=0.4)

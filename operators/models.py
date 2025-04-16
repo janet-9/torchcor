@@ -1,41 +1,48 @@
-import torchcor as tc
-from torchcor.simulator import Monodomain
-from torchcor.ionic import ModifiedMS2v
-from pathlib import Path
-from torch_geometric.data import Data
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch_geometric.nn import BatchNorm, GCNConv, GINConv, GraphSAGE
+from torch_geometric.data import Data
+from torch_geometric.loader import DataLoader
+from pathlib import Path
+import numpy as np
 
-tc.set_device("cuda:0")
-dtype = tc.float32
-simulation_time = 500
-dt = 0.01
+class ScalarGCN(nn.Module):
+    def __init__(self, hidden_channels=128, dropout=0.2):
+        super().__init__()
+        self.conv1 = GCNConv(1, hidden_channels)
+        self.bn1 = BatchNorm(hidden_channels)
 
-ionic_model = ModifiedMS2v(dt, dtype=dtype)
-ionic_model.u_gate = 0.1
-ionic_model.u_crit = 0.1
-ionic_model.tau_in = 0.15
-ionic_model.tau_out = 1.5
-ionic_model.tau_open = 105.0
-ionic_model.tau_close = 185.0
+        self.conv2 = GCNConv(hidden_channels, hidden_channels)
+        self.bn2 = BatchNorm(hidden_channels)
 
-# ionic_model = CourtemancheRamirezNattel(dt)
+        self.conv3 = GCNConv(hidden_channels, hidden_channels)
+        self.bn3 = BatchNorm(hidden_channels)
 
-case_name = f"Case_1"
-mesh_dir = f"{Path.home()}/Data/atrium/{case_name}/"
+        self.lin1 = nn.Linear(hidden_channels, hidden_channels // 2)
+        self.lin2 = nn.Linear(hidden_channels // 2, 1)
 
-simulator = Monodomain(ionic_model, T=simulation_time, dt=dt, dtype=dtype)
-simulator.load_mesh(path=mesh_dir, unit_conversion=1000)
-simulator.add_condutivity(region_ids=[1, 2, 3, 4, 5, 6], il=0.4, it=0.4)
+        self.dropout = dropout
 
-simulator.add_stimulus(f"{mesh_dir}/{case_name}.vtx", 
-                       start=0.0, 
-                       duration=2.0, 
-                       intensity=50)
-simulator.assemble()
-mass_matrix, stiffness_matrx = simulator.K.to_sparse_coo(), simulator.M.to_sparse_coo()
+    def forward(self, data):
+        x, edge_index = data.x, data.edge_index
 
-node_features = simulator.nodes
-edge_index = mass_matrix.indices()  # [2, 2759561]
-edge_features = torch.stack([mass_matrix.values(), stiffness_matrx.values()], dim=1)  # [2759561, 2]
+        x = self.conv1(x, edge_index)
+        x = self.bn1(x)
+        x = F.relu(x)
+        x = F.dropout(x, p=self.dropout, training=self.training)
 
-mesh_data = Data(x=node_features, edge_index=edge_index, edge_attr=edge_features)
+        x = self.conv2(x, edge_index)
+        x = self.bn2(x)
+        x = F.relu(x)
+        x = F.dropout(x, p=self.dropout, training=self.training)
+
+        x = self.conv3(x, edge_index)
+        x = self.bn3(x)
+        x = F.relu(x)
+
+        x = self.lin1(x)
+        x = F.relu(x)
+        x = self.lin2(x)
+
+        return x
