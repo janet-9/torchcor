@@ -62,7 +62,8 @@ class MeshReader:
 
         return self.nodes, self.elems, self.regions, self.fibres
 
-
+    def compute_edges(self):
+        pass
 
 if __name__ == "__main__":
     import time

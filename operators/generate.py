@@ -3,6 +3,7 @@ import numpy as np
 import vtk
 import pickle
 from vtk.util.numpy_support import  numpy_to_vtk, vtk_to_numpy
+from pathlib import Path
 
 
 ########################################################################################
@@ -423,6 +424,11 @@ def generate_spiral_initialisation(polydata: vtk.vtkPolyData) -> vtk.vtkPolyData
 # CAROLINE DATASET IS E.G.:
 #Sum: 1.87056e+08, Mean: 341.175, Stddev: 58.9917, Min: 3.70679, Max: 636.258
 
+def get_uac(polydata):
+    X   = vtk_to_numpy(polydata.GetPointData().GetArray('UAC1'))
+    Y   = vtk_to_numpy(polydata.GetPointData().GetArray('UAC2'))
+    return np.stack([X, Y], axis=1)
+
 def generate_simulation_data(filename,INPUTDIR,OUTDIR,CASEDIRNAME,refine=False):
     if filename[-4:]=='.vtk':
         filename = filename[:-4]
@@ -442,6 +448,10 @@ def generate_simulation_data(filename,INPUTDIR,OUTDIR,CASEDIRNAME,refine=False):
         print('----------------------------------',flush=True)
     surface = generate_spiral_initialisation(surface)
     surface = generate_PV_pacing_sites(surface)
+    uac = get_uac(surface)
+    uacpath = Path(OUTDIR) / CASEDIRNAME / "UAC.npy"
+    np.save(uacpath, uac)
+
     mesh0   = extract_mesh(surface)
     write_carp_files(mesh0,outputdir,CASEDIRNAME)
     surface = classify_surface(mesh0,surface)
