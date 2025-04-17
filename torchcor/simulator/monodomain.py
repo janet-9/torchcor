@@ -190,9 +190,9 @@ class Monodomain:
             torch.save(activation_time.cpu(), self.result_path / "ATs.pt")
             torch.save(repolarization_time.cpu(), self.result_path / "RTs.pt")
 
-            torch.save(self.K.to_sparse_coo().cpu(), self.result_path / "K.pt")
-            torch.save(self.M.to_sparse_coo().cpu(), self.result_path / "M.pt")
-            torch.save(self.A.to_sparse_coo().cpu(), self.result_path / "A.pt")
+            # torch.save(self.K.to_sparse_coo().cpu(), self.result_path / "K.pt")
+            # torch.save(self.M.to_sparse_coo().cpu(), self.result_path / "M.pt")
+            # torch.save(self.A.to_sparse_coo().cpu(), self.result_path / "A.pt")
 
         if snapshot_interval < self.T:
             torch.save(torch.stack(solution_list, dim=0).cpu(), self.result_path / "Vm.pt")
@@ -208,6 +208,10 @@ class Monodomain:
                   f"{round(sum(gpu_utilisation_list)/len(gpu_utilisation_list), 2)}",
                   f"{round(sum(gpu_memory_list)/len(gpu_memory_list), 2)}",
                   flush=True)
+            
+            if calculate_AT_RT:
+                print("ATs: ", activation_time.cpu().min().item(), activation_time.cpu().max().item(), flush=True)
+                print("RTs: ", repolarization_time.cpu().min().item(), repolarization_time.cpu().max().item(), flush=True)
 
         return n_total_iter
 
