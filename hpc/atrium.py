@@ -26,15 +26,13 @@ data_dir = Path("/data/scratch/acw554")
 for il in range(1, 51):
     for it in range(1, 51):
         case_name = f"Case_{args.case_id}"
-        il = il / 10
-        it = it / 10
-        print(case_name, il, it, flush=True)
+        print(case_name, il/10, it/10, flush=True)
         mesh_dir = data_dir / "meshes_refined" / case_name
         vtk_filepath = mesh_dir / f"{case_name}.vtx"
                 
         simulator = Monodomain(ionic_model, T=simulation_time, dt=dt, dtype=dtype)
         simulator.load_mesh(path=mesh_dir, unit_conversion=1000)
-        simulator.add_condutivity(region_ids=[1, 2, 3, 4, 5, 6], il=il, it=it)
+        simulator.add_condutivity(region_ids=[1, 2, 3, 4, 5, 6], il=il/10, it=it/10)
 
         simulator.add_stimulus(vtk_filepath, 
                                start=0.0, 
@@ -48,4 +46,4 @@ for il in range(1, 51):
                         linear_guess=True,
                         snapshot_interval=simulation_time, 
                         verbose=True,
-                        result_path=data_dir / "atrium_conductivity" / case_name / f"{il}_{it}")
+                        result_path=data_dir / "atrium_conductivity" / case_name / f"{il/10}_{it/10}")
