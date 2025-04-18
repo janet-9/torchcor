@@ -23,8 +23,8 @@ ionic_model.tau_open = 105.0
 ionic_model.tau_close = 185.0
 
 data_dir = Path("/data/scratch/acw554")
-for il in range(1, 11):
-    for it in range(1, 11):
+for il in range(1, 21):
+    for it in range(1, 21):
         case_name = f"Case_{args.case_id}"
         print(case_name, il/10, it/10, flush=True)
         mesh_dir = data_dir / "meshes_refined" / case_name
@@ -46,4 +46,4 @@ for il in range(1, 11):
                         linear_guess=True,
                         snapshot_interval=simulation_time, 
                         verbose=True,
-                        result_path=data_dir / "atrium_conductivity" / case_name / f"{il/10}_{it/10}")
+                        result_path=data_dir / "atrium_conductivity_2" / case_name / f"{il/10}_{it/10}")
