@@ -23,8 +23,8 @@ ionic_model.tau_open = 105.0
 ionic_model.tau_close = 185.0
 
 data_dir = Path("/data/scratch/acw554")
-for il in range(1, 51):
-    for it in range(1, 51):
+for il in range(1, 11):
+    for it in range(1, 11):
         case_name = f"Case_{args.case_id}"
         print(case_name, il/10, it/10, flush=True)
         mesh_dir = data_dir / "meshes_refined" / case_name
