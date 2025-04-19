@@ -17,7 +17,7 @@ dt      = 10         #in microseconds; PDEnsorflow uses milliseconds
 tend    = 500
 timedt  = 10
 spacedt = 500 #1 in ms  #writes the solution every spacedt times set to tend to not write the solution
-simID   = "Case_42"
+simID   = "Case_5"
 
 #######################################
 # IMP regions definition (cell model) #
@@ -45,8 +45,8 @@ num_gregions = 1
 gregion[0].name    = "tissue" 
 gregion[0].num_IDs = 1
 gregion[0].ID[0]   = 0
-gregion[0].g_il   = 0.4
-gregion[0].g_it   = 0.4
+gregion[0].g_il   = 0.1
+gregion[0].g_it   = 0.5
 
 num_stim =  1
 ##############################
@@ -58,8 +58,21 @@ stimulus[0].name          = "S1"
 stimulus[0].start         = 0.0
 stimulus[0].duration      = 2.0
 stimulus[0].strength      = 50.0
-stimulus[0].vtx_file      = /home/bzhou6/Data/atrium/Case_18/Case_18
+stimulus[0].vtx_file      = /data/Bei/meshes_refined/Case_5/Case_5
 ##############################
 
+num_LATs = 2
+lats[0].measurand = 0
+lats[0].all = 0
+lats[0].mode = 0
+lats[0].threshold = 0
+lats[0].method = 1
+lats[0].ID = "activation"
 
+lats[1].measurand = 0   # Vm
+lats[1].all = 0         # all activations should be detected (1) or only the first one (0)
+lats[1].mode = 1        # detect -slope threshold crossing
+lats[1].threshold = -70
+lats[1].method = 1
+lats[1].ID = "depolarization"
 
