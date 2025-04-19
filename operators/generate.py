@@ -551,3 +551,7 @@ if __name__=='__main__':
             pickle.dump(surface_statistics,fs)
     np.save(os.path.join(OUTDIR,'tissue_properties.npy'),PROPERTIES)        
     
+
+
+
+

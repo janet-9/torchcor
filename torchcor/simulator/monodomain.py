@@ -129,7 +129,7 @@ class Monodomain:
         return u, n_iter, ionic_time, electric_time
 
     def solve(self, a_tol, r_tol, max_iter, calculate_AT_RT=True, linear_guess=True, snapshot_interval=1, verbose=True, result_path=None):
-        self.result_path = result_path
+        self.result_path = Path(result_path)
         self.result_path.mkdir(parents=True, exist_ok=True)
 
         self.assemble()
@@ -140,8 +140,8 @@ class Monodomain:
         ts_per_frame = int(snapshot_interval / self.dt)
     
         if calculate_AT_RT:
-            activation_time = torch.zeros_like(u_initial)
-            repolarization_time = torch.zeros_like(u_initial)
+            activation_time = torch.ones_like(u_initial) * -1
+            repolarization_time = torch.ones_like(u_initial) * -1
 
         t = 0
         solving_time = time.time()
@@ -162,8 +162,8 @@ class Monodomain:
             
             ### calculate AT and RT ###
             if calculate_AT_RT:
-                activation_time[(u > 0) & (activation_time == 0)] = t
-                repolarization_time[(activation_time > 0) & (repolarization_time == 0) & (u < -70)] = t
+                activation_time[(u > 0) & (activation_time == -1)] = t
+                repolarization_time[(activation_time > 0) & (repolarization_time == -1) & (u < -70)] = t
 
                 # mask_peak_update = (u > u_peak) & (activation_time > 0)
                 # u_peak[mask_peak_update] = u[mask_peak_update]
