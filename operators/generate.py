@@ -442,7 +442,7 @@ def generate_simulation_data(filename,INPUTDIR,OUTDIR,CASEDIRNAME,refine=False):
         os.makedirs(outputdir)
     if refine:
         #print('refining case {}'.format(CASEDIRNAME) )
-        surface = adaptiveSubdiv(surface,edgeLen=350)
+        surface = adaptiveSubdiv(surface,edgeLen=400)    # -------------------- 
         #print('New mesh quality:',flush=True)
         print_mesh_quality(surface,reducedprint=True)
         print('----------------------------------',flush=True)
@@ -514,7 +514,7 @@ def classify_surface(mesh0,polydata):
     
 if __name__=='__main__':
     REFINEFLAG = True
-    BASEDIR  = os.getcwd() 
+    BASEDIR  = "/data/Bei/" # os.getcwd() 
     INPUTDIR = os.path.join(BASEDIR,'5801337')
     if REFINEFLAG:
         OUTDIR   = os.path.join(BASEDIR,'meshes_refined')
