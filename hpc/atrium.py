@@ -11,7 +11,7 @@ args = parser.parse_args()
 
 tc.set_device("cuda:0")
 dtype = tc.float32
-simulation_time = 500
+simulation_time = 600
 dt = 0.01
 
 ionic_model = ModifiedMS2v(dt, dtype=dtype)
@@ -46,4 +46,4 @@ for il in range(1, 21):
                         linear_guess=True,
                         snapshot_interval=simulation_time, 
                         verbose=True,
-                        result_path=data_dir / "atrium_conductivity_2" / case_name / f"{il/10}_{it/10}")
+                        result_path=data_dir / "atrium_conductivity_600" / case_name / f"{il/10}_{it/10}")
