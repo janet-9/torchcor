@@ -32,8 +32,6 @@ class Domain(Monodomain):
         total_ionic_time = 0
         total_electric_time = 0
         n_total_iter = 0
-        gpu_utilisation_list = []
-        gpu_memory_list = []
         solution_list = [u_initial]
         for n in range(1, self.nt + 1):
             t += self.dt
@@ -83,8 +81,6 @@ class Domain(Monodomain):
                   round(total_ionic_time, 2),
                   round(total_electric_time, 2),
                   n_total_iter,
-                  f"{round(sum(gpu_utilisation_list)/len(gpu_utilisation_list), 2)}",
-                  f"{round(sum(gpu_memory_list)/len(gpu_memory_list), 2)}",
                   flush=True)
             
             if calculate_AT_RT:
