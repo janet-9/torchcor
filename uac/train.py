@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, TensorDataset
 from model import ConductivityCNN
 
-dataset = Dataset()
+dataset = Dataset(n_uac_points=500)
 X_train, X_test, y_train, y_test = train_test_split(dataset.X, dataset.y, test_size=0.2, random_state=42)
 X_train = torch.tensor(X_train)
 X_test = torch.tensor(X_test)
