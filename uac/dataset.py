@@ -58,8 +58,19 @@ class Dataset(Dataset):
     def uac_interpolate(self, uac, at, rt, n_uac_points):
         grid = np.linspace(0, 1, n_uac_points)
         grid_points = np.meshgrid(grid, grid)
-        grid_ats = griddata(uac, at, (grid_points[0], grid_points[1]), method='linear')
-        grid_rts = griddata(uac, rt, (grid_points[0], grid_points[1]), method='linear')
+
+        grid_ats_linear = griddata(uac, at, (grid_points[0], grid_points[1]), method='linear', fill_value=np.nan)
+        grid_ats_nearest = griddata(uac, at, (grid_points[0], grid_points[1]), method='nearest')
+        grid_ats = np.where(np.isnan(grid_ats_linear),
+                            grid_ats_nearest,
+                            grid_ats_linear)
+        
+        grid_rts_linear = griddata(uac, rt, (grid_points[0], grid_points[1]), method='linear', fill_value=np.nan)
+        grid_rts_nearest = griddata(uac, rt, (grid_points[0], grid_points[1]), method='nearest')
+        grid_rts = np.where(np.isnan(grid_rts_linear),
+                            grid_rts_nearest,
+                            grid_rts_linear)
+
         uac_values = np.stack([grid_ats, grid_rts], axis=0)
 
         return uac_values

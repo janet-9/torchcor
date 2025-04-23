@@ -40,7 +40,7 @@ class ConductivityCNN(nn.Module):
 
 
 if __name__ == "__main__":
-    model = CNNRegressor()
+    model = ConductivityCNN()
     input_tensor = torch.randn(8, 2, 500, 500)  # N=8
     output = model(input_tensor)
     print(output.shape) 
