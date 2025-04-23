@@ -7,16 +7,15 @@ from torch.utils.data import DataLoader, TensorDataset
 from model import ConductivityCNN
 
 dataset = Dataset(n_uac_points=500)
-X_train, X_test, y_train, y_test = train_test_split(dataset.X, dataset.y, test_size=0.2, random_state=42)
-X_train = torch.tensor(X_train)
-X_test = torch.tensor(X_test)
-y_train = torch.tensor(y_train)
-y_test = torch.tensor(y_test)
+X_train = torch.tensor(dataset.X_train)
+X_test = torch.tensor(dataset.X_test)
+y_train = torch.tensor(dataset.y_train)
+y_test = torch.tensor(dataset.y_test)
 
 train_dataset = TensorDataset(X_train, y_train)
 test_dataset = TensorDataset(X_test, y_test)
-train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=8)
+train_loader = DataLoader(train_dataset, batch_size=1024, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size=1024)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = ConductivityCNN().to(device)

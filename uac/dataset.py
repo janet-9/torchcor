@@ -4,48 +4,64 @@ from pathlib import Path
 from scipy.interpolate import griddata
 import numpy as np
 from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import as_completed
+from multiprocessing import Manager
 
 class Dataset(Dataset):
-    def __init__(self, n_uac_points=500, mesh_dir="/data/Bei/meshes_refined/", at_rt_dir="/data/Bei/atrium_conductivity_2"):
+    def __init__(self, n_uac_points=500, mesh_dir="/data1/Bei/meshes_refined/", at_rt_dir="/data1/Bei/atrium_conductivity_2"):
         self.n_uac_points = n_uac_points
         self.mesh_dir = Path(mesh_dir)
         self.at_rt_dir = Path(at_rt_dir)
-        self.dataset_path = Path(f"./dataset_{self.n_uac_points}.npz")
+        self.dataset_path = Path(f"/data1/Bei/dataset_{self.n_uac_points}")
+        
+        self.X_train = np.empty(shape=(2, n_uac_points, n_uac_points))
+        self.y_train = np.empty(shape=(2,))
+
+        self.X_test = np.empty(shape=(2, n_uac_points, n_uac_points))
+        self.y_test = np.empty(shape=(2,))
 
         if not self.dataset_path.exists():
-            self.X = None
-            self.y = None
+            self.dataset_path.mkdir(exist_ok=True, parents=True)
+            with Manager() as manager:
+                X_list = manager.list()
+                y_list = manager.list()
+                with ProcessPoolExecutor() as executor:
+                    for i in range(1, 101):
+                        case = f"Case_{i}"
+                        print(case)
+                        uac_path = self.mesh_dir / case / "UAC.npy"
+                        UAC = torch.from_numpy(np.load(uac_path))
+                        futures = []
+                        for at_rt_path in (self.at_rt_dir / case).iterdir():
+                            future = executor.submit(self.process_case, UAC, at_rt_path, n_uac_points)
+                            futures.append(future)
+                        for future in as_completed(futures):
+                            X, y = future.result()
+                            X_list.append(X)
+                            y_list.append(y)
 
-            X_list = []
-            y_list = []
-            with ProcessPoolExecutor() as executor:
-                for i in range(1, 101):
-                    case = f"Case_{i}"
-                    print(case)
-                    uac_path = self.mesh_dir / case / "UAC.npy"
-                    UAC = torch.from_numpy(np.load(uac_path))
-                    futures = []
-                    for at_rt_path in (self.at_rt_dir / case).iterdir():
-                        future = executor.submit(self.process_case, UAC, at_rt_path, n_uac_points)
-                        futures.append(future)
-                    for future in futures:
-                        X, y = future.result()
-                        X_list.append(X)
-                        y_list.append(y)
-                    print(len(X_list), len(y_list))
+                        np.savez(self.dataset_path / f"{case}.npz", X=np.stack(X_list), y=np.stack(y_list))
+                        X_list[:] = []
+                        y_list[:] = []
 
-            self.X = np.stack(X_list)
-            self.y = np.stack(y_list)
+                        
+        self.load_data()
 
-            self.X = (self.X - self.X.min()) / (self.X.max() - self.X.min())
-            self.y = self.y - 1
+    def load_data(self):
+        for i, data_path in enumerate(self.dataset_path.iterdir()):
+            data = np.load(data_path)
+            X = data['X']
+            y = data['y']
 
-            np.savez(self.dataset_path, X=self.X, y=self.y)
+            if i < 90:
+                self.X_train = np.stack([self.X_train, X], axis=0)
+                self.y_train = np.stack([self.y_train, y], axis=0) - 1
+            else:
+                self.X_test = np.stack([self.X_test, X], axis=0)
+                self.y_test = np.stack([self.y_test, y], axis=0) - 1
 
-        else:
-            data = np.load(self.dataset_path)
-            self.X = data['X']
-            self.y = data['y']
+            self.X_train = (self.X_train - self.X_train.min()) / (self.X_train.max() - self.X_train.min())
+            self.X_test = (self.X_test - self.X_train.min()) / (self.X_train.max() - self.X_train.min())
 
     def process_case(self, UAC, at_rt_path, n_uac_points):
         AT = torch.load(at_rt_path / "ATs.pt", weights_only=False).numpy()
