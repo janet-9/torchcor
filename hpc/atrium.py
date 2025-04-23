@@ -3,6 +3,90 @@ from torchcor.simulator import Monodomain
 from torchcor.ionic import ModifiedMS2v
 from pathlib import Path
 import argparse
+import torch
+import time
+
+
+class Domain(Monodomain):
+    def __init__(self, ionic_model, T, dt, device=tc.get_device(), dtype=None):
+        super().__init__(self, ionic_model, T, dt, device, dtype)
+
+    def solve(self, a_tol, r_tol, max_iter, calculate_AT_RT=True, linear_guess=True, snapshot_interval=1, verbose=True, result_path=None):
+        self.result_path = Path(result_path)
+        self.result_path.mkdir(parents=True, exist_ok=True)
+
+        self.assemble()
+        
+        u = self.ionic_model.initialize(self.n_nodes)
+        u_initial = u.clone()
+        self.cg.initialize(x=u, linear_guess=linear_guess)
+        ts_per_frame = int(snapshot_interval / self.dt)
+    
+        if calculate_AT_RT:
+            activation_time = torch.ones_like(u_initial) * -1
+            repolarization_time = torch.ones_like(u_initial) * -1
+
+        t = 0
+        solving_time = time.time()
+        total_ionic_time = 0
+        total_electric_time = 0
+        n_total_iter = 0
+        gpu_utilisation_list = []
+        gpu_memory_list = []
+        solution_list = [u_initial]
+        for n in range(1, self.nt + 1):
+            t += self.dt
+            
+            ### CG step ###
+            u, n_iter, ionic_time, electric_time = self.step(u, t, a_tol, r_tol, max_iter, verbose)
+            n_total_iter += n_iter
+            total_ionic_time += ionic_time
+            total_electric_time += electric_time
+            
+            ### calculate AT and RT ###
+            if calculate_AT_RT:
+                activation_time[(u > 0) & (activation_time == -1)] = t
+                repolarization_time[(activation_time > 0) & (repolarization_time == -1) & (u < -70)] = t
+
+            ### keep track of GPU usage ###
+            if n % ts_per_frame == 0:
+                solution_list.append(u.clone())
+                
+                if verbose and snapshot_interval != self.T:
+                    print(f"t: {round(t, 1)}/{self.T}", 
+                          f"Time elapsed:", round(time.time() - solving_time, 2),
+                          f"Total CG iter:", n_total_iter,
+                          flush=True)
+
+        ### save AT, RT, and solutions to disk ###
+        if calculate_AT_RT:
+            torch.save(activation_time.cpu(), self.result_path / "ATs.pt")
+            torch.save(repolarization_time.cpu(), self.result_path / "RTs.pt")
+
+            torch.save(self.A.indices().cpu(), self.result_path / "edge_index.pt")
+
+        if snapshot_interval < self.T:
+            torch.save(torch.stack(solution_list, dim=0).cpu(), self.result_path / "Vm.pt")
+
+        ### print log info to console ###
+        if verbose:
+            print(self.ionic_model.name,
+                  self.n_nodes, 
+                  round(time.time() - solving_time, 2),
+                  round(total_ionic_time, 2),
+                  round(total_electric_time, 2),
+                  n_total_iter,
+                  f"{round(sum(gpu_utilisation_list)/len(gpu_utilisation_list), 2)}",
+                  f"{round(sum(gpu_memory_list)/len(gpu_memory_list), 2)}",
+                  flush=True)
+            
+            if calculate_AT_RT:
+                print("ATs: ", activation_time.cpu().min().item(), activation_time.cpu().max().item(), flush=True)
+                print("RTs: ", repolarization_time.cpu().min().item(), repolarization_time.cpu().max().item(), flush=True)
+
+        return n_total_iter
+
+
 
 parser = argparse.ArgumentParser(description="Case id",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
