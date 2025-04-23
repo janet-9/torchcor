@@ -63,7 +63,7 @@ class Domain(Monodomain):
             torch.save(activation_time.cpu(), self.result_path / "ATs.pt")
             torch.save(repolarization_time.cpu(), self.result_path / "RTs.pt")
 
-            torch.save(self.A.indices().cpu(), self.result_path / "edge_index.pt")
+            torch.save(self.A.to_sparse_coo().indices().cpu(), self.result_path.parent / "edge_index.pt")
 
         if snapshot_interval < self.T:
             torch.save(torch.stack(solution_list, dim=0).cpu(), self.result_path / "Vm.pt")
@@ -114,7 +114,7 @@ for il in range(1, 21):
         mesh_dir = data_dir / "meshes_refined" / case_name
         vtk_filepath = mesh_dir / f"{case_name}.vtx"
                 
-        simulator = Monodomain(ionic_model, T=simulation_time, dt=dt, dtype=dtype)
+        simulator = Domain(ionic_model, T=simulation_time, dt=dt, dtype=dtype)
         simulator.load_mesh(path=mesh_dir, unit_conversion=1000)
         simulator.add_condutivity(region_ids=[1, 2, 3, 4, 5, 6], il=il/10, it=it/10)
 
