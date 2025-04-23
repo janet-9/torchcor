@@ -7,41 +7,40 @@ import numpy as np
 
 
 class DatasetConductivity(Dataset):
-    def __init__(self, at_rt_root="/data/Bei/atrium_conductivity_2", uac_root="/data/Bei/meshes_refined", transform=None, pre_transform=None):
-        super().__init__(at_rt_root, transform, pre_transform)
-        self.at_rt_root = Path(at_rt_root)
-        self.uac_root = Path(uac_root)
+    def __init__(self, root="/data/Bei/atrium_conductivity_600", transform=None, pre_transform=None):
+        super().__init__(root, transform, pre_transform)
+        self.root = Path(root)
 
-        self.at_rt_list = []
+        self.folder_path_list = []
         for case_dir in self.root.iterdir():
-            for file_path in case_dir.iterdir():
-                at_path = file_path / "ATs.pt"
-                rt_path = file_path / "RTs.pt"
-                self.file_list.append((at_path, rt_path))
+            for folder_path in case_dir.iterdir():
+                if folder_path.is_dir():
+                    self.folder_path_list.append(folder_path)
+
+    def len(self):
+        return len(self.folder_path_list)
+
+    def get(self, idx):
+        folder_path = self.folder_path_list[idx]
+        case_path = folder_path.parent
+
+        AT = torch.load(folder_path / "ATs.pt", weights_only=False)
+        RT = torch.load(folder_path / "RTs.pt", weights_only=False)
+
+        UAC = torch.from_numpy(np.load(case_path / "UAC.npy"))
+        edge_index = torch.load(case_path / "edge_index.pt", weights_only=False)
+        y = torch.tensor(y = [float(c) for c in conductivities.name.split("_")])
         
-        self.uac_list = []
-        for case_dir in self.root.iterdir():
-            uac = case_dir / "UAC.npy"
-            self.uac_list.append(uac)
-
-        def len(self):
-            return len(self.file_list)
-
-        def get(self, idx):
-            at_path, rt_path = self.file_list[idx]
-            AT = torch.load(at_path)
-            RT = torch.load(rt_path)
-
-            UAC = torch.load()
-
-            return Data(x=[torch.cat([AT, RT], dim=1), 
-                           UAC], 
-                        edge_index=edge_index, 
-                        y=y)
+        
+        return Data(x=[torch.stack([AT, RT], dim=1), 
+                       UAC], 
+                    edge_index=edge_index, 
+                    y=y.unsqueeze(dim=0))
 
 
 
 
 if __name__ == "__main__":
     dataset = DatasetConductivity()
+    dataset.get(2)
 

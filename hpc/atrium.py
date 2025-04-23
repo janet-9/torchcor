@@ -109,7 +109,8 @@ ionic_model.tau_out = 1.5
 ionic_model.tau_open = 105.0
 ionic_model.tau_close = 185.0
 
-data_dir = Path("/data/scratch/acw554")
+# data_dir = Path("/data/scratch/acw554")
+data_dir = Path("/data/Bei")
 output_folder_name = "atrium_conductivity_600"
 for il in range(1, 21):
     for it in range(1, 21):
