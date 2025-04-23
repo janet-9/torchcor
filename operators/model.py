@@ -18,8 +18,8 @@ class BranchTrunkNet(nn.Module):
         x = F.elu(self.gat1(x, edge_index))
         x = F.elu(self.gat2(x, edge_index))
         x = global_mean_pool(x, batch)
-        x = self.mlp(x)    # [batch_size, out_channels]
-        return x
+        output = self.mlp(x)    # [batch_size, out_channels]
+        return output
     
 
 class DeepONet(nn.Module):
@@ -35,9 +35,9 @@ class DeepONet(nn.Module):
             nn.Tanh()
         )
 
-    def forward(self, data_branch, data_trunk):
-        branch_out = self.brank_net(data_branch.x, data_branch.edge_index, data_branch.batch)
-        trunk_out = self.trunk_net(data_trunk.x, data_trunk.edge_index, data_trunk.batch)
+    def forward(self, data):
+        branch_out = self.brank_net(data.x[0], data.edge_index, data.batch)
+        trunk_out = self.trunk_net(data.x[1], data.edge_index, data.batch)
 
         combined = branch_out * trunk_out
 

@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 
 
-class DatasetBranch(Dataset):
+class DatasetConductivity(Dataset):
     def __init__(self, at_rt_root="/data/Bei/atrium_conductivity_2", uac_root="/data/Bei/meshes_refined", transform=None, pre_transform=None):
         super().__init__(at_rt_root, transform, pre_transform)
         self.at_rt_root = Path(at_rt_root)
@@ -34,10 +34,14 @@ class DatasetBranch(Dataset):
 
             UAC = torch.load()
 
+            return Data(x=[torch.cat([AT, RT], dim=1), 
+                           UAC], 
+                        edge_index=edge_index, 
+                        y=y)
 
 
 
 
 if __name__ == "__main__":
-    dataset = ConductivityDataset()
+    dataset = DatasetConductivity()
 

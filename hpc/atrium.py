@@ -5,11 +5,12 @@ from pathlib import Path
 import argparse
 import torch
 import time
+import shutil
 
 
 class Domain(Monodomain):
     def __init__(self, ionic_model, T, dt, device=tc.get_device(), dtype=None):
-        super().__init__(self, ionic_model, T, dt, device, dtype)
+        super().__init__(ionic_model, T, dt, device, dtype)
 
     def solve(self, a_tol, r_tol, max_iter, calculate_AT_RT=True, linear_guess=True, snapshot_interval=1, verbose=True, result_path=None):
         self.result_path = Path(result_path)
@@ -63,7 +64,13 @@ class Domain(Monodomain):
             torch.save(activation_time.cpu(), self.result_path / "ATs.pt")
             torch.save(repolarization_time.cpu(), self.result_path / "RTs.pt")
 
-            torch.save(self.A.to_sparse_coo().indices().cpu(), self.result_path.parent / "edge_index.pt")
+            indices_filepath = self.result_path.parent / "edge_index.pt"
+            if not indices_filepath.exists():
+                torch.save(self.A.to_sparse_coo().indices().cpu(), indices_filepath)
+
+            uac_filepath = self.result_path.parent / "UAC.npy"
+            if not uac_filepath.exists():
+                shutil.copy(self.mesh_path / "UAC.npy", uac_filepath)
 
         if snapshot_interval < self.T:
             torch.save(torch.stack(solution_list, dim=0).cpu(), self.result_path / "Vm.pt")
@@ -107,6 +114,7 @@ ionic_model.tau_open = 105.0
 ionic_model.tau_close = 185.0
 
 data_dir = Path("/data/scratch/acw554")
+output_folder_name = "atrium_conductivity_600"
 for il in range(1, 21):
     for it in range(1, 21):
         case_name = f"Case_{args.case_id}"
@@ -130,4 +138,6 @@ for il in range(1, 21):
                         linear_guess=True,
                         snapshot_interval=simulation_time, 
                         verbose=True,
-                        result_path=data_dir / "atrium_conductivity_600" / case_name / f"{il/10}_{it/10}")
+                        result_path=data_dir / output_folder_name / case_name / f"{il/10}_{it/10}")
+
+        
