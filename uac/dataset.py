@@ -17,10 +17,8 @@ class Dataset(Dataset):
         
         self.X_train = []
         self.y_train = []
-
         self.X_test = []
         self.y_test = []
-
         self.X_extra = []
         self.y_extra = []
 

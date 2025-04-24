@@ -38,7 +38,7 @@ extra_loader = DataLoader(extra_dataset, batch_size=32)
 model = FNOWithGlobalHead().to(device)
 criterion = nn.MSELoss()
 optimizer = optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
-scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_max=50)
+scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=50)
 
 num_epochs = 100
 for epoch in range(num_epochs):
