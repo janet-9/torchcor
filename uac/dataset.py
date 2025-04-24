@@ -30,7 +30,7 @@ class Dataset(Dataset):
                         case = f"Case_{i}"
                         print(case)
                         uac_path = self.mesh_dir / case / "UAC.npy"
-                        UAC = torch.from_numpy(np.load(uac_path)).astype(np.float32)
+                        UAC = torch.from_numpy(np.load(uac_path))
                         futures = []
                         for at_rt_path in (self.at_rt_dir / case).iterdir():
                             future = executor.submit(self.process_case, UAC, at_rt_path, n_uac_points)
@@ -56,10 +56,10 @@ class Dataset(Dataset):
             X = data['X'].astype(np.float32)
             y = data['y'].astype(np.float32) - 1
 
-            if i > 30:
+            if i > 4:
                 break
             
-            if i <= 20:
+            if i <= 3:
                 self.X_train.append(X)
                 self.y_train.append(y)
             else:
@@ -71,8 +71,10 @@ class Dataset(Dataset):
         self.X_test = np.concatenate(self.X_test, axis=0)
         self.y_test = np.concatenate(self.y_test, axis=0)
 
-        self.X_train = (self.X_train - self.X_train.min()) / (self.X_train.max() - self.X_train.min())
-        self.X_test = (self.X_test - self.X_test.min()) / (self.X_test.max() - self.X_test.min())
+        x_min = self.X_train.min()
+        x_max = self.X_train.max()
+        self.X_train = (self.X_train - x_min) / (x_max - x_min)
+        self.X_test = (self.X_test - x_min) / (x_max - x_min)
         print("Finished loading data")
 
     def process_case(self, UAC, at_rt_path, n_uac_points):
