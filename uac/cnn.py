@@ -29,8 +29,9 @@ class ConductivityCNN(nn.Module):
             nn.Flatten(),  # (N, 128)
             nn.Linear(128, 64),
             nn.ReLU(),
+            nn.Dropout(0.3),
             nn.Linear(64, 2),
-            nn.Sigmoid()  # Output in [-1, 1]
+            nn.Sigmoid()  
         )
 
     def forward(self, x):

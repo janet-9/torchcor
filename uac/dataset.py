@@ -8,7 +8,7 @@ from concurrent.futures import as_completed
 from multiprocessing import Manager
 
 class Dataset(Dataset):
-    def __init__(self, n_uac_points=500, root="/data/Bei//"):
+    def __init__(self, n_uac_points=500, root="/data/Bei/"):
         self.n_uac_points = n_uac_points
         self.root = Path(root)
         self.mesh_dir = self.root / "meshes_refined"

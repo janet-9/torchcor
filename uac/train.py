@@ -13,6 +13,11 @@ parser = argparse.ArgumentParser(description="root",
 parser.add_argument("-root", type=str, default="/data/Bei")
 args = parser.parse_args()
 
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+device_id = torch.cuda.current_device()
+gpu_name = torch.cuda.get_device_name(device_id)
+print(gpu_name)
+
 dataset = Dataset(n_uac_points=100, root=args.root)
 X_train = torch.tensor(dataset.X_train[:, :1, :, :])
 X_test = torch.tensor(dataset.X_test[:, :1, :, :])
@@ -24,7 +29,6 @@ test_dataset = TensorDataset(X_test, y_test)
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=32)
 
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 # model = ConductivityCNN().to(device)
 model = FNOWithGlobalHead().to(device)
 criterion = nn.MSELoss()
