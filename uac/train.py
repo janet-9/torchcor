@@ -18,7 +18,7 @@ device_id = torch.cuda.current_device()
 gpu_name = torch.cuda.get_device_name(device_id)
 print(gpu_name, flush=True)
 
-dataset = Dataset(n_uac_points=100, root=args.root)
+dataset = Dataset(n_uac_points=300, root=args.root)
 X_train = torch.tensor(dataset.X_train[:, :1, :, :])
 X_test = torch.tensor(dataset.X_test[:, :1, :, :])
 y_train = torch.tensor(dataset.y_train)
@@ -29,8 +29,8 @@ test_dataset = TensorDataset(X_test, y_test)
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=32)
 
-# model = ConductivityCNN().to(device)
-model = FNOWithGlobalHead().to(device)
+model = ConductivityCNN().to(device)
+# model = FNOWithGlobalHead().to(device)
 criterion = nn.MSELoss()
 optimizer = optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
 scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=100)
@@ -40,9 +40,10 @@ for epoch in range(num_epochs):
     model.train()
     train_loss = 0
     train_max_diff = 0
-    train_mean_diff = []
-    for inputs, targets in train_loader:
+    train_abs_sum = 0
+    total_train_samples = 0
 
+    for inputs, targets in train_loader:
         inputs, targets = inputs.to(device), targets.to(device)
 
         outputs = model(inputs)
@@ -54,7 +55,8 @@ for epoch in range(num_epochs):
 
         train_loss += loss.item() * inputs.size(0)
         train_abs = torch.abs(outputs * 2 - targets * 2)
-        train_mean_diff.append(train_abs.mean().item())
+        train_abs_sum += train_abs.sum().item()  
+        total_train_samples += inputs.size(0)  
 
         max_train = train_abs.max().item()
         train_max_diff = max_train if max_train > train_max_diff else train_max_diff
@@ -66,7 +68,8 @@ for epoch in range(num_epochs):
     model.eval()
     test_loss = 0
     test_max_diff = 0
-    test_mean_diff = []
+    test_abs_sum = 0
+    total_test_samples = 0
     with torch.no_grad():
         for inputs, targets in test_loader:
             inputs, targets = inputs.to(device), targets.to(device)
@@ -75,8 +78,9 @@ for epoch in range(num_epochs):
 
             test_loss += loss.item() * inputs.size(0)
             test_abs = torch.abs(outputs * 2 - targets * 2)
-            test_mean_diff.append(test_abs.mean().item())
-
+            
+            test_abs_sum += test_abs.sum().item()  
+            total_test_samples += inputs.size(0) 
             test_max = test_abs.max().item()
             test_max_diff = test_max if test_max > test_max_diff else test_max_diff
 
@@ -84,6 +88,6 @@ for epoch in range(num_epochs):
 
     print(f"Epoch {epoch+1}/{num_epochs} \
           | Loss: {train_loss:.2f} - {test_loss:.2f} \
-          | Mean Abs: {sum(train_mean_diff)/len(train_mean_diff):.2f} - {sum(test_mean_diff)/len(test_mean_diff):.2f} \
+          | Mean Abs: {train_abs_sum/total_train_samples:.2f} - {test_abs_sum/total_test_samples:.2f} \
           | Max Abs {train_max_diff:.2f} - {test_max_diff:.2f}",
           flush=True)
