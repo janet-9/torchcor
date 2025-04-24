@@ -8,7 +8,7 @@ from concurrent.futures import as_completed
 from multiprocessing import Manager
 
 class Dataset(Dataset):
-    def __init__(self, n_uac_points=500, root="/data/Bei/"):
+    def __init__(self, n_uac_points=100, root="/data/Bei/"):
         self.n_uac_points = n_uac_points
         self.root = Path(root)
         self.mesh_dir = self.root / "meshes_refined"
@@ -20,6 +20,9 @@ class Dataset(Dataset):
 
         self.X_test = []
         self.y_test = []
+
+        self.X_extra = []
+        self.y_extra = []
 
         if not self.dataset_path.exists():
             self.dataset_path.mkdir(exist_ok=True, parents=True)
@@ -51,12 +54,12 @@ class Dataset(Dataset):
         self.load_data()
 
     def load_data(self):
-        for i, data_path in enumerate(self.dataset_path.iterdir()):
-            data = np.load(data_path)
+        for i in range(1, 101):
+            data = np.load(self.dataset_path / f"Case_{i}.npz")
             X = data['X'].astype(np.float32)
             y = data['y'].astype(np.float32) / 2
             
-            if i <= 80:
+            if i <= 90:
                 self.X_train.append(X)
                 self.y_train.append(y)
             else:
@@ -72,7 +75,20 @@ class Dataset(Dataset):
         x_max = self.X_train.max()
         self.X_train = (self.X_train - x_min) / (x_max - x_min)
         self.X_test = (self.X_test - x_min) / (x_max - x_min)
-        print("Finished loading data", flush=True)
+
+        for i in range(91, 101):
+            data = np.load(self.root / f"dataset_300" / f"Case_{i}.npz")
+            X = data['X'].astype(np.float32)
+            y = data['y'].astype(np.float32) / 2
+            self.X_extra.append(X)
+            self.y_extra.append(y)
+
+        self.X_extra = np.concatenate(self.X_extra, axis=0)
+        self.y_extra = np.concatenate(self.y_extra, axis=0)
+        self.X_extra = (self.X_extra - x_min) / (x_max - x_min)
+
+        print("Completed loading data", flush=True)
+
 
     def process_case(self, UAC, at_rt_path, n_uac_points):
         AT = torch.load(at_rt_path / "ATs.pt", weights_only=False).numpy().astype(np.float32)

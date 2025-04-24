@@ -33,12 +33,12 @@ class FNOWithGlobalHead(nn.Module):
     def forward(self, x):
         # x = self.add_coords(x)
         x = self.fno1(x)            # Output: (N, 64, 500, 500) 
-        x = self.norm1(x) 
+        # x = self.norm1(x) 
         x = F.relu(x)
     
-        # x = self.fno2(x)
+        x = self.fno2(x)
         # x = self.norm2(x)
-        # x = F.relu(x)
+        x = F.relu(x)
 
         out = self.head(x)         # Output: (N, 2)
         return out
