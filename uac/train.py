@@ -5,22 +5,25 @@ from dataset import Dataset
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, TensorDataset
 from model import ConductivityCNN
+from fno import FNOWithGlobalHead
 
 dataset = Dataset(n_uac_points=500)
-X_train = torch.tensor(dataset.X_train)
-X_test = torch.tensor(dataset.X_test)
+X_train = torch.tensor(dataset.X_train[:, :1, :, :])
+X_test = torch.tensor(dataset.X_test[:, :1, :, :])
 y_train = torch.tensor(dataset.y_train)
 y_test = torch.tensor(dataset.y_test)
 
 train_dataset = TensorDataset(X_train, y_train)
 test_dataset = TensorDataset(X_test, y_test)
-train_loader = DataLoader(train_dataset, batch_size=1024, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=1024)
+train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size=32)
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model = ConductivityCNN().to(device)
+device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+# model = ConductivityCNN().to(device)
+model = FNOWithGlobalHead().to(device)
 criterion = nn.MSELoss()
-optimizer = optim.Adam(model.parameters(), lr=1e-4)
+optimizer = optim.AdamW(model.parameters(), lr=8e-3, weight_decay=1e-4)
+scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=30)
 
 num_epochs = 1000
 for epoch in range(num_epochs):
@@ -28,6 +31,7 @@ for epoch in range(num_epochs):
     train_loss = 0
     train_max_diff = 0
     for inputs, targets in train_loader:
+
         inputs, targets = inputs.to(device), targets.to(device)
 
         outputs = model(inputs)
@@ -38,11 +42,11 @@ for epoch in range(num_epochs):
         optimizer.step()
 
         train_loss += loss.item() * inputs.size(0)
-
         max_train = torch.abs(outputs - targets).max().item()
         train_max_diff = max_train if max_train > train_max_diff else train_max_diff
 
     train_loss /= len(train_loader.dataset)
+    scheduler.step()
 
     # Evaluation
     model.eval()
@@ -53,11 +57,11 @@ for epoch in range(num_epochs):
             inputs, targets = inputs.to(device), targets.to(device)
             outputs = model(inputs)
             loss = criterion(outputs, targets)
+
             test_loss += loss.item() * inputs.size(0)
+            max_test = torch.abs(outputs - targets).max().item()
+            test_max_diff = max_test if max_test > test_max_diff else test_max_diff
 
     test_loss /= len(test_loader.dataset)
-
-    max_test = torch.abs(outputs - targets).max().item()
-    test_max_diff = max_test if max_test > test_max_diff else test_max_diff
 
     print(f"Epoch {epoch+1}/{num_epochs} | Train Loss: {train_loss:.2f} | Test Loss: {test_loss:.2f} | Train Max: {train_max_diff:.2f} | Test Max: {test_max_diff:.2f}")

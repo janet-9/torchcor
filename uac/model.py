@@ -6,7 +6,7 @@ class ConductivityCNN(nn.Module):
     def __init__(self):
         super(ConductivityCNN, self).__init__()
         self.conv_layers = nn.Sequential(
-            nn.Conv2d(2, 16, kernel_size=5, stride=2, padding=2),  # (N, 16, 250, 250)
+            nn.Conv2d(1, 16, kernel_size=5, stride=2, padding=2),  # (N, 16, 250, 250)
             nn.BatchNorm2d(16),
             nn.ReLU(),
 
@@ -41,6 +41,6 @@ class ConductivityCNN(nn.Module):
 
 if __name__ == "__main__":
     model = ConductivityCNN()
-    input_tensor = torch.randn(8, 2, 500, 500)  # N=8
+    input_tensor = torch.randn(8, 1, 500, 500)  # N=8
     output = model(input_tensor)
     print(output.shape) 

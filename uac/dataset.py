@@ -8,17 +8,17 @@ from concurrent.futures import as_completed
 from multiprocessing import Manager
 
 class Dataset(Dataset):
-    def __init__(self, n_uac_points=500, mesh_dir="/data1/Bei/meshes_refined/", at_rt_dir="/data1/Bei/atrium_conductivity_2"):
+    def __init__(self, n_uac_points=500, mesh_dir="/data/Bei/meshes_refined/", at_rt_dir="/data/Bei/atrium_conductivity_2"):
         self.n_uac_points = n_uac_points
         self.mesh_dir = Path(mesh_dir)
         self.at_rt_dir = Path(at_rt_dir)
-        self.dataset_path = Path(f"/data1/Bei/dataset_{self.n_uac_points}")
+        self.dataset_path = Path(f"/data/Bei/dataset_{self.n_uac_points}")
         
-        self.X_train = np.empty(shape=(2, n_uac_points, n_uac_points))
-        self.y_train = np.empty(shape=(2,))
+        self.X_train = []
+        self.y_train = []
 
-        self.X_test = np.empty(shape=(2, n_uac_points, n_uac_points))
-        self.y_test = np.empty(shape=(2,))
+        self.X_test = []
+        self.y_test = []
 
         if not self.dataset_path.exists():
             self.dataset_path.mkdir(exist_ok=True, parents=True)
@@ -30,7 +30,7 @@ class Dataset(Dataset):
                         case = f"Case_{i}"
                         print(case)
                         uac_path = self.mesh_dir / case / "UAC.npy"
-                        UAC = torch.from_numpy(np.load(uac_path))
+                        UAC = torch.from_numpy(np.load(uac_path)).astype(np.float32)
                         futures = []
                         for at_rt_path in (self.at_rt_dir / case).iterdir():
                             future = executor.submit(self.process_case, UAC, at_rt_path, n_uac_points)
@@ -40,7 +40,9 @@ class Dataset(Dataset):
                             X_list.append(X)
                             y_list.append(y)
 
-                        np.savez(self.dataset_path / f"{case}.npz", X=np.stack(X_list), y=np.stack(y_list))
+                        np.savez(self.dataset_path / f"{case}.npz", 
+                                 X=np.stack(X_list).astype(np.float32), 
+                                 y=np.stack(y_list).astype(np.float32))
                         X_list[:] = []
                         y_list[:] = []
 
@@ -49,23 +51,33 @@ class Dataset(Dataset):
 
     def load_data(self):
         for i, data_path in enumerate(self.dataset_path.iterdir()):
+            print(i)
             data = np.load(data_path)
-            X = data['X']
-            y = data['y']
+            X = data['X'].astype(np.float32)
+            y = data['y'].astype(np.float32) - 1
 
-            if i < 90:
-                self.X_train = np.stack([self.X_train, X], axis=0)
-                self.y_train = np.stack([self.y_train, y], axis=0) - 1
+            if i > 30:
+                break
+            
+            if i <= 20:
+                self.X_train.append(X)
+                self.y_train.append(y)
             else:
-                self.X_test = np.stack([self.X_test, X], axis=0)
-                self.y_test = np.stack([self.y_test, y], axis=0) - 1
+                self.X_test.append(X)
+                self.y_test.append(y)
 
-            self.X_train = (self.X_train - self.X_train.min()) / (self.X_train.max() - self.X_train.min())
-            self.X_test = (self.X_test - self.X_train.min()) / (self.X_train.max() - self.X_train.min())
+        self.X_train = np.concatenate(self.X_train, axis=0)
+        self.y_train = np.concatenate(self.y_train, axis=0)
+        self.X_test = np.concatenate(self.X_test, axis=0)
+        self.y_test = np.concatenate(self.y_test, axis=0)
+
+        self.X_train = (self.X_train - self.X_train.min()) / (self.X_train.max() - self.X_train.min())
+        self.X_test = (self.X_test - self.X_test.min()) / (self.X_test.max() - self.X_test.min())
+        print("Finished loading data")
 
     def process_case(self, UAC, at_rt_path, n_uac_points):
-        AT = torch.load(at_rt_path / "ATs.pt", weights_only=False).numpy()
-        RT = torch.load(at_rt_path / "RTs.pt", weights_only=False).numpy()
+        AT = torch.load(at_rt_path / "ATs.pt", weights_only=False).numpy().astype(np.float32)
+        RT = torch.load(at_rt_path / "RTs.pt", weights_only=False).numpy().astype(np.float32)
         X = self.uac_interpolate(UAC, AT, RT, n_uac_points)
         y = [float(c) for c in at_rt_path.name.split("_")]
 
@@ -89,7 +101,7 @@ class Dataset(Dataset):
 
         uac_values = np.stack([grid_ats, grid_rts], axis=0)
 
-        return uac_values
+        return uac_values.astype(np.float32)
     
     def __len__(self):
         return self.X.shape[0]
