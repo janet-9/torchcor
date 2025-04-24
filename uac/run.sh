@@ -7,7 +7,7 @@
 #$ -l h_vmem=7.5G   # Request RAM (7.5GB per core)
 #$ -l h_rt=1:0:0    # Max 1hr runtime (can request up to 240hr)
 #$ -l gpu=1         # Request GPU
-#$ -l gpu_type=hopper  # Ensure that the job runs on Andrena nodes
+#$ -l gpu_type=ameper  # Ensure that the job runs on Andrena nodes
 #$ -N uac     # Name for the job (optional)
 
 # Load the necessary modules
