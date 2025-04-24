@@ -36,9 +36,9 @@ class FNOWithGlobalHead(nn.Module):
         x = self.norm1(x) 
         x = F.relu(x)
     
-        x = self.fno2(x)
-        x = self.norm2(x)
-        x = F.relu(x)
+        # x = self.fno2(x)
+        # x = self.norm2(x)
+        # x = F.relu(x)
 
         out = self.head(x)         # Output: (N, 2)
         return out
