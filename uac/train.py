@@ -16,7 +16,7 @@ args = parser.parse_args()
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 device_id = torch.cuda.current_device()
 gpu_name = torch.cuda.get_device_name(device_id)
-print(gpu_name)
+print(gpu_name, flush=True)
 
 dataset = Dataset(n_uac_points=100, root=args.root)
 X_train = torch.tensor(dataset.X_train[:, :1, :, :])
