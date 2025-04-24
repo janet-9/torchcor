@@ -8,11 +8,12 @@ from concurrent.futures import as_completed
 from multiprocessing import Manager
 
 class Dataset(Dataset):
-    def __init__(self, n_uac_points=500, mesh_dir="/data/Bei/meshes_refined/", at_rt_dir="/data/Bei/atrium_conductivity_2"):
+    def __init__(self, n_uac_points=500, root="/data/Bei//"):
         self.n_uac_points = n_uac_points
-        self.mesh_dir = Path(mesh_dir)
-        self.at_rt_dir = Path(at_rt_dir)
-        self.dataset_path = Path(f"/data/Bei/dataset_{self.n_uac_points}")
+        self.root = Path(root)
+        self.mesh_dir = self.root / "meshes_refined"
+        self.at_rt_dir = self.root / "atrium_conductivity_2"
+        self.dataset_path = self.root / f"dataset_{self.n_uac_points}"
         
         self.X_train = []
         self.y_train = []
@@ -51,15 +52,11 @@ class Dataset(Dataset):
 
     def load_data(self):
         for i, data_path in enumerate(self.dataset_path.iterdir()):
-            print(i)
             data = np.load(data_path)
             X = data['X'].astype(np.float32)
-            y = data['y'].astype(np.float32) - 1
-
-            if i > 4:
-                break
+            y = data['y'].astype(np.float32) / 2
             
-            if i <= 3:
+            if i <= 80:
                 self.X_train.append(X)
                 self.y_train.append(y)
             else:
@@ -75,7 +72,7 @@ class Dataset(Dataset):
         x_max = self.X_train.max()
         self.X_train = (self.X_train - x_min) / (x_max - x_min)
         self.X_test = (self.X_test - x_min) / (x_max - x_min)
-        print("Finished loading data")
+        print("Finished loading data", flush=True)
 
     def process_case(self, UAC, at_rt_path, n_uac_points):
         AT = torch.load(at_rt_path / "ATs.pt", weights_only=False).numpy().astype(np.float32)

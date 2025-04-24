@@ -30,7 +30,7 @@ class ConductivityCNN(nn.Module):
             nn.Linear(128, 64),
             nn.ReLU(),
             nn.Linear(64, 2),
-            nn.Tanh()  # Output in [-1, 1]
+            nn.Sigmoid()  # Output in [-1, 1]
         )
 
     def forward(self, x):
