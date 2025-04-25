@@ -5,7 +5,7 @@ import torch.nn.functional as F
 class ConductivityCNN(nn.Module):
     def __init__(self):
         super(ConductivityCNN, self).__init__()
-        self.conv_layers = nn.Sequential(
+        self.conv = nn.Sequential(
             nn.Conv2d(1, 16, kernel_size=5, stride=2, padding=2),  # (N, 16, 250, 250)
             nn.BatchNorm2d(16),
             nn.ReLU(),
@@ -24,7 +24,7 @@ class ConductivityCNN(nn.Module):
         )
 
         self.head = nn.Sequential(
-            nn.AdaptiveAvgPool2d((1, 1))  # (N, 128, 1, 1)
+            nn.AdaptiveAvgPool2d((1, 1)),  # (N, 128, 1, 1)
             nn.Flatten(),  # (N, 128)
 
             nn.Linear(128, 64),
@@ -35,7 +35,7 @@ class ConductivityCNN(nn.Module):
         )
 
     def forward(self, x):
-        x = self.conv_layers(x)
+        x = self.conv(x)
         x = self.head(x)
         return x
 
