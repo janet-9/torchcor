@@ -5,6 +5,8 @@ import torch.nn.functional as F
 class ConductivityCNN(nn.Module):
     def __init__(self):
         super(ConductivityCNN, self).__init__()
+        self.name = "cnn"
+        
         self.conv = nn.Sequential(
             nn.Conv2d(1, 16, kernel_size=5, stride=2, padding=2),  # (N, 16, 250, 250)
             nn.BatchNorm2d(16),

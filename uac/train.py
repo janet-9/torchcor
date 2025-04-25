@@ -13,12 +13,12 @@ parser = argparse.ArgumentParser(description="root",
 parser.add_argument("-root", type=str, default="/data/Bei")
 args = parser.parse_args()
 
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 device_id = torch.cuda.current_device()
 gpu_name = torch.cuda.get_device_name(device_id)
 print(gpu_name, flush=True)
 
-dataset = Dataset(n_uac_points=50, root=args.root)
+dataset = Dataset(n_uac_points=100, root=args.root)
 X_train = torch.tensor(dataset.X_train[:, :1, :, :])
 x_min = X_train.min()
 x_max = X_train.max()
@@ -46,9 +46,10 @@ model = ConductivityCNN().to(device)
 # model = FNOWithGlobalHead().to(device)
 criterion = nn.MSELoss()
 optimizer = optim.AdamW(model.parameters(), lr=3e-3, weight_decay=1e-4)
-scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=100)
+scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=50)
 
-num_epochs = 10
+best_model_error = 99
+num_epochs = 50
 for epoch in range(num_epochs):
     model.train()
     train_loss = 0
@@ -82,7 +83,6 @@ for epoch in range(num_epochs):
     test_loss = 0
     test_max_diff = 0
     test_abs_sum = 0
-    total_test_samples = 0
     with torch.no_grad():
         for inputs, targets in test_loader:
             inputs, targets = inputs.to(device), targets.to(device)
@@ -93,7 +93,6 @@ for epoch in range(num_epochs):
             test_abs = torch.abs(outputs - targets)
             
             test_abs_sum += test_abs.sum().item() / 2
-            total_test_samples += inputs.size(0) 
             test_max = test_abs.max().item()
             test_max_diff = test_max if test_max > test_max_diff else test_max_diff
     test_loss /= len(test_loader.dataset)
@@ -101,7 +100,6 @@ for epoch in range(num_epochs):
     extra_loss = 0
     extra_max_diff = 0
     extra_abs_sum = 0
-    total_extra_samples = 0
     with torch.no_grad():
         for inputs, targets in extra_loader:
             inputs, targets = inputs.to(device), targets.to(device)
@@ -112,20 +110,21 @@ for epoch in range(num_epochs):
             extra_abs = torch.abs(outputs - targets)
             
             extra_abs_sum += extra_abs.sum().item() / 2
-            total_extra_samples += inputs.size(0) 
             extra_max = extra_abs.max().item()
             extra_max_diff = extra_max if extra_max > extra_max_diff else extra_max_diff
     extra_loss /= len(extra_loader.dataset)
 
     print(f"Epoch {epoch+1}/{num_epochs} \
           | Loss: {train_loss:.2f} - {test_loss:.2f} - {extra_loss:.2f}\
-          | Mean Abs: {train_abs_sum/total_train_samples:.2f} - {test_abs_sum/total_test_samples:.2f} - {extra_abs_sum/total_extra_samples:.2f}\
+          | Mean Abs: {train_abs_sum/total_train_samples:.2f} - {test_abs_sum/len(test_loader.dataset):.2f} - {extra_abs_sum/len(extra_loader.dataset):.2f}\
           | Max Abs {train_max_diff:.2f} - {test_max_diff:.2f} - {extra_max_diff:.2f}",
           flush=True)
+    
+    test_error = test_abs_sum/len(test_loader.dataset)
+    if best_model_error > test_error:
+        torch.save(model, f"{model.name}.pth")
+        best_model_error = test_error
 
-checkpoint = {
-    'model_state_dict': model.state_dict(),
-    'train_min': x_min,
-    'train_max': x_max,
-}
-torch.save(checkpoint, f"{model.__class__.__name__}.pth")
+print(best_model_error)
+
+# FNO: Epoch 50/50           | Loss: 0.10 - 0.06 - 0.06          | Mean Abs: 0.15 - 0.19 - 0.19          | Max Abs 1.00 - 0.91 - 0.93

@@ -6,6 +6,8 @@ from neuralop.models import FNO
 class FNOWithGlobalHead(nn.Module):
     def __init__(self, n_modes=(32, 32), in_channels=1, out_channels=2, hidden_channels=64):
         super().__init__()
+        self.name = "fno"
+
         self.fno = nn.Sequential(
             FNO(n_modes=n_modes,
                 n_layers=4,
