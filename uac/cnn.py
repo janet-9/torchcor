@@ -24,7 +24,8 @@ class ConductivityCNN(nn.Module):
         )
 
         self.head = nn.Sequential(
-            nn.AdaptiveAvgPool2d((1, 1)),  # (N, 128, 1, 1)
+            # nn.AdaptiveAvgPool2d((1, 1)),  # (N, 128, 1, 1)
+            nn.AdaptiveAvgPool2d((1, 1)),
             nn.Flatten(),  # (N, 128)
 
             nn.Linear(128, 64),

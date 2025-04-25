@@ -4,11 +4,11 @@ import torch.nn.functional as F
 from neuralop.models import FNO
 
 class FNOWithGlobalHead(nn.Module):
-    def __init__(self, n_modes=(64, 64), in_channels=1, out_channels=2, hidden_channels=128):
+    def __init__(self, n_modes=(32, 32), in_channels=1, out_channels=2, hidden_channels=64):
         super().__init__()
         self.fno = nn.Sequential(
             FNO(n_modes=n_modes,
-                n_layers=8,
+                n_layers=4,
                 hidden_channels=hidden_channels,
                 in_channels=in_channels,   
                 out_channels=hidden_channels,
@@ -29,10 +29,8 @@ class FNOWithGlobalHead(nn.Module):
             nn.AdaptiveAvgPool2d((1, 1)),  # reduce to (N, 128, 1, 1)
             nn.Flatten(),  # (N, 128)
             
-            nn.Linear(128, 64),
-            nn.ReLU(),
+            nn.Linear(hidden_channels, out_channels),
             nn.Dropout(0.3),
-            nn.Linear(64, out_channels),
             nn.Tanh()  
         )
 

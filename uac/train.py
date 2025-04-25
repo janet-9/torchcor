@@ -18,13 +18,21 @@ device_id = torch.cuda.current_device()
 gpu_name = torch.cuda.get_device_name(device_id)
 print(gpu_name, flush=True)
 
-dataset = Dataset(n_uac_points=100, root=args.root)
+dataset = Dataset(n_uac_points=50, root=args.root)
 X_train = torch.tensor(dataset.X_train[:, :1, :, :])
+x_min = X_train.min()
+x_max = X_train.max()
+X_train = (X_train - x_min) / (x_max - x_min)
+
 X_test = torch.tensor(dataset.X_test[:, :1, :, :])
+X_test = (X_test - x_min) / (x_max - x_min)
+
 X_extra = torch.tensor(dataset.X_extra[:, :1, :, :])
-y_train = torch.tensor(dataset.y_train)
-y_test = torch.tensor(dataset.y_test)
-y_extra = torch.tensor(dataset.y_extra)
+X_extra = (X_extra - x_min) / (x_max - x_min)
+
+y_train = torch.tensor(dataset.y_train) - 1
+y_test = torch.tensor(dataset.y_test) - 1
+y_extra = torch.tensor(dataset.y_extra) - 1
 
 train_dataset = TensorDataset(X_train, y_train)
 test_dataset = TensorDataset(X_test, y_test)
@@ -34,13 +42,13 @@ train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=32)
 extra_loader = DataLoader(extra_dataset, batch_size=32)
 
-# model = ConductivityCNN().to(device)
-model = FNOWithGlobalHead().to(device)
+model = ConductivityCNN().to(device)
+# model = FNOWithGlobalHead().to(device)
 criterion = nn.MSELoss()
 optimizer = optim.AdamW(model.parameters(), lr=3e-3, weight_decay=1e-4)
 scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=100)
 
-num_epochs = 100
+num_epochs = 10
 for epoch in range(num_epochs):
     model.train()
     train_loss = 0
@@ -115,4 +123,9 @@ for epoch in range(num_epochs):
           | Max Abs {train_max_diff:.2f} - {test_max_diff:.2f} - {extra_max_diff:.2f}",
           flush=True)
 
-torch.save(model.state_dict(), f"{model.__class__.__name__}.pth")
+checkpoint = {
+    'model_state_dict': model.state_dict(),
+    'train_min': x_min,
+    'train_max': x_max,
+}
+torch.save(checkpoint, f"{model.__class__.__name__}.pth")

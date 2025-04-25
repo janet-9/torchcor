@@ -7,6 +7,17 @@ from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import as_completed
 from multiprocessing import Manager
 
+
+def load_data(case_path="/data/Bei/dataset_50/Case_1.npz"):
+    data = np.load(case_path)
+    X = data['X'].astype(np.float32)
+    y = data['y'].astype(np.float32)
+
+    return X, y
+
+        
+
+
 class Dataset(Dataset):
     def __init__(self, n_uac_points=100, root="/data/Bei/"):
         self.n_uac_points = n_uac_points
@@ -21,6 +32,9 @@ class Dataset(Dataset):
         self.y_test = []
         self.X_extra = []
         self.y_extra = []
+
+        self.x_min = None
+        self.x_max = None
 
         if not self.dataset_path.exists():
             self.dataset_path.mkdir(exist_ok=True, parents=True)
@@ -55,7 +69,7 @@ class Dataset(Dataset):
         for i in range(1, 101):
             data = np.load(self.dataset_path / f"Case_{i}.npz")
             X = data['X'].astype(np.float32)
-            y = data['y'].astype(np.float32) -1
+            y = data['y'].astype(np.float32)
             
             if i <= 90:
                 self.X_train.append(X)
@@ -69,21 +83,21 @@ class Dataset(Dataset):
         self.X_test = np.concatenate(self.X_test, axis=0)
         self.y_test = np.concatenate(self.y_test, axis=0)
 
-        x_min = self.X_train.min()
-        x_max = self.X_train.max()
-        self.X_train = (self.X_train - x_min) / (x_max - x_min)
-        self.X_test = (self.X_test - x_min) / (x_max - x_min)
+        # self.x_min = self.X_train.min()
+        # self.x_max = self.X_train.max()
+        # self.X_train = (self.X_train - self.x_min) / (self.x_max - self.x_min)
+        # self.X_test = (self.X_test - self.x_min) / (self.x_max - self.x_min)
 
         for i in range(91, 101):
             data = np.load(self.root / f"dataset_300" / f"Case_{i}.npz")
             X = data['X'].astype(np.float32)
-            y = data['y'].astype(np.float32) -1
+            y = data['y'].astype(np.float32)
             self.X_extra.append(X)
             self.y_extra.append(y)
 
         self.X_extra = np.concatenate(self.X_extra, axis=0)
         self.y_extra = np.concatenate(self.y_extra, axis=0)
-        self.X_extra = (self.X_extra - x_min) / (x_max - x_min)
+        # self.X_extra = (self.X_extra - self.x_min) / (self.x_max - self.x_min)
 
         print("Completed loading data", flush=True)
 
