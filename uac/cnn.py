@@ -21,22 +21,22 @@ class ConductivityCNN(nn.Module):
             nn.Conv2d(64, 128, kernel_size=5, stride=2, padding=2),  # (N, 128, 32, 32)
             nn.BatchNorm2d(128),
             nn.ReLU(),
-
-            nn.AdaptiveAvgPool2d((1, 1))  # (N, 128, 1, 1)
         )
 
-        self.fc_layers = nn.Sequential(
+        self.head = nn.Sequential(
+            nn.AdaptiveAvgPool2d((1, 1))  # (N, 128, 1, 1)
             nn.Flatten(),  # (N, 128)
+
             nn.Linear(128, 64),
             nn.ReLU(),
             nn.Dropout(0.3),
             nn.Linear(64, 2),
-            nn.Sigmoid()  
+            nn.Tanh()  
         )
 
     def forward(self, x):
         x = self.conv_layers(x)
-        x = self.fc_layers(x)
+        x = self.head(x)
         return x
 
 

@@ -37,8 +37,8 @@ extra_loader = DataLoader(extra_dataset, batch_size=32)
 # model = ConductivityCNN().to(device)
 model = FNOWithGlobalHead().to(device)
 criterion = nn.MSELoss()
-optimizer = optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
-scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=50)
+optimizer = optim.AdamW(model.parameters(), lr=3e-3, weight_decay=1e-4)
+scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=100)
 
 num_epochs = 100
 for epoch in range(num_epochs):
@@ -47,7 +47,6 @@ for epoch in range(num_epochs):
     train_max_diff = 0
     train_abs_sum = 0
     total_train_samples = 0
-
     for inputs, targets in train_loader:
         inputs, targets = inputs.to(device), targets.to(device)
 
@@ -58,9 +57,11 @@ for epoch in range(num_epochs):
         loss.backward()
         optimizer.step()
 
+        
         train_loss += loss.item() * inputs.size(0)
-        train_abs = torch.abs(outputs * 2 - targets * 2)
-        train_abs_sum += train_abs.sum().item()  
+        train_abs = torch.abs(outputs - targets)
+
+        train_abs_sum += train_abs.sum().item() / 2
         total_train_samples += inputs.size(0)  
 
         max_train = train_abs.max().item()
@@ -81,9 +82,9 @@ for epoch in range(num_epochs):
             loss = criterion(outputs, targets)
 
             test_loss += loss.item() * inputs.size(0)
-            test_abs = torch.abs(outputs * 2 - targets * 2)
+            test_abs = torch.abs(outputs - targets)
             
-            test_abs_sum += test_abs.sum().item()  
+            test_abs_sum += test_abs.sum().item() / 2
             total_test_samples += inputs.size(0) 
             test_max = test_abs.max().item()
             test_max_diff = test_max if test_max > test_max_diff else test_max_diff
@@ -100,9 +101,9 @@ for epoch in range(num_epochs):
             loss = criterion(outputs, targets)
 
             extra_loss += loss.item() * inputs.size(0)
-            extra_abs = torch.abs(outputs * 2 - targets * 2)
+            extra_abs = torch.abs(outputs - targets)
             
-            extra_abs_sum += extra_abs.sum().item()  
+            extra_abs_sum += extra_abs.sum().item() / 2
             total_extra_samples += inputs.size(0) 
             extra_max = extra_abs.max().item()
             extra_max_diff = extra_max if extra_max > extra_max_diff else extra_max_diff
@@ -113,3 +114,5 @@ for epoch in range(num_epochs):
           | Mean Abs: {train_abs_sum/total_train_samples:.2f} - {test_abs_sum/total_test_samples:.2f} - {extra_abs_sum/total_extra_samples:.2f}\
           | Max Abs {train_max_diff:.2f} - {test_max_diff:.2f} - {extra_max_diff:.2f}",
           flush=True)
+
+torch.save(model.state_dict(), f"{model.__class__.__name__}.pth")

@@ -55,7 +55,7 @@ class Dataset(Dataset):
         for i in range(1, 101):
             data = np.load(self.dataset_path / f"Case_{i}.npz")
             X = data['X'].astype(np.float32)
-            y = data['y'].astype(np.float32) / 2
+            y = data['y'].astype(np.float32) -1
             
             if i <= 90:
                 self.X_train.append(X)
@@ -77,7 +77,7 @@ class Dataset(Dataset):
         for i in range(91, 101):
             data = np.load(self.root / f"dataset_300" / f"Case_{i}.npz")
             X = data['X'].astype(np.float32)
-            y = data['y'].astype(np.float32) / 2
+            y = data['y'].astype(np.float32) -1
             self.X_extra.append(X)
             self.y_extra.append(y)
 
