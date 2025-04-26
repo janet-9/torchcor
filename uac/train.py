@@ -6,14 +6,17 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, TensorDataset
 from cnn import ConductivityCNN
 from fno import FNOWithGlobalHead
+from don import DeepONet
 import argparse
+from tools import set_random_seed
 
 parser = argparse.ArgumentParser(description="root",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("-root", type=str, default="/data/Bei")
 args = parser.parse_args()
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+set_random_seed(42)
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 device_id = torch.cuda.current_device()
 gpu_name = torch.cuda.get_device_name(device_id)
 print(gpu_name, flush=True)
@@ -42,14 +45,16 @@ train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=32)
 extra_loader = DataLoader(extra_dataset, batch_size=32)
 
-model = ConductivityCNN().to(device)
-# model = FNOWithGlobalHead().to(device)
+# model = ConductivityCNN().to(device)
+# model = DeepONet().to(device)
+model = FNOWithGlobalHead().to(device)
+
 criterion = nn.MSELoss()
 optimizer = optim.AdamW(model.parameters(), lr=3e-3, weight_decay=1e-4)
-scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=50)
+scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=100)
 
 best_model_error = 99
-num_epochs = 50
+num_epochs = 100
 for epoch in range(num_epochs):
     model.train()
     train_loss = 0
@@ -122,9 +127,21 @@ for epoch in range(num_epochs):
     
     test_error = test_abs_sum/len(test_loader.dataset)
     if best_model_error > test_error:
-        torch.save(model, f"{model.name}.pth")
+        torch.save(model, f"./models/{model.name}.pth")
         best_model_error = test_error
 
 print(best_model_error)
 
-# FNO: Epoch 50/50           | Loss: 0.10 - 0.06 - 0.06          | Mean Abs: 0.15 - 0.19 - 0.19          | Max Abs 1.00 - 0.91 - 0.93
+'''
+CNN:
+Epoch 100/100           | Loss: 0.01 - 0.05 - 0.71          | Mean Abs: 0.06 - 0.17 - 0.70          | Max Abs 0.78 - 0.81 - 1.89
+0.1469404897093773
+
+DON:
+Epoch 100/100           | Loss: 0.01 - 0.03 - 0.51          | Mean Abs: 0.09 - 0.12 - 0.60          | Max Abs 0.72 - 0.69 - 1.73
+0.11284642389416695
+
+FNO: 
+Epoch 50/50           | Loss: 0.10 - 0.06 - 0.06          | Mean Abs: 0.15 - 0.19 - 0.19          | Max Abs 1.00 - 0.91 - 0.93
+
+'''

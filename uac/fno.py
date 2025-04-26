@@ -3,8 +3,16 @@ import torch.nn as nn
 import torch.nn.functional as F
 from neuralop.models import FNO
 
+def create_grid_coords(H, W, device='cpu'):
+    x = torch.linspace(0, 1, W, device=device)
+    y = torch.linspace(0, 1, H, device=device)
+    grid_x, grid_y = torch.meshgrid(y, x, indexing='ij') 
+    coords = torch.stack([grid_x, grid_y], dim=0)        # (2, H, W)
+
+    return coords
+
 class FNOWithGlobalHead(nn.Module):
-    def __init__(self, n_modes=(32, 32), in_channels=1, out_channels=2, hidden_channels=64):
+    def __init__(self, n_modes=(32, 32), in_channels=3, out_channels=2, hidden_channels=64):
         super().__init__()
         self.name = "fno"
 
@@ -37,13 +45,16 @@ class FNOWithGlobalHead(nn.Module):
         )
 
     def forward(self, x):
-        # x = self.add_coords(x)
+        coords = create_grid_coords(H=x.size(2), W=x.size(3), device=x.device)
+        coords = coords.unsqueeze(0).expand(x.size(0), -1, -1, -1)
+        x = torch.cat([x, coords], dim=1)
+
         x = self.fno(x)            # Output: (N, 64, 500, 500) 
         out = self.head(x)         # Output: (N, 2)
         return out
 
 if __name__ == "__main__":
     model = FNOWithGlobalHead()
-    input_tensor = torch.randn(128, 1, 500, 500)  # (batch_size, in_channels, height, width)
+    input_tensor = torch.randn(32, 1, 50, 50)  # (batch_size, in_channels, height, width)
     output = model(input_tensor)
     print(output.shape) 
