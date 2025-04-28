@@ -138,6 +138,6 @@ for pl in pacing_location:
                             linear_guess=True,
                             snapshot_interval=simulation_time, 
                             verbose=True,
-                            result_path=data_dir / output_folder_name / case_name / f"{il/10}_{it/10}_{pl}")
+                            result_path=data_dir / output_folder_name / case_name / f"{il/10}_{it/10}{pl}")
 
             
