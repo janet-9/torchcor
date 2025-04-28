@@ -6,7 +6,7 @@ from pytorch_wavelets import DWT, IDWT
 
 """ Def: 2d Wavelet convolutional layer (discrete) """
 class WaveConv2d(nn.Module):
-    def __init__(self, in_channels, out_channels, level, size, wavelet, mode='symmetric'):
+    def __init__(self, in_channels, out_channels, level, size, wavelet="db6", mode='periodization'):
         super(WaveConv2d, self).__init__()
 
         self.in_channels = in_channels
@@ -76,8 +76,8 @@ if __name__ == "__main__":
                                out_channels=10, 
                                level=2, 
                                size=[100, 100], 
-                               wavelet="db1", 
-                               mode="symmetric")
+                               wavelet="db6", 
+                               mode="periodization")  # symmetric
     
 
     input_tensor = torch.randn(32, 10, 50, 50) 

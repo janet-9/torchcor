@@ -5,7 +5,7 @@ import numpy as np
 from wavelet_convolution import WaveConv2d
 
 class WNO2d(nn.Module):
-    def __init__(self, width=10, level=2, layers=2, size=[100, 100], wavelet="db1", in_channel=3, grid_range=[0, 1]):
+    def __init__(self, width=64, level=2, layers=4, size=[100, 100], wavelet="db6", in_channel=3, grid_range=[0, 1]):
         super(WNO2d, self).__init__()
         self.name = "wno"
 
@@ -63,7 +63,7 @@ class WNO2d(nn.Module):
 
 
 if __name__ == "__main__":
-    wno = WNO2d(width=20, level=2, layers=2, size=[100, 100], wavelet="db1", in_channel=3, grid_range=[0, 1])
+    wno = WNO2d(width=20, level=2, layers=2, size=[100, 100], wavelet="sym3", in_channel=3, grid_range=[0, 1])
     # input_tensor = torch.randn(32, 1, 100, 100) 
     # print(wno(input_tensor).shape)
 

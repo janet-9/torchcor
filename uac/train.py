@@ -48,10 +48,10 @@ train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=32)
 extra_loader = DataLoader(extra_dataset, batch_size=32)
 
-model = ConductivityCNN().to(device)
+# model = ConductivityCNN().to(device)
 # model = DeepONet().to(device)
 # model = FNO2d().to(device)
-# model = WNO2d().to(device)
+model = WNO2d().to(device)
 
 criterion = nn.MSELoss()
 optimizer = optim.AdamW(model.parameters(), lr=3e-3, weight_decay=1e-4)
