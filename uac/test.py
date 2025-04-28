@@ -1,79 +1,68 @@
-import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from pytorch_wavelets import DWT, IDWT
+import torch.fft
 
-class FlexibleWaveConv2d(nn.Module):
-    def __init__(self, in_channels, out_channels, level, wavelet="db1", mode="symmetric"):
-        super(FlexibleWaveConv2d, self).__init__()
-
+class FourierLayer(nn.Module):
+    def __init__(self, in_channels, out_channels, modes=16):
+        super(FourierLayer, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self.level = level
-        self.wavelet = wavelet
-        self.mode = mode
+        self.modes = modes  # number of low-frequency modes to keep
 
-        # We define smaller weight parameters (say 16x16 modes)
-        self.base_modes = (16, 16)   # you can adjust this
-        self.scale = (1 / (in_channels * out_channels))
-
-        self.weights1 = nn.Parameter(self.scale * torch.rand(in_channels, out_channels, *self.base_modes))
-        self.weights2 = nn.Parameter(self.scale * torch.rand(in_channels, out_channels, *self.base_modes))
-        self.weights3 = nn.Parameter(self.scale * torch.rand(in_channels, out_channels, *self.base_modes))
-        self.weights4 = nn.Parameter(self.scale * torch.rand(in_channels, out_channels, *self.base_modes))
-
-    def mul2d(self, input, weights):
-        return torch.einsum("bixy,ioxy->boxy", input, weights)
-
-    def interpolate_weights(self, weights, target_shape):
-        # Bilinear interpolation to match target mode size
-        weights = F.interpolate(weights, size=target_shape, mode="bilinear", align_corners=False)
-        return weights
+        # This is the linear transformation applied in Fourier space
+        self.scale = 1 / (in_channels * out_channels)
+        self.weights_real = nn.Parameter(self.scale * torch.randn(in_channels, out_channels, modes, modes))
+        self.weights_imag = nn.Parameter(self.scale * torch.randn(in_channels, out_channels, modes, modes))
 
     def forward(self, x):
-        batchsize, channels, height, width = x.shape
+        '''
+        x: (batch, height, width, in_channels)
+        '''
+        batchsize, h, w, c = x.shape
+        x = x.permute(0, 3, 1, 2)  # (batch, in_channels, height, width)
 
-        # Compute DWT
-        dwt = DWT(J=self.level, mode=self.mode, wave=self.wavelet).to(x.device)
-        x_ft, x_coeff = dwt(x)
+        # Fourier Transform
+        x_ft = torch.fft.rfft2(x, norm='ortho')
 
-        # Dynamically resize weights
-        target_shape = (x_ft.shape[-2], x_ft.shape[-1])
-        weights1 = self.interpolate_weights(self.weights1, target_shape)
-        weights2 = self.interpolate_weights(self.weights2, target_shape)
-        weights3 = self.interpolate_weights(self.weights3, target_shape)
-        weights4 = self.interpolate_weights(self.weights4, target_shape)
+        # Initialize output in Fourier domain
+        out_ft = torch.zeros(batchsize, self.out_channels, h, w//2+1, dtype=torch.cfloat, device=x.device)
 
-        # Allocate output coefficients
-        out_ft = torch.zeros_like(x_ft, device=x.device)
-        out_coeff = [torch.zeros_like(coeffs, device=x.device) for coeffs in x_coeff]
-
-        # Apply wavelet convolution
-        out_ft = self.mul2d(x_ft, weights1)
-
-        # Detailed coefficients
-        out_coeff[-1][:,:,0,:,:] = self.mul2d(x_coeff[-1][:,:,0,:,:].clone(), weights2)
-        out_coeff[-1][:,:,1,:,:] = self.mul2d(x_coeff[-1][:,:,1,:,:].clone(), weights3)
-        out_coeff[-1][:,:,2,:,:] = self.mul2d(x_coeff[-1][:,:,2,:,:].clone(), weights4)
-
-        # Inverse DWT
-        idwt = IDWT(mode=self.mode, wave=self.wavelet).to(x.device)
-        x = idwt((out_ft, out_coeff))
-
+        # Apply learned weights on low-frequency modes
+        for i in range(self.in_channels):
+            for j in range(self.out_channels):
+                out_ft[:, j, :self.modes, :self.modes] += (
+                    x_ft[:, i, :self.modes, :self.modes] * 
+                    (self.weights_real[i, j] + 1j * self.weights_imag[i, j])
+                )
+        
+        # Inverse Fourier Transform
+        x = torch.fft.irfft2(out_ft, s=(h, w), norm='ortho')
+        raise Exception(x.shape)
+        x = x.permute(0, 2, 3, 1)  # (batch, height, width, out_channels)
         return x
 
-if __name__ == "__main__":
-    wavelet_layer = FlexibleWaveConv2d(in_channels=1, out_channels=1, level=2)
+class SimpleFNO(nn.Module):
+    def __init__(self, modes=16):
+        super(SimpleFNO, self).__init__()
+        self.fourier = FourierLayer(in_channels=1, out_channels=16, modes=modes)
+        self.fc = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(50 * 50 * 16, 128),
+            nn.ReLU(),
+            nn.Linear(128, 2)
+        )
 
-    input_tensor = torch.randn(32, 1, 50, 50)
-    output = wavelet_layer(input_tensor)
-    print(output.shape)  # (32, 1, 50, 50)
+    def forward(self, x):
+        '''
+        x: (batch, 50, 50, 1)
+        '''
+        x = self.fourier(x)
+        x = self.fc(x)
+        return x
+    
 
-    input_tensor = torch.randn(32, 1, 100, 100)
-    output = wavelet_layer(input_tensor)
-    print(output.shape)  # (32, 1, 100, 100)
+model = SimpleFNO(modes=16)
+x = torch.randn(8, 50, 50, 1)  # batch of 8
+out = model(x)
+print(out.shape)  # should be (8, 2)
 
-    input_tensor = torch.randn(32, 1, 128, 128)
-    output = wavelet_layer(input_tensor)
-    print(output.shape)  # (32, 1, 128, 128)

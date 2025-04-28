@@ -12,7 +12,7 @@ def create_grid_coords(H, W, device='cpu'):
     return coords
 
 class FNOWithGlobalHead(nn.Module):
-    def __init__(self, n_modes=(32, 32), in_channels=3, out_channels=2, hidden_channels=64):
+    def __init__(self, n_modes=(16, 16), in_channels=3, out_channels=2, hidden_channels=64):
         super().__init__()
         self.name = "fno"
 
@@ -22,12 +22,13 @@ class FNOWithGlobalHead(nn.Module):
                 hidden_channels=hidden_channels,
                 in_channels=in_channels,   
                 out_channels=hidden_channels,
+                positional_embedding="grid",
                 channel_mlp_dropout=0.1),
             nn.GroupNorm(4, hidden_channels),
             nn.ReLU(),
 
             # FNO(n_modes=n_modes,
-            #     n_layers=2,
+            #     n_layers=4,
             #     hidden_channels=hidden_channels,
             #     in_channels=hidden_channels,  
             #     out_channels=hidden_channels),
