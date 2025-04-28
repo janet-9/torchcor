@@ -13,10 +13,10 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 data = []
 groups = []
 
-for m in ["fno", "cnn_no", "don"]:
+for m in ["fno", "wno", "cnn_no", "don"]:
     model = torch.load(f"./models/{m}.pth", weights_only=False, map_location=device)
     model.eval()
-    for n_uac_points in [50, 100, 200, 500]:
+    for n_uac_points in [50, 100, 200]:
 
         avg_gil = []
         avg_git = []
@@ -51,13 +51,12 @@ for m in ["fno", "cnn_no", "don"]:
 
 df = pd.DataFrame({'value': data, 'group': groups})
 
-fig, axes = plt.subplots(2, 3, figsize=(8.8, 6))
+fig, axes = plt.subplots(2, 4, figsize=(9, 6))
 
-group_label = sorted(list(set([t[:7] for t in df['group'].unique()])), reverse=True)
-
+group_label =  ['git_fno', 'git_wno', 'git_don', 'git_cnn', 'gil_fno', 'gil_wno', 'gil_don', 'gil_cnn'] # sorted(list(set([t[:7] for t in df['group'].unique()])), reverse=True)
 for idx, label in enumerate(group_label):
-    i = int(idx / 3)
-    j = idx % 3
+    i = int(idx / 4)
+    j = idx % 4
     ax = axes[i][j]
     
     targets = [t for t in df['group'].unique() if t.startswith(label)]
@@ -88,6 +87,8 @@ for idx, label in enumerate(group_label):
     
     ax.set_ylabel("")
     ax.set_xlabel('absolute error')
+    
+    ax.set_xticks([0, 0.5, 1, 1.5, 2])
     ax.set_yticks([0, y1, math.ceil(ymax)])
     ax.legend(title='', fontsize=8)
     ax.grid(True)
@@ -95,8 +96,8 @@ for idx, label in enumerate(group_label):
 axes[0][0].set_ylabel('Count')
 axes[1][0].set_ylabel('Count')
 
-axes[0][0].text(-0.35, 0.5, 'gil', va='center', ha='left', fontsize=14, transform=axes[0][0].transAxes)
-axes[1][0].text(-0.35, 0.5, 'git', va='center', ha='left', fontsize=14, transform=axes[1][0].transAxes)
+axes[0][0].text(-0.5, 0.5, 'git', va='center', ha='left', fontsize=14, transform=axes[0][0].transAxes)
+axes[1][0].text(-0.5, 0.5, 'gil', va='center', ha='left', fontsize=14, transform=axes[1][0].transAxes)
 
 # axes[-1].set_xlabel('Value')  # Only set xlabel on bottom plot
 plt.tight_layout()

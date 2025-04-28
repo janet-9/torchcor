@@ -22,6 +22,7 @@ class WaveConv2d(nn.Module):
         self.modes1 = mode_data.shape[-2]
         self.modes2 = mode_data.shape[-1]
         
+        
         # Parameter initilization
         self.scale = (1 / (in_channels * out_channels))
         self.weights1 = nn.Parameter(self.scale * torch.rand(in_channels, out_channels, self.modes1, self.modes2))
@@ -71,15 +72,21 @@ class WaveConv2d(nn.Module):
         return x
 
 if __name__ == "__main__":
-    wavelet_layer = WaveConv2d(in_channels=1, 
-                               out_channels=1, 
+    wavelet_layer = WaveConv2d(in_channels=10, 
+                               out_channels=10, 
                                level=2, 
                                size=[100, 100], 
                                wavelet="db1", 
                                mode="symmetric")
     
 
-    input_tensor = torch.randn(32, 1, 100, 100) 
+    input_tensor = torch.randn(32, 10, 50, 50) 
+    print(wavelet_layer(input_tensor).shape)
+
+    input_tensor = torch.randn(32, 10, 200, 200) 
+    print(wavelet_layer(input_tensor).shape)
+
+    input_tensor = torch.randn(32, 10, 400, 400) 
     print(wavelet_layer(input_tensor).shape)
 
     # wavelet_layer.reset_size(size=[50, 50])

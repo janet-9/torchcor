@@ -5,7 +5,7 @@ import numpy as np
 from wavelet_convolution import WaveConv2d
 
 class WNO2d(nn.Module):
-    def __init__(self, width=100, level=2, layers=2, size=[100, 100], wavelet="db6", in_channel=3, grid_range=[0, 1]):
+    def __init__(self, width=10, level=2, layers=2, size=[100, 100], wavelet="db1", in_channel=3, grid_range=[0, 1]):
         super(WNO2d, self).__init__()
         self.name = "wno"
 
@@ -40,7 +40,7 @@ class WNO2d(nn.Module):
         x = torch.cat((x, grid), dim=-1)    
         x = self.fc0(x)                      # Shape: Batch * x * y * Channel
         x = x.permute(0, 3, 1, 2)            # Shape: Batch * Channel * x * y
-        
+
         for index, (convl, wl) in enumerate(zip(self.conv, self.w)):
             x = convl(x) + wl(x) 
             if index != self.layers - 1:     # Final layer has no activation    
@@ -63,8 +63,15 @@ class WNO2d(nn.Module):
 
 
 if __name__ == "__main__":
-    wno = WNO2d(width=10, level=2, layers=2, size=[10, 10], wavelet="db6", in_channel=3, grid_range=[0, 1])
-    input_tensor = torch.randn(32, 1, 10, 10) 
-    
+    wno = WNO2d(width=20, level=2, layers=2, size=[100, 100], wavelet="db1", in_channel=3, grid_range=[0, 1])
+    # input_tensor = torch.randn(32, 1, 100, 100) 
+    # print(wno(input_tensor).shape)
+
+    input_tensor = torch.randn(32, 1, 50, 50) 
     print(wno(input_tensor).shape)
-    print(wno.get_grid((1, 3, 3), device="cpu"))
+
+    input_tensor = torch.randn(32, 1, 200, 200) 
+    print(wno(input_tensor).shape)
+
+    input_tensor = torch.randn(32, 1, 400, 400) 
+    print(wno(input_tensor).shape)

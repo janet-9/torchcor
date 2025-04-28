@@ -5,11 +5,13 @@ from dataset import Dataset
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, TensorDataset
 from cnn import ConductivityCNN
-from fno import FNOWithGlobalHead
+from fno import FNO2d
 from don import DeepONet
 from wno import WNO2d
 import argparse
 from tools import set_random_seed
+from pathlib import Path
+
 
 parser = argparse.ArgumentParser(description="root",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -46,9 +48,9 @@ train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=32)
 extra_loader = DataLoader(extra_dataset, batch_size=32)
 
-# model = ConductivityCNN().to(device)
+model = ConductivityCNN().to(device)
 # model = DeepONet().to(device)
-model = FNOWithGlobalHead().to(device)
+# model = FNO2d().to(device)
 # model = WNO2d().to(device)
 
 criterion = nn.MSELoss()
@@ -108,19 +110,19 @@ for epoch in range(num_epochs):
     extra_max_diff = 0
     extra_abs_sum = 0
 
-    # with torch.no_grad():
-    #     for inputs, targets in extra_loader:
-    #         inputs, targets = inputs.to(device), targets.to(device)
-    #         outputs = model(inputs)
-    #         loss = criterion(outputs, targets)
+    with torch.no_grad():
+        for inputs, targets in extra_loader:
+            inputs, targets = inputs.to(device), targets.to(device)
+            outputs = model(inputs)
+            loss = criterion(outputs, targets)
 
-    #         extra_loss += loss.item() * inputs.size(0)
-    #         extra_abs = torch.abs(outputs - targets)
+            extra_loss += loss.item() * inputs.size(0)
+            extra_abs = torch.abs(outputs - targets)
             
-    #         extra_abs_sum += extra_abs.sum().item() / 2
-    #         extra_max = extra_abs.max().item()
-    #         extra_max_diff = extra_max if extra_max > extra_max_diff else extra_max_diff
-    # extra_loss /= len(extra_loader.dataset)
+            extra_abs_sum += extra_abs.sum().item() / 2
+            extra_max = extra_abs.max().item()
+            extra_max_diff = extra_max if extra_max > extra_max_diff else extra_max_diff
+    extra_loss /= len(extra_loader.dataset)
 
     print(f"Epoch {epoch+1}/{num_epochs} \
           | Loss: {train_loss:.2f} - {test_loss:.2f} - {extra_loss:.2f}\
@@ -128,9 +130,11 @@ for epoch in range(num_epochs):
           | Max Abs {train_max_diff:.2f} - {test_max_diff:.2f} - {extra_max_diff:.2f}",
           flush=True)
     
+    model_path = Path("./models")
+    model_path.mkdir(exist_ok=True, parents=True)
     test_error = test_abs_sum/len(test_loader.dataset)
     if best_model_error > test_error:
-        torch.save(model, f"./models/{model.name}.pth")
+        torch.save(model, model_path / f"{model.name}.pth")
         best_model_error = test_error
 
 print(best_model_error)
