@@ -10,6 +10,9 @@ __pycache__/
 *.lon
 *.vtx
 
+models/
+*.pth
+
 # C extensions
 *.so
 
