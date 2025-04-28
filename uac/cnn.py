@@ -13,10 +13,10 @@ def create_grid_coords(H, W, device='cpu'):
 class ConductivityCNN(nn.Module):
     def __init__(self):
         super(ConductivityCNN, self).__init__()
-        self.name = "cnn"
+        self.name = "cnn_no"
         
         self.conv = nn.Sequential(
-            nn.Conv2d(3, 16, kernel_size=5, stride=2, padding=2),  # (N, 16, 250, 250)
+            nn.Conv2d(1, 16, kernel_size=5, stride=2, padding=2),  # (N, 16, 250, 250)
             nn.BatchNorm2d(16),
             nn.ReLU(),
 
@@ -46,9 +46,9 @@ class ConductivityCNN(nn.Module):
         )
 
     def forward(self, x):
-        coords = create_grid_coords(H=x.size(2), W=x.size(3), device=x.device)
-        coords = coords.unsqueeze(0).expand(x.size(0), -1, -1, -1)
-        x = torch.cat([x, coords], dim=1)
+        # coords = create_grid_coords(H=x.size(2), W=x.size(3), device=x.device)
+        # coords = coords.unsqueeze(0).expand(x.size(0), -1, -1, -1)
+        # x = torch.cat([x, coords], dim=1)
         
         x = self.conv(x)
         x = self.head(x)

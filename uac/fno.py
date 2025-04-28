@@ -57,4 +57,5 @@ if __name__ == "__main__":
     model = FNOWithGlobalHead()
     input_tensor = torch.randn(32, 1, 50, 50)  # (batch_size, in_channels, height, width)
     output = model(input_tensor)
-    print(output.shape) 
+    # print(output.shape) 
+    print(create_grid_coords(3, 3, "cpu").permute(1, 2, 0))

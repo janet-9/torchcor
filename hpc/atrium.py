@@ -62,13 +62,13 @@ class Domain(Monodomain):
             torch.save(activation_time.cpu(), self.result_path / "ATs.pt")
             torch.save(repolarization_time.cpu(), self.result_path / "RTs.pt")
 
-            indices_filepath = self.result_path.parent / "edge_index.pt"
-            if not indices_filepath.exists():
-                torch.save(self.A.to_sparse_coo().indices().cpu(), indices_filepath)
+            # indices_filepath = self.result_path.parent / "edge_index.pt"
+            # if not indices_filepath.exists():
+            #     torch.save(self.A.to_sparse_coo().indices().cpu(), indices_filepath)
 
-            uac_filepath = self.result_path.parent / "UAC.npy"
-            if not uac_filepath.exists():
-                shutil.copy(self.mesh_path / "UAC.npy", uac_filepath)
+            # uac_filepath = self.result_path.parent / "UAC.npy"
+            # if not uac_filepath.exists():
+            #     shutil.copy(self.mesh_path / "UAC.npy", uac_filepath)
 
         if snapshot_interval < self.T:
             torch.save(torch.stack(solution_list, dim=0).cpu(), self.result_path / "Vm.pt")
@@ -109,32 +109,35 @@ ionic_model.tau_out = 1.5
 ionic_model.tau_open = 105.0
 ionic_model.tau_close = 185.0
 
-# data_dir = Path("/data/scratch/acw554")
-data_dir = Path("/data/Bei")
-output_folder_name = "atrium_conductivity_600"
-for il in range(1, 21):
-    for it in range(1, 21):
-        case_name = f"Case_{args.case_id}"
-        print(case_name, il/10, it/10, flush=True)
-        mesh_dir = data_dir / "meshes_refined" / case_name
-        vtk_filepath = mesh_dir / f"{case_name}.vtx"
-                
-        simulator = Domain(ionic_model, T=simulation_time, dt=dt, dtype=dtype)
-        simulator.load_mesh(path=mesh_dir, unit_conversion=1000)
-        simulator.add_condutivity(region_ids=[1, 2, 3, 4, 5, 6], il=il/10, it=it/10)
+data_dir = Path("/data/scratch/acw554")
+# data_dir = Path("/data/Bei")
+output_folder_name = "atrium_conductivity_2_2_7"
 
-        simulator.add_stimulus(vtk_filepath, 
-                               start=0.0, 
-                               duration=2.0, 
-                               intensity=50)
+pacing_location = ["_LAA", "_LIPV", "_LSPV", "_RIPV", "_roof", "_RSPV", "_"]
+for pl in pacing_location:
+    for il in range(1, 21):
+        for it in range(1, 21):
+            case_name = f"Case_{args.case_id}"
+            print(case_name, il/10, it/10, flush=True)
+            mesh_dir = data_dir / "meshes_refined" / case_name
+            vtk_filepath = mesh_dir / f"{case_name}{pl}.vtx"
+            
+            simulator = Domain(ionic_model, T=simulation_time, dt=dt, dtype=dtype)
+            simulator.load_mesh(path=mesh_dir, unit_conversion=1000)
+            simulator.add_condutivity(region_ids=[1, 2, 3, 4, 5, 6], il=il/10, it=it/10)
 
-        simulator.solve(a_tol=1e-5, 
-                        r_tol=1e-5, 
-                        max_iter=100, 
-                        calculate_AT_RT=True,
-                        linear_guess=True,
-                        snapshot_interval=simulation_time, 
-                        verbose=True,
-                        result_path=data_dir / output_folder_name / case_name / f"{il/10}_{it/10}")
+            simulator.add_stimulus(vtk_filepath, 
+                                   start=0.0, 
+                                   duration=2.0, 
+                                   intensity=50)
 
-        
+            simulator.solve(a_tol=1e-5, 
+                            r_tol=1e-5, 
+                            max_iter=100, 
+                            calculate_AT_RT=True,
+                            linear_guess=True,
+                            snapshot_interval=simulation_time, 
+                            verbose=True,
+                            result_path=data_dir / output_folder_name / case_name / f"{il/10}_{it/10}_{pl}")
+
+            
