@@ -19,7 +19,7 @@ parser.add_argument("-root", type=str, default="/data/Bei")
 args = parser.parse_args()
 
 set_random_seed(42)
-device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 device_id = torch.cuda.current_device()
 gpu_name = torch.cuda.get_device_name(device_id)
 print(gpu_name, flush=True)
@@ -56,11 +56,15 @@ loader_400 = DataLoader(dataset_400, batch_size=8)
 
 # model = CNN2d().to(device)
 # model = DeepONet2d().to(device)
-# model = WNO2d().to(device)
 
-for modes1, modes2 in [(8, 8), (16, 16), (26, 26)]:
+for wavelet in ["haar", "db6", "coif3"]:
     for width in [32, 64, 128]:
-        model = FNO2d(modes1=modes1, modes2=modes2, width=width, in_channels=1, out_dim=2, depth=4).to(device)
+        model = WNO2d(width=64, level=3, layers=2, size=[100, 100], wavelet=wavelet, in_channel=3, grid_range=[0, 1]).to(device)
+
+
+# for modes1, modes2 in [(8, 8), (16, 16), (26, 26)]:
+#     for width in [32, 64, 128]:
+#         model = FNO2d(modes1=modes1, modes2=modes2, width=width, in_channels=1, out_dim=2, depth=4).to(device)
 
         criterion = nn.MSELoss()
         optimizer = optim.AdamW(model.parameters(), lr=3e-3, weight_decay=1e-4)
@@ -128,8 +132,16 @@ for modes1, modes2 in [(8, 8), (16, 16), (26, 26)]:
         total_params = sum(p.numel() for p in model.parameters())
         print(f"Total parameters: {total_params}")
 
-        print((modes1, modes2, width),
+        # WNO:
+        print((wavelet, width, width),
               round(np.array(error_list_50).mean(), 3), round(np.array(error_list_50).std(), 3),
               round(np.array(error_list_100).mean(), 3), round(np.array(error_list_100).std(), 3),
               round(np.array(error_list_400).mean(), 3), round(np.array(error_list_400).std(), 3),
               total_params)
+
+        # FNO
+        # print((modes1, modes2, width),
+        #       round(np.array(error_list_50).mean(), 3), round(np.array(error_list_50).std(), 3),
+        #       round(np.array(error_list_100).mean(), 3), round(np.array(error_list_100).std(), 3),
+        #       round(np.array(error_list_400).mean(), 3), round(np.array(error_list_400).std(), 3),
+        #       total_params)

@@ -14,7 +14,7 @@ data = []
 groups = []
 
 for m in ["fno", "wno", "cnn_no", "don"]:
-    model = torch.load(f"./models/{m}.pth", weights_only=False, map_location=device)
+    model = torch.load(f"../trained/{m}.pth", weights_only=False, map_location=device)
     model.eval()
     for n_uac_points in [50, 100, 200, 400]:
 
