@@ -19,7 +19,7 @@ parser.add_argument("-root", type=str, default="/data/Bei")
 args = parser.parse_args()
 
 set_random_seed(42)
-device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 device_id = torch.cuda.current_device()
 gpu_name = torch.cuda.get_device_name(device_id)
 print(gpu_name, flush=True)
@@ -54,6 +54,8 @@ test_loader = DataLoader(test_dataset, batch_size=32)
 loader_50 = DataLoader(dataset_50, batch_size=32)
 loader_400 = DataLoader(dataset_400, batch_size=8)
 
+error_100 = 99
+
 # model = CNN2d().to(device)
 # model = DeepONet2d().to(device)
 
@@ -70,7 +72,6 @@ for wavelet in ["haar", "db6", "coif3"]:
         optimizer = optim.AdamW(model.parameters(), lr=3e-3, weight_decay=1e-4)
         scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=100)
 
-        error_100 = 99
         error_list_100 = []
         error_list_50 = []
         error_list_400 = []
