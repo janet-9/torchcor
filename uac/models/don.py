@@ -63,7 +63,7 @@ class TrunkNet(nn.Module):
         out = coords.unsqueeze(0).expand(x.size(0), -1)  # (N, latent_dim)
         return out
 
-class DeepONet(nn.Module):
+class DeepONet2d(nn.Module):
     def __init__(self, latent_dim=64, output_dim=2):
         super().__init__()
         self.name = "don"

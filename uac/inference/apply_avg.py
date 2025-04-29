@@ -8,7 +8,7 @@ import pandas as pd
 import seaborn as sns
 import math
 
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
 
 data = []
 groups = []

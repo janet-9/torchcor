@@ -1,11 +1,11 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
-from wavelet_convolution import WaveConv2d
+from models.wavelet_convolution import WaveConv2d
+
 
 class WNO2d(nn.Module):
-    def __init__(self, width=64, level=2, layers=4, size=[100, 100], wavelet="db6", in_channel=3, grid_range=[0, 1]):
+    def __init__(self, width=64, level=3, layers=2, size=[100, 100], wavelet="haar", in_channel=3, grid_range=[0, 1]):
         super(WNO2d, self).__init__()
         self.name = "wno"
 
@@ -26,25 +26,27 @@ class WNO2d(nn.Module):
             self.w.append(nn.Conv2d(self.width, self.width, 1))
 
         self.head = nn.Sequential(
-            nn.AdaptiveAvgPool2d((1, 1)),  # reduce to (N, 128, 1, 1)
-            nn.Flatten(),  # (N, 128)
-            
-            nn.Linear(self.width, 2),
+            nn.AdaptiveAvgPool2d(output_size=(1, 1)), # (B, self.width, 1, 1)
+            nn.Flatten(),                             # (B, self.width)
+
+            nn.Linear(self.width, 64),
+            nn.ReLU(),
             nn.Dropout(0.3),
+            nn.Linear(64, 2),
             nn.Tanh()  
         )
 
     def forward(self, x):
-        x = x.permute(0, 2, 3, 1)
-        grid = self.get_grid(x.shape, x.device)  # Shape: Batch * Channel * x * y
+        x = x.permute(0, 2, 3, 1)                # (B, C, H, W) -> (B, H, W, C)
+        grid = self.get_grid(x.shape, x.device)  # (B, H, W, 2)
         x = torch.cat((x, grid), dim=-1)    
-        x = self.fc0(x)                      # Shape: Batch * x * y * Channel
-        x = x.permute(0, 3, 1, 2)            # Shape: Batch * Channel * x * y
+
+        x = self.fc0(x)                      # (B, H, W, C)
+        x = x.permute(0, 3, 1, 2)            # (B, C, H, W)
 
         for index, (convl, wl) in enumerate(zip(self.conv, self.w)):
-            x = convl(x) + wl(x) 
-            if index != self.layers - 1:     # Final layer has no activation    
-                x = F.mish(x)                # Shape: Batch * Channel * x * y
+            x = convl(x) + wl(x)  
+            x = F.mish(x)                    # (B, C, H, W)
         
         x = self.head(x)
         return x
@@ -64,8 +66,8 @@ class WNO2d(nn.Module):
 
 if __name__ == "__main__":
     wno = WNO2d(width=20, level=2, layers=2, size=[100, 100], wavelet="sym3", in_channel=3, grid_range=[0, 1])
-    # input_tensor = torch.randn(32, 1, 100, 100) 
-    # print(wno(input_tensor).shape)
+    input_tensor = torch.randn(32, 1, 100, 100) 
+    print(wno(input_tensor).shape)
 
     input_tensor = torch.randn(32, 1, 50, 50) 
     print(wno(input_tensor).shape)

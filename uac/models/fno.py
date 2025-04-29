@@ -16,8 +16,8 @@ class SpectralConv2d(nn.Module):
         super(SpectralConv2d, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self.modes1 = modes1  # Number of Fourier modes to keep along height
-        self.modes2 = modes2  # Number of Fourier modes to keep along width
+        self.modes1 = modes1  # Number of Fourier modes to keep along height; must <= H
+        self.modes2 = modes2  # Number of Fourier modes to keep along width;  must <= (W//2+1)
 
         self.scale = 1 / (in_channels * out_channels)
         # Low positive frequencies 
@@ -61,7 +61,7 @@ class SpectralConv2d(nn.Module):
 
 
 class FNO2d(nn.Module):
-    def __init__(self, modes1=16, modes2=16, width=64, in_channels=1, out_channels=2, depth=4):
+    def __init__(self, modes1=16, modes2=16, width=64, in_channels=1, out_dim=2, depth=4):
         super(FNO2d, self).__init__()
         self.name = "fno"
 
@@ -83,18 +83,15 @@ class FNO2d(nn.Module):
 
         self.activation = nn.GELU()
 
-        # Output projection
-        self.fc1 = nn.Linear(self.width, 128)
-        self.fc2 = nn.Linear(128, out_channels)
-
         self.head = nn.Sequential(
-            nn.AdaptiveAvgPool2d(output_size=(1, 1)), # (N, 128, 1, 1)
-            nn.Flatten(),  # (N, 128)
+            nn.AdaptiveAvgPool2d(output_size=(1, 1)), # (N, self.width, 1, 1)
+            nn.Flatten(),  # (N, self.width)
 
             nn.Linear(self.width, 64),
             nn.ReLU(),
             nn.Dropout(0.3),
-            nn.Linear(64, 2),
+            
+            nn.Linear(64, out_dim),
             nn.Tanh()  
         )
 
@@ -103,14 +100,9 @@ class FNO2d(nn.Module):
         # coords = coords.unsqueeze(0).expand(x.size(0), -1, -1, -1)
         # x = torch.cat([x, coords], dim=1)
 
-        # Reshape input: (N, C_in, H, W) -> (N, H, W, C_in)
-        x = x.permute(0, 2, 3, 1)
-
-        # Lift to high-dimensional space
-        x = self.fc0(x)  # (N, H, W, width)
-
-        # Reshape back for convs: (N, H, W, width) -> (N, width, H, W)
-        x = x.permute(0, 3, 1, 2)
+        x = x.permute(0, 2, 3, 1)  # (N, C_in, H, W) -> (N, H, W, C_in)
+        x = self.fc0(x)            # (N, H, W, width)
+        x = x.permute(0, 3, 1, 2)  # (N, H, W, width) -> (N, width, H, W)
 
         for spectral_conv, pointwise_conv in zip(self.spectral_convs, self.pointwise_convs):
             x1 = spectral_conv(x)
@@ -166,9 +158,10 @@ class FNO2d(nn.Module):
 #         out = self.head(x)         # Output: (N, 2)
 #         return out
 
-# if __name__ == "__main__":
-#     model = FNOWithGlobalHead()
-#     input_tensor = torch.randn(32, 1, 50, 50)  # (batch_size, in_channels, height, width)
-#     output = model(input_tensor)
-#     # print(output.shape) 
-#     print(create_grid_coords(3, 3, "cpu").permute(1, 2, 0))
+if __name__ == "__main__":
+    # model = FNO2d(modes1=32, modes2=32, width=64, in_channels=1, out_dim=2, depth=4)
+    model = SpectralConv2d(in_channels=1, out_channels=10, modes1=8, modes2=8)
+    input_tensor = torch.randn(32, 1, 50, 50)  # (batch_size, in_channels, height, width)
+    output = model(input_tensor)
+    # print(output.shape) 
+    print(create_grid_coords(3, 3, "cpu").permute(1, 2, 0))

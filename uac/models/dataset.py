@@ -27,8 +27,10 @@ class Dataset(Dataset):
         self.y_train = []
         self.X_test = []
         self.y_test = []
-        self.X_extra = []
-        self.y_extra = []
+        self.X_50 = []
+        self.y_50 = []
+        self.X_400 = []
+        self.y_400 = []
 
         self.x_min = None
         self.x_max = None
@@ -80,21 +82,25 @@ class Dataset(Dataset):
         self.X_test = np.concatenate(self.X_test, axis=0)
         self.y_test = np.concatenate(self.y_test, axis=0)
 
-        # self.x_min = self.X_train.min()
-        # self.x_max = self.X_train.max()
-        # self.X_train = (self.X_train - self.x_min) / (self.x_max - self.x_min)
-        # self.X_test = (self.X_test - self.x_min) / (self.x_max - self.x_min)
-
         for i in range(91, 101):
-            data = np.load(self.root / f"dataset_200" / f"Case_{i}.npz")
+            data = np.load(self.root / f"dataset_50" / f"Case_{i}.npz")
             X = data['X'].astype(np.float32)
             y = data['y'].astype(np.float32)
-            self.X_extra.append(X)
-            self.y_extra.append(y)
+            self.X_50.append(X)
+            self.y_50.append(y)
 
-        self.X_extra = np.concatenate(self.X_extra, axis=0)
-        self.y_extra = np.concatenate(self.y_extra, axis=0)
-        # self.X_extra = (self.X_extra - self.x_min) / (self.x_max - self.x_min)
+        self.X_50 = np.concatenate(self.X_50, axis=0)
+        self.y_50 = np.concatenate(self.y_50, axis=0)
+
+        for i in range(91, 101):
+            data = np.load(self.root / f"dataset_400" / f"Case_{i}.npz")
+            X = data['X'].astype(np.float32)
+            y = data['y'].astype(np.float32)
+            self.X_400.append(X)
+            self.y_400.append(y)
+
+        self.X_400 = np.concatenate(self.X_400, axis=0)
+        self.y_400 = np.concatenate(self.y_400, axis=0)
 
         print("Completed loading data", flush=True)
 

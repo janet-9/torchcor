@@ -10,7 +10,7 @@ __pycache__/
 *.lon
 *.vtx
 
-models/
+trained/
 *.pth
 
 # C extensions

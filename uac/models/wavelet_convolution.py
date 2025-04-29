@@ -14,14 +14,13 @@ class WaveConv2d(nn.Module):
         self.level = level
         self.size = size
 
-        self.wavelet = wavelet       
+        self.wavelet = wavelet
         self.mode = mode
         dummy_data = torch.randn(1, 1, *self.size)        
         dwt_ = DWT(J=self.level, mode=self.mode, wave=self.wavelet)
         mode_data, mode_coef = dwt_(dummy_data)
         self.modes1 = mode_data.shape[-2]
         self.modes2 = mode_data.shape[-1]
-        
         
         # Parameter initilization
         self.scale = (1 / (in_channels * out_channels))

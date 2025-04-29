@@ -1,16 +1,16 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from dataset import Dataset
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, TensorDataset
-from cnn import ConductivityCNN
-from fno import FNO2d
-from don import DeepONet
-from wno import WNO2d
+from models.dataset import Dataset
+from models.cnn import CNN2d
+from models.fno import FNO2d
+from models.don import DeepONet2d
+from models.wno import WNO2d
 import argparse
-from tools import set_random_seed
 from pathlib import Path
+from tools import set_random_seed
 
 
 parser = argparse.ArgumentParser(description="root",
@@ -19,7 +19,7 @@ parser.add_argument("-root", type=str, default="/data/Bei")
 args = parser.parse_args()
 
 set_random_seed(42)
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
 device_id = torch.cuda.current_device()
 gpu_name = torch.cuda.get_device_name(device_id)
 print(gpu_name, flush=True)
@@ -48,8 +48,8 @@ train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=32)
 extra_loader = DataLoader(extra_dataset, batch_size=32)
 
-# model = ConductivityCNN().to(device)
-# model = DeepONet().to(device)
+# model = CNN2d().to(device)
+# model = DeepONet2d().to(device)
 # model = FNO2d().to(device)
 model = WNO2d().to(device)
 
@@ -130,7 +130,7 @@ for epoch in range(num_epochs):
           | Max Abs {train_max_diff:.2f} - {test_max_diff:.2f} - {extra_max_diff:.2f}",
           flush=True)
     
-    model_path = Path("./models")
+    model_path = Path("./trained")
     model_path.mkdir(exist_ok=True, parents=True)
     test_error = test_abs_sum/len(test_loader.dataset)
     if best_model_error > test_error:

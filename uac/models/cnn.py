@@ -10,9 +10,9 @@ def create_grid_coords(H, W, device='cpu'):
 
     return coords
 
-class ConductivityCNN(nn.Module):
+class CNN2d(nn.Module):
     def __init__(self):
-        super(ConductivityCNN, self).__init__()
+        super(CNN2d, self).__init__()
         self.name = "cnn_no"
         
         self.conv = nn.Sequential(
@@ -56,7 +56,7 @@ class ConductivityCNN(nn.Module):
 
 
 if __name__ == "__main__":
-    model = ConductivityCNN()
+    model = CNN2d()
     input_tensor = torch.randn(8, 1, 500, 500)  # N=8
     output = model(input_tensor)
     print(output.shape) 
