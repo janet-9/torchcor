@@ -59,7 +59,7 @@ loader_400 = DataLoader(dataset_400, batch_size=8)
 
 for wavelet in ["haar", "db6", "coif3"]:
     for width in [32, 64, 128]:
-        model = WNO2d(width=64, level=3, layers=2, size=[100, 100], wavelet=wavelet, in_channel=3, grid_range=[0, 1]).to(device)
+        model = WNO2d(width=width, level=3, layers=2, size=[100, 100], wavelet=wavelet, in_channel=3, grid_range=[0, 1]).to(device)
 
 
 # for modes1, modes2 in [(8, 8), (16, 16), (26, 26)]:

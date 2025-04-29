@@ -113,7 +113,7 @@ data_dir = Path("/data/scratch/acw554")
 # data_dir = Path("/data/Bei")
 output_folder_name = "atrium_conductivity_2_2_7"
 
-pacing_location = ["_LAA", "_LIPV", "_LSPV", "_RIPV", "_roof", "_RSPV", "_"]
+pacing_location = ["_LAA", "_LIPV", "_LSPV", "_RIPV", "_roof", "_RSPV", ""]
 for pl in pacing_location:
     for il in range(1, 21):
         for it in range(1, 21):
