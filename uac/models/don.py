@@ -5,34 +5,36 @@ import torch.nn.functional as F
 
 
 class BranchNet(nn.Module):
-    def __init__(self, latent_dim=64):
+    def __init__(self, in_channels=1, out_channels=64, layers=3, latent_dim=64):
         super().__init__()
-        self.conv = nn.Sequential(
-            nn.Conv2d(1, 16, kernel_size=3, padding=1),  # (N,16,50,50)
-            nn.BatchNorm2d(16),
-            nn.ReLU(),
-            
-            nn.Conv2d(16, 32, kernel_size=3, padding=1), # (N,32,50,50)
-            nn.BatchNorm2d(32),
-            nn.ReLU(),
+        self.conv_layers = nn.ModuleList()
+        
+        # First layer
+        self.conv_layers.append(nn.Conv2d(in_channels, out_channels, kernel_size=5, stride=2, padding=2))
+        self.conv_layers.append(nn.BatchNorm2d(out_channels))
+        self.conv_layers.append(nn.ReLU())
 
-            nn.Conv2d(32, 64, kernel_size=3, padding=1), # (N,64,50,50)
-            nn.BatchNorm2d(64),
-            nn.ReLU(),
-        )
+        # Subsequent layers
+        for _ in range(1, layers):
+            self.conv_layers.append(nn.Conv2d(out_channels, out_channels, kernel_size=5, stride=2, padding=2))
+            self.conv_layers.append(nn.BatchNorm2d(out_channels))
+            self.conv_layers.append(nn.ReLU())
+
 
         self.head = nn.Sequential(
             nn.AdaptiveAvgPool2d((1, 1)),               # (N,64,1,1)
             nn.Flatten(),                               # (N,64)
             nn.Dropout(0.2),
-            nn.Linear(64, latent_dim),                  # (N,latent_dim)
+            nn.Linear(out_channels, latent_dim),                  # (N,latent_dim)
             nn.ReLU()
         )
 
     def forward(self, x):  # (N, 1, 50, 50)
-        x = self.conv(x)
+        for conv in self.conv_layers:
+            x = conv(x)
+
         x = self.head(x)
-        return x  # (N, latent_dim)
+        return x           # (N, latent_dim)
 
 class TrunkNet(nn.Module):
     def __init__(self, latent_dim=64):
@@ -64,10 +66,10 @@ class TrunkNet(nn.Module):
         return out
 
 class DeepONet2d(nn.Module):
-    def __init__(self, latent_dim=64, output_dim=2):
+    def __init__(self, in_channels=1, out_channels=64, layers=3, latent_dim=64, output_dim=2):
         super().__init__()
         self.name = "don"
-        self.branch_net = BranchNet(latent_dim)
+        self.branch_net = BranchNet(in_channels=in_channels, out_channels=out_channels, layers=layers, latent_dim=latent_dim)
         self.trunk_net = TrunkNet(latent_dim)
     
         self.head = nn.Sequential(
@@ -89,7 +91,7 @@ class DeepONet2d(nn.Module):
 
 # Example usage
 if __name__ == "__main__":
-    model = DeepONet(latent_dim=64, output_dim=2)
+    model = DeepONet2d(in_channels=1, out_channels=64, layers=3, latent_dim=64, output_dim=2)
     input_tensor = torch.randn(8, 1, 50, 50)  # (batch_size, channels, height, width)
     output = model(input_tensor)
     print(output.shape)  # should be (8, 2)

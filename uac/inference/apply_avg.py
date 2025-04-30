@@ -1,4 +1,3 @@
-from dataset import load_data
 import torch
 import numpy as np
 from torch.utils.data import DataLoader, TensorDataset
@@ -7,8 +6,18 @@ from pathlib import Path
 import pandas as pd
 import seaborn as sns
 import math
+from pathlib import Path
+import sys
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
+def load_data(case_path="/data/Bei/dataset_50/Case_1.npz"):
+    data = np.load(case_path)
+    X = data['X'].astype(np.float32)
+    y = data['y'].astype(np.float32)
+    return X, y
+
+
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 data = []
 groups = []

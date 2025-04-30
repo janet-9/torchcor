@@ -19,7 +19,7 @@ parser.add_argument("-root", type=str, default="/data/Bei")
 args = parser.parse_args()
 
 set_random_seed(42)
-device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 device_id = torch.cuda.current_device()
 gpu_name = torch.cuda.get_device_name(device_id)
 print(gpu_name, flush=True)
@@ -33,12 +33,12 @@ X_train = (X_train - x_min) / (x_max - x_min)
 X_test = torch.tensor(dataset.X_test[:, :1, :, :])
 X_test = (X_test - x_min) / (x_max - x_min)
 
-X_extra = torch.tensor(dataset.X_extra[:, :1, :, :])
+X_extra = torch.tensor(dataset.X_400[:, :1, :, :])
 X_extra = (X_extra - x_min) / (x_max - x_min)
 
 y_train = torch.tensor(dataset.y_train) - 1
 y_test = torch.tensor(dataset.y_test) - 1
-y_extra = torch.tensor(dataset.y_extra) - 1
+y_extra = torch.tensor(dataset.y_400) - 1
 
 train_dataset = TensorDataset(X_train, y_train)
 test_dataset = TensorDataset(X_test, y_test)
@@ -49,9 +49,9 @@ test_loader = DataLoader(test_dataset, batch_size=32)
 extra_loader = DataLoader(extra_dataset, batch_size=32)
 
 # model = CNN2d().to(device)
-# model = DeepONet2d().to(device)
+model = DeepONet2d().to(device)
 # model = FNO2d().to(device)
-model = WNO2d().to(device)
+# model = WNO2d().to(device)
 
 criterion = nn.MSELoss()
 optimizer = optim.AdamW(model.parameters(), lr=3e-3, weight_decay=1e-4)

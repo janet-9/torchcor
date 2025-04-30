@@ -8,13 +8,6 @@ from concurrent.futures import as_completed
 from multiprocessing import Manager
 
 
-def load_data(case_path="/data/Bei/dataset_50/Case_1.npz"):
-    data = np.load(case_path)
-    X = data['X'].astype(np.float32)
-    y = data['y'].astype(np.float32)
-
-    return X, y
-
 class Dataset(Dataset):
     def __init__(self, n_uac_points=100, root="/data/Bei/"):
         self.n_uac_points = n_uac_points

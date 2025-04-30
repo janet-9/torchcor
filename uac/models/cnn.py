@@ -11,37 +11,32 @@ def create_grid_coords(H, W, device='cpu'):
     return coords
 
 class CNN2d(nn.Module):
-    def __init__(self):
+    def __init__(self, in_channels=1, out_channels=64, layers=3):
         super(CNN2d, self).__init__()
         self.name = "cnn_no"
+
+        self.conv_layers = nn.ModuleList()
         
-        self.conv = nn.Sequential(
-            nn.Conv2d(1, 16, kernel_size=5, stride=2, padding=2),  # (N, 16, 250, 250)
-            nn.BatchNorm2d(16),
-            nn.ReLU(),
+        # First layer
+        self.conv_layers.append(nn.Conv2d(in_channels, out_channels, kernel_size=5, stride=2, padding=2))
+        self.conv_layers.append(nn.BatchNorm2d(out_channels))
+        self.conv_layers.append(nn.ReLU())
 
-            nn.Conv2d(16, 32, kernel_size=5, stride=2, padding=2),  # (N, 32, 125, 125)
-            nn.BatchNorm2d(32),
-            nn.ReLU(),
-
-            nn.Conv2d(32, 64, kernel_size=5, stride=2, padding=2),  # (N, 64, 63, 63)
-            nn.BatchNorm2d(64),
-            nn.ReLU(),
-
-            nn.Conv2d(64, 128, kernel_size=5, stride=2, padding=2),  # (N, 128, 32, 32)
-            nn.BatchNorm2d(128),
-            nn.ReLU(),
-        )
+        # Subsequent layers
+        for _ in range(1, layers):
+            self.conv_layers.append(nn.Conv2d(out_channels, out_channels, kernel_size=5, stride=2, padding=2))
+            self.conv_layers.append(nn.BatchNorm2d(out_channels))
+            self.conv_layers.append(nn.ReLU())
 
         self.head = nn.Sequential(
-            # nn.AdaptiveAvgPool2d((1, 1)),  # (N, 128, 1, 1)
+            # nn.AdaptiveAvgPool2d((1, 1)),  # (N, 64, 1, 1)
             nn.AdaptiveAvgPool2d((1, 1)),
-            nn.Flatten(),  # (N, 128)
+            nn.Flatten(),  # (N, 64)
 
-            nn.Linear(128, 64),
+            nn.Linear(out_channels, out_channels),
             nn.ReLU(),
             nn.Dropout(0.3),
-            nn.Linear(64, 2),
+            nn.Linear(out_channels, 2),
             nn.Tanh()  
         )
 
@@ -50,8 +45,11 @@ class CNN2d(nn.Module):
         # coords = coords.unsqueeze(0).expand(x.size(0), -1, -1, -1)
         # x = torch.cat([x, coords], dim=1)
         
-        x = self.conv(x)
+        for conv in self.conv_layers:
+            x = conv(x)
+        
         x = self.head(x)
+
         return x
 
 
