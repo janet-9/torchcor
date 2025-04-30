@@ -133,19 +133,16 @@ if args.model == "fno":
                     torch.save(model, model_path / f"{model.name}.pth")
                     error_100 = test_error
 
-            total_params = sum(p.numel() for p in model.parameters())
-            print(f"Total parameters: {total_params}")
-
             print((args.model, modes1, modes2, width),
-                round(np.array(error_list_50[0]).mean(), 3), round(np.array(error_list_50[0]).std(), 3),
-                round(np.array(error_list_50[1]).mean(), 3), round(np.array(error_list_50[1]).std(), 3),
+                round(np.array(error_list_50[0]).mean(), 3), round(np.array(error_list_50[0]).std(), 3), 
+                round(np.array(error_list_50[1]).mean(), 3), round(np.array(error_list_50[1]).std(), 3), " | ",
 
                 round(np.array(error_list_100[0]).mean(), 3), round(np.array(error_list_100[0]).std(), 3),
-                round(np.array(error_list_100[1]).mean(), 3), round(np.array(error_list_100[1]).std(), 3),
+                round(np.array(error_list_100[1]).mean(), 3), round(np.array(error_list_100[1]).std(), 3), " | ",
 
                 round(np.array(error_list_400[0]).mean(), 3), round(np.array(error_list_400[0]).std(), 3),
-                round(np.array(error_list_400[1]).mean(), 3), round(np.array(error_list_400[1]).std(), 3),
-                total_params)
+                round(np.array(error_list_400[1]).mean(), 3), round(np.array(error_list_400[1]).std(), 3), " | ",
+                sum(p.numel() for p in model.parameters()))
 
 
 if args.model == "wno":
