@@ -1,3 +1,4 @@
+from scipy.stats import qmc
 import torchcor as tc
 from torchcor.simulator import Monodomain
 from torchcor.ionic import ModifiedMS2v
@@ -5,6 +6,7 @@ from pathlib import Path
 import argparse
 import torch
 import time
+import numpy as np
 import shutil
 
 
@@ -62,14 +64,6 @@ class Domain(Monodomain):
             torch.save(activation_time.cpu(), self.result_path / "ATs.pt")
             torch.save(repolarization_time.cpu(), self.result_path / "RTs.pt")
 
-            # indices_filepath = self.result_path.parent / "edge_index.pt"
-            # if not indices_filepath.exists():
-            #     torch.save(self.A.to_sparse_coo().indices().cpu(), indices_filepath)
-
-            # uac_filepath = self.result_path.parent / "UAC.npy"
-            # if not uac_filepath.exists():
-            #     shutil.copy(self.mesh_path / "UAC.npy", uac_filepath)
-
         if snapshot_interval < self.T:
             torch.save(torch.stack(solution_list, dim=0).cpu(), self.result_path / "Vm.pt")
 
@@ -109,34 +103,52 @@ ionic_model.tau_out = 1.5
 ionic_model.tau_open = 105.0
 ionic_model.tau_close = 185.0
 
-# data_dir = Path("/data/scratch/acw554")
-data_dir = Path("/data/Bei")
-output_folder_name = "atrium_conductivity_2_2_7"
 
-# pacing_location = ["_LAA", "_LIPV", "_LSPV", "_RIPV", "_roof", "_RSPV", ""]
-pacing_location = [""]
-for pl in pacing_location:
-    for il in range(1, 21):
-        for it in range(1, 21):
-            case_name = f"Case_{args.case_id}"
-            print(case_name, il/10, it/10, flush=True)
-            mesh_dir = data_dir / "meshes_refined" / case_name
-            vtk_filepath = mesh_dir / f"{case_name}{pl}.vtx"
-            
-            simulator = Domain(ionic_model, T=simulation_time, dt=dt, dtype=dtype)
-            simulator.load_mesh(path=mesh_dir, unit_conversion=1000)
-            simulator.add_condutivity(region_ids=[1, 2, 3, 4, 5, 6], il=il/10, it=it/10)
+# sampling from latin hypercube
+num_normal_regions   = 3
+num_fibrotic_regions = 3
+num_regions          = num_normal_regions + num_fibrotic_regions
+num_dim              = num_regions * 2
+num_samples          = 300 # num_dim*10
 
-            simulator.add_stimulus(vtk_filepath, 
-                                   start=0.0, 
-                                   duration=2.0, 
-                                   intensity=50)
+sampler = qmc.LatinHypercube(d=num_dim)
+lb      = [0.1] * num_normal_regions + [0.1] * num_fibrotic_regions + [1.0] * num_normal_regions+ [1.0] * num_fibrotic_regions
+ub      = [1.0] * num_normal_regions + [0.5] * num_fibrotic_regions + [5.0] * num_normal_regions+ [8.0] * num_fibrotic_regions
+samples = sampler.random(num_samples)
+samples = qmc.scale(samples, lb, ub)
 
-            simulator.solve(a_tol=1e-5, 
-                            r_tol=1e-5, 
-                            max_iter=100, 
-                            calculate_AT_RT=True,
-                            linear_guess=True,
-                            snapshot_interval=simulation_time, 
-                            verbose=True,
-                            result_path=data_dir / output_folder_name / case_name / f"{il/10}_{it/10}{pl}")
+g_it = samples[:, :6]
+g_il = samples[:, :6] * samples[:, 6:]
+
+
+case_name = f"Case_{args.case_id}"
+data_dir = Path("/data/scratch/acw554")
+# data_dir = Path("/data/Bei")
+output_folder_name = "latine_conductivity"
+for sample_id, (il, it) in enumerate(zip(g_il, g_it)):
+    print(case_name, il.max(), it.max(), flush=True)
+    mesh_dir = data_dir / "meshes_refined" / case_name
+    vtk_filepath = mesh_dir / f"{case_name}.vtx"
+    
+    simulator = Domain(ionic_model, T=simulation_time, dt=dt, dtype=dtype)
+    simulator.load_mesh(path=mesh_dir, unit_conversion=1000)
+
+    for region_id, (l, t) in enumerate(zip(il, it)):
+        simulator.add_condutivity(region_ids=[region_id + 1], il=l, it=t)
+
+    simulator.add_stimulus(vtk_filepath, 
+                           start=0.0, 
+                           duration=2.0, 
+                           intensity=50)
+    
+    result_path = data_dir / output_folder_name / case_name / f"{sample_id}"
+    simulator.solve(a_tol=1e-5, 
+                    r_tol=1e-5, 
+                    max_iter=100, 
+                    calculate_AT_RT=True,
+                    linear_guess=True,
+                    snapshot_interval=simulation_time, 
+                    verbose=True,
+                    result_path=result_path)
+    
+    np.savez(result_path / "conductivity.npz", g_il=il, g_it=it)

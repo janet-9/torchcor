@@ -13,4 +13,4 @@ module load cudnn/8.9.7.29-12-cuda-12.4.0-gcc-12.2.0
 conda activate venv
 
 
-python ./atrium.py -case_id ${SGE_TASK_ID}
+python ./latine_conductivity.py -case_id ${SGE_TASK_ID}

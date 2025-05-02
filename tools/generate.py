@@ -424,10 +424,13 @@ def generate_spiral_initialisation(polydata: vtk.vtkPolyData) -> vtk.vtkPolyData
 # CAROLINE DATASET IS E.G.:
 #Sum: 1.87056e+08, Mean: 341.175, Stddev: 58.9917, Min: 3.70679, Max: 636.258
 
-def get_uac(polydata):
+def get_uac_iir(polydata):
     X   = vtk_to_numpy(polydata.GetPointData().GetArray('UAC1'))
     Y   = vtk_to_numpy(polydata.GetPointData().GetArray('UAC2'))
-    return np.stack([X, Y], axis=1)
+
+    IIR_array = polydata.GetPointData().GetArray('IIR')
+
+    return X, Y, IIR_array
 
 def generate_simulation_data(filename,INPUTDIR,OUTDIR,CASEDIRNAME,refine=False):
     if filename[-4:]=='.vtk':
@@ -448,9 +451,9 @@ def generate_simulation_data(filename,INPUTDIR,OUTDIR,CASEDIRNAME,refine=False):
         print('----------------------------------',flush=True)
     surface = generate_spiral_initialisation(surface)
     surface = generate_PV_pacing_sites(surface)
-    uac = get_uac(surface)
-    uacpath = Path(OUTDIR) / CASEDIRNAME / "UAC.npy"
-    np.save(uacpath, uac)
+    X, Y, IIR = get_uac_iir(surface)
+    uacpath = Path(OUTDIR) / CASEDIRNAME / "UAC_IIR.npz"
+    np.savez(uacpath, UAC1=X, UAC2=Y, IIR=IIR)
 
     mesh0   = extract_mesh(surface)
     write_carp_files(mesh0,outputdir,CASEDIRNAME)
