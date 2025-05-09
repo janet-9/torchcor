@@ -1,12 +1,18 @@
 import warnings
 warnings.filterwarnings("ignore", message="Sparse CSR tensor support is in beta state")
+import sys
+import os
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 import torch
 import torchcor as tc
 from pynvml import nvmlInit, nvmlDeviceGetHandleByIndex, nvmlDeviceGetUtilizationRates, nvmlDeviceGetMemoryInfo
 import time
 from torchcor.core import *
 from pathlib import Path
+import pandas as pd
+from torchcor.simulator.signalanalysis.signalanalysis.ecg_QS import Ecg
+from tools.igbwriter import IGBWriter
 
 
 class Monodomain:
@@ -266,12 +272,42 @@ class Monodomain:
             b = -K @ V
             phi_e, n_iter = cg.solve(b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
             
-            # phi_e -= phi_e.mean()
-            print(phi_e.min().item(), phi_e.max().item(), n_iter)
+            phi_e -= phi_e.mean()
             phie_list.append(phi_e)
+
+            print(phi_e.min().item(), phi_e.max().item(), n_iter)
         
         phi_e_all = torch.stack(phie_list, dim=0)
         torch.save(phi_e_all.cpu(), self.result_path / "Phi_e.pt")
         print(phi_e_all.min().item(), phi_e_all.max().item())
+
+
+    def simulated_ECG(self):
+        im = IGBWriter({
+            "fname": "phie.igb",
+            "Tend": self.T + 1,
+            "nt": 1 + self.nt,
+            "nx": self.n_nodes,
+            "ny": 1,
+            "nz": 1
+        })
+
+        path = self.result_path / "Phi_e.pt"
+        phie = torch.load(path).numpy()
+
+        for p in phie:
+           im.imshow(p)
+        
+        ECGs=Ecg('phie.igb', dt=1)
+
+        lp, hp=100, 0.01
+        ECGs.filter='butterworth'
+        ECGs.apply_filter(freq_filter=lp, order=2, sample_freq=1000, filter_type='low')
+        ECGs.apply_filter(freq_filter=hp, order=2, sample_freq=1000, filter_type='high')
+        ECGdata2=ECGs.data
+        
+        ECGspd=pd.DataFrame(ECGdata2)
+        print(ECGspd.columns)
+        ECGspd.to_csv('./simulated_filtered.dat', sep=' ', header=False, mode='w')
         
 

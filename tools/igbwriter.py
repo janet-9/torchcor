@@ -1,7 +1,6 @@
 import numpy as np
 import struct
 import os
-from igbreader import IGBReader
 
 class IGBWriter:
     """
@@ -189,7 +188,7 @@ class IGBWriter:
         self.__parse_header(header)
         self.__data = data
 
-    def initialise_from_IGBReader(self, reader:IGBReader):
+    def initialise_from_IGBReader(self, reader):
         """initialise_from_IGBReader(reader) initialises an IGBWriter object from an IGBreader object
         """ 
         self.__parse_header(reader.header())
