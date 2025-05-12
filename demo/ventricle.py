@@ -31,7 +31,8 @@ simulator.solve(a_tol=1e-5,
                 linear_guess=True,
                 snapshot_interval=1, 
                 verbose=True,
-                result_path=mesh_dir / "equal")
+                result_path="./biventricle")
 
 # simulator.pt_to_vtk()
-# simulator.phie_recovery()
+simulator.phie_recovery()
+simulator.simulated_ECG()

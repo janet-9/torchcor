@@ -45,6 +45,10 @@ class Monodomain:
         self.Cm = 0.01  
         self.theta = 0.5
 
+        self.sigma_i = None
+        self.sigma_e = None
+        self.simga_m = None
+
         nvmlInit()
         device_id = torch.cuda.current_device()
         self.gpu_handle = nvmlDeviceGetHandleByIndex(device_id)
@@ -77,14 +81,14 @@ class Monodomain:
         self.conductivity.add(region_ids, il, it, el, et)
 
     def assemble(self):
-        sigma = self.conductivity.calculate_sigma(self.fibres)
+        self.sigma_i, self.sigma_e, self.sigma_m = self.conductivity.calculate_sigma(self.fibres)
 
         if self.elems.shape[1] == 3:
             matrices = Matrices3DSurface(vertices=self.nodes, triangles=self.elems, device=self.device, dtype=self.dtype)
         else:
             matrices = Matrices3D(vertices=self.nodes, tetrahedrons=self.elems, device=self.device, dtype=self.dtype)
 
-        K, M = matrices.assemble_matrices(sigma)
+        K, M = matrices.assemble_matrices(self.sigma_m)
         
         K = K / self.Chi
         self.K = K.to(device=self.device, dtype=self.dtype)
@@ -250,28 +254,26 @@ class Monodomain:
     def phie_recovery(self, a_tol=1e-5, r_tol=1e-5, max_iter=100):
         Vm = torch.load(self.result_path / "Vm.pt").to(self.device)
 
-        cp = ConductivityPhie(self.regions, self.dtype)
-
-        sigma = cp.calculate_sigma(self.fibres)
         if self.elems.shape[1] == 3:
             matrices = Matrices3DSurface(vertices=self.nodes, triangles=self.elems, device=self.device, dtype=self.dtype)
         else:
             matrices = Matrices3D(vertices=self.nodes, tetrahedrons=self.elems, device=self.device, dtype=self.dtype)
-        K, _ = matrices.assemble_matrices(sigma)
-        # K = K / self.Chi
+        K_ie, _ = matrices.assemble_matrices(self.sigma_i + self.sigma_e)
+        K_i, _ = matrices.assemble_matrices(self.sigma_i)
 
         pcd = Preconditioner()
-        pcd.create_Jocobi(K)
-        cg = ConjugateGradient(pcd, K, dtype=torch.float64)
+        pcd.create_Jocobi(K_ie)
+        cg = ConjugateGradient(pcd, K_ie, dtype=torch.float64)
         cg.initialize(x=torch.zeros_like(Vm[0]), linear_guess=True)
 
-        K = K.to_sparse_csr()
+        K_ie = K_ie.to_sparse_csr()
+        K_i = K_i.to_sparse_csr()
         
         phie_list = []
         for i in range(Vm.shape[0]):
             V = Vm[i, :]
             
-            b = -K @ V
+            b = -K_i @ V
             phi_e, n_iter = cg.solve(b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
             
             phi_e -= phi_e.mean()
@@ -286,7 +288,7 @@ class Monodomain:
 
     def simulated_ECG(self):
         im = IGBWriter({
-            "fname": "phie.igb",
+            "fname": self.result_path / "phie.igb",
             "Tend": self.T + 1,
             "nt": 1 + self.nt,
             "nx": self.n_nodes,
@@ -296,20 +298,18 @@ class Monodomain:
 
         path = self.result_path / "Phi_e.pt"
         phie = torch.load(path).numpy()
-
         for p in phie:
            im.imshow(p)
         
-        ECGs=Ecg('phie.igb', dt=1)
+        ECGs = Ecg(str(self.result_path / 'phie.igb'), dt=1)
 
-        lp, hp=100, 0.01
-        ECGs.filter='butterworth'
+        lp, hp = 100, 0.01
+        ECGs.filter = 'butterworth'
         ECGs.apply_filter(freq_filter=lp, order=2, sample_freq=1000, filter_type='low')
         ECGs.apply_filter(freq_filter=hp, order=2, sample_freq=1000, filter_type='high')
-        ECGdata2=ECGs.data
         
-        ECGspd=pd.DataFrame(ECGdata2)
+        ECGspd = pd.DataFrame(ECGs.data)
         print(ECGspd.columns)
-        ECGspd.to_csv('./simulated_filtered.dat', sep=' ', header=False, mode='w')
+        ECGspd.to_csv(self.result_path / 'simulated_filtered.dat', sep=' ', header=False, mode='w')
         
 

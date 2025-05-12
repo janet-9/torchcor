@@ -23,7 +23,7 @@ mesh_dir = Path("/home/bzhou6/Data/atrium/") / case_name
 
 simulator = Monodomain(ionic_model, T=simulation_time, dt=dt, dtype=dtype)
 simulator.load_mesh(path=mesh_dir, unit_conversion=1000)
-simulator.add_condutivity(region_ids=[1, 2, 3, 4, 5, 6], il=0.3, it=0.06)
+simulator.add_condutivity(region_ids=[1, 2, 3, 4, 5, 6], il=0.3, it=0.06, el=0.4, et=0.4)
 
 simulator.add_stimulus(f"{mesh_dir}/{case_name}.vtx", 
                        start=0.0, 
@@ -37,7 +37,7 @@ simulator.solve(a_tol=1e-5,
                 linear_guess=True,
                 snapshot_interval=1, 
                 verbose=True,
-                result_path="./results")
+                result_path="./atrium")
 
 # simulator.pt_to_vtk()
 simulator.phie_recovery()

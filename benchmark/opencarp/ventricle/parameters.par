@@ -130,3 +130,4 @@ lats[1].mode = 1        # detect -slope threshold crossing
 lats[1].threshold = -70
 lats[1].method = 1
 lats[1].ID = "depolarization"
+
