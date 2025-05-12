@@ -250,7 +250,9 @@ class Monodomain:
     def phie_recovery(self, a_tol=1e-5, r_tol=1e-5, max_iter=100):
         Vm = torch.load(self.result_path / "Vm.pt").to(self.device)
 
-        sigma = self.conductivity.calculate_sigma_phie(self.fibres)
+        cp = ConductivityPhie(self.regions, self.dtype)
+
+        sigma = cp.calculate_sigma(self.fibres)
         if self.elems.shape[1] == 3:
             matrices = Matrices3DSurface(vertices=self.nodes, triangles=self.elems, device=self.device, dtype=self.dtype)
         else:
