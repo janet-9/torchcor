@@ -47,7 +47,7 @@ class Conductivity:
                 self.sigma_t[mask] = t
 
     def calculate_sigma(self, fibres):
-        if self.sigma_il is None and self.sigma_it is None and self.sigma_el is None and self.sigma_et:
+        if self.sigma_il is None and self.sigma_it is None and self.sigma_el is None and self.sigma_et is None:
             sigma_i = None
             sigma_e = None
         else:
