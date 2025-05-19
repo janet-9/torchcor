@@ -84,6 +84,6 @@ pip install torchcor
 
 ## 👩‍💻 Contributors
 
-**TorchCor** is developed and maintained by Bei Zhou, Maximilian Balmus, Cesare Corradoa, Shuang Qian, and Steven A. Niederer​ as part of the [Computational Electrophysiology and Modelling Research Group (CEMRG)](https://www.imperial.ac.uk/cemrg/) at Imperial College London.
+**TorchCor** is developed and maintained by Bei Zhou, Maximilian Balmus, Cesare Corradoa, Shuang Qian, and Steven A. Niederer​ as part of the [Cardiac Electro-Mechanics Research Group (CEMRG)](https://www.cemrg.co.uk/) at Imperial College London.
 
 We welcome contributions from the community! Feel free to open issues or submit pull requests.
