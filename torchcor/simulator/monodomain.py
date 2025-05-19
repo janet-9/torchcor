@@ -12,7 +12,7 @@ from torchcor.core import *
 from pathlib import Path
 import pandas as pd
 from torchcor.signalanalysis.signalanalysis.ecg_QS import Ecg
-from tools.igbwriter import IGBWriter
+from torchcor.tools.igbwriter import IGBWriter
 
 
 class Monodomain:

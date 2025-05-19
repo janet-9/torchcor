@@ -4,11 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "torchcor"
-version = "0.1.4"
+version = "0.1.8"
 description = "High-Performance Large-Scale Cardic Electrophysiology Simulations on GPUs"
 authors = [{ name = "Bei Zhou", email = "bei.zhou@imperial.ac.uk" }]
 readme = "README.md" 
-license = {text = "MIT"}
 requires-python = ">=3.8"
 dependencies = [
     "torch",
@@ -30,5 +29,10 @@ packages = [
     "torchcor.core", 
     "torchcor.ionic", 
     "torchcor.simulator",
-    "torch.electrodes",
-    "torch.signalanalysis"] 
+    "torchcor.tools",
+    "torchcor.electrodes",
+    "torchcor.signalanalysis",
+    "torchcor.signalanalysis.io",
+    "torchcor.signalanalysis.signalanalysis",
+    "torchcor.signalanalysis.signalplot",
+    "torchcor.signalanalysis.tools"] 
