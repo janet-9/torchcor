@@ -40,7 +40,7 @@ simulator.solve(a_tol=1e-5,              # absolute tolerance
                 max_iter=100,            # maximum number of iterations for each CG calculation
                 calculate_AT_RT=True,    # keep track of local activation time (LAT)
                 linear_guess=True,
-                snapshot_interval=1,     # save the soluation after every 10 ms
+                snapshot_interval=1,     # save the soluation after every 1 ms
                 verbose=True,
                 result_path="./atrium")  # to folder in which the results are saved
 

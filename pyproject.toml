@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "torchcor"
 version = "0.1.2"
-description = "Efficient EP simulations on GPUs"
+description = "High-Performance large-scale cardic electrophysiology simulations on GPUs"
 authors = [{ name = "Bei Zhou", email = "bei.zhou@imperial.ac.uk" }]
 dependencies = [
     "torch",
@@ -14,8 +14,12 @@ dependencies = [
     "pygmsh",      
     "pynvml",      
     "pyvista",     
-    "scipy"       
+    "scipy",
+    "wfdb",
+    "seaborn",
+    "scikit-learn",
+    "pandas "      
 ]
 
 [tool.setuptools]
-packages = ["torchcor", "torchcor.core", "torchcor.ionic", "torchcor.simulator"]  # Explicitly list packages
+packages = ["torchcor", "torchcor.core", "torchcor.ionic", "torchcor.simulator"] 

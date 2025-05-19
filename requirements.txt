@@ -5,3 +5,7 @@ pynvml
 pyvista
 scipy
 torch
+wfdb
+seaborn
+scikit-learn
+pandas
