@@ -6,10 +6,10 @@ import wfdb
 from typing import List, Union
 import matplotlib.pyplot as plt
 
-from torchcor.simulator.signalanalysis.signalanalysis import general
-from torchcor.simulator.signalanalysis import tools
-from torchcor.simulator.signalanalysis import signalplot
-from torchcor.simulator.signalanalysis.io import igb
+from torchcor.signalanalysis.signalanalysis import general
+from torchcor.signalanalysis import tools
+from torchcor.signalanalysis import signalplot
+from torchcor.signalanalysis.io import igb
 
 # plt.style.use('seaborn')
 

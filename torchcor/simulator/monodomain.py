@@ -11,7 +11,7 @@ import time
 from torchcor.core import *
 from pathlib import Path
 import pandas as pd
-from torchcor.simulator.signalanalysis.signalanalysis.ecg_QS import Ecg
+from torchcor.signalanalysis.signalanalysis.ecg_QS import Ecg
 from tools.igbwriter import IGBWriter
 
 

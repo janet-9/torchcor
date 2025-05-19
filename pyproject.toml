@@ -21,8 +21,14 @@ dependencies = [
     "wfdb",
     "seaborn",
     "scikit-learn",
-    "pandas "      
+    "pandas"      
 ]
 
 [tool.setuptools]
-packages = ["torchcor", "torchcor.core", "torchcor.ionic", "torchcor.simulator"] 
+packages = [
+    "torchcor", 
+    "torchcor.core", 
+    "torchcor.ionic", 
+    "torchcor.simulator",
+    "torch.electrodes",
+    "torch.signalanalysis"] 

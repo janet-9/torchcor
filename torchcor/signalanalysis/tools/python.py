@@ -1,7 +1,7 @@
 import numpy as np
 from typing import List, Tuple, Union, Optional, Any
 
-from torchcor.simulator.signalanalysis.tools import plotting
+from torchcor.signalanalysis.tools import plotting
 
 def recursive_len(item: list):
     """ Return the total number of elements with a potentially nested list """

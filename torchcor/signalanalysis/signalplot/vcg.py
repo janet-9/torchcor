@@ -9,7 +9,7 @@ from math import sin, cos, acos, atan2
 import warnings
 from typing import List, Tuple, Optional, Union
 
-from torchcor.simulator.signalanalysis import tools
+from torchcor.signalanalysis import tools
 
 # plt.style.use('seaborn')
 

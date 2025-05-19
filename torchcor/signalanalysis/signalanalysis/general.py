@@ -6,7 +6,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from typing import List, Union, Optional
 
-from torchcor.simulator.signalanalysis import tools
+from torchcor.signalanalysis import tools
 
 # plt.style.use('seaborn')
 

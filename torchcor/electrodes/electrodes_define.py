@@ -10,9 +10,9 @@ import glob
 import random
 import sys
 import os.path, time 
-import torchcor.simulator.electrodes.meshIO as meshIO
-import torchcor.simulator.electrodes.findapexbase as meshUVC
-import torchcor.simulator.electrodes.geometrical as geometrical
+import torchcor.electrodes.meshIO as meshIO
+import torchcor.electrodes.findapexbase as meshUVC
+import torchcor.electrodes.geometrical as geometrical
 
 def find_electrodes(outputBasename,basenameLVmesh,basenameLVuvc,outfolder):
     #############

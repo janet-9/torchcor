@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from typing import Union, Optional, List, Tuple
 
-from torchcor.simulator.signalanalysis import tools
+from torchcor.signalanalysis import tools
 
 # plt.style.use('seaborn')
 
