@@ -42,7 +42,7 @@ simulator.solve(a_tol=1e-5,              # absolute tolerance
                 linear_guess=True,
                 snapshot_interval=1,     # save the soluation after every 1 ms
                 verbose=True,
-                result_path="./atrium")  # to folder in which the results are saved
+                result_path="./atrium")  # the folder in which the results are saved
 
 simulator.pt_to_vtk()  # generate VTK files 
 # simulator.phie_recovery()
