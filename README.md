@@ -28,7 +28,24 @@ Below are simulation results showcasing the electrical activation patterns over 
   </tr>
 </table>
 
-## ⚡ Quickstart Example
+## ⚡ Performance
+
+TorchCor is optimized for high-throughput cardiac electrophysiology simulations on large-scale meshes. The benchmarks below demonstrate its ability to efficiently scale with mesh size and leverage GPU acceleration over traditional CPU-based solvers.
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="docs/performance_cubic.png" alt="Performance on cubic meshes" width="400"/><br/>
+      <em>Execution time on cubic 3D volume meshes with increasing node counts.</em>
+    </td>
+    <td align="center">
+      <img src="docs/performance_biv.png" alt="Performance on bi-ventricle mesh" width="400"/><br/>
+      <em>Execution time on a bi-ventricle mesh (637,480 nodes) using various CPU cores and GPU devices.</em>
+    </td>
+  </tr>
+</table>
+
+## 🚀 Quickstart Example
 
 Here’s a concise example to run a simulation using the **TenTusscher-Panfilov** ionic model on a bi-ventricle mesh:
 
