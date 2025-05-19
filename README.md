@@ -10,7 +10,7 @@
 - 🔧 Fully customizable model parameters for flexible experimentation and prototyping
 - 🎯 Accurate simulation of cardiac electrical activity for research and development  
 - 📈 Generation of precise local activation time maps  
-- 🩺 Simulation of clinically relevant 12-lead ECG signals 
+- 🩺 Simulation of clinically relevant 12-lead ECG signals through phie recovery (under testing)
 
 
 ## 🫀 Simulation Previews
@@ -107,6 +107,6 @@ pip install torchcor
 
 ## 👩‍💻 Contributors
 
-**TorchCor** is developed and maintained by Bei Zhou, Maximilian Balmus, Cesare Corradoa, Shuang Qian, and Steven A. Niederer​ as part of the [Cardiac Electro-Mechanics Research Group (CEMRG)](https://www.cemrg.co.uk/) at Imperial College London.
+**TorchCor** is developed and maintained by Bei Zhou, Maximilian Balmus, Cesare Corradoa, Shuang Qian, and Steven A. Niederer​ in the [Cardiac Electro-Mechanics Research Group (CEMRG)](https://www.cemrg.co.uk/) at Imperial College London.
 
 We welcome contributions from the community! Feel free to open issues or submit pull requests.
