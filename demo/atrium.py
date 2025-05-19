@@ -6,7 +6,7 @@ from pathlib import Path
 # Specify the GPU device to run the simulation on 
 tc.set_device("cuda:1")
 dtype = tc.float32
-# The total similation duration (ms)
+# The total simulation duration (ms)
 simulation_time = 600
 # time interval
 dt = 0.01
@@ -28,7 +28,7 @@ simulator = Monodomain(ionic_model, T=simulation_time, dt=dt, dtype=dtype)
 # 2. Load in the mesh files (.pts .elem .lon)
 simulator.load_mesh(path=mesh_dir, unit_conversion=1000)
 # 3. Specify the conductivity for each region
-simulator.add_condutivity(region_ids=[1, 2, 3, 4, 5, 6], il=0.3, it=0.06, el=None, et=None)
+simulator.add_conductivity(region_ids=[1, 2, 3, 4, 5, 6], il=0.3, it=0.06, el=None, et=None)
 # 4. Specify the locations where stimulation is applied
 simulator.add_stimulus(f"{mesh_dir}/{case_name}.vtx", 
                        start=0.0, 

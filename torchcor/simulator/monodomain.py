@@ -77,7 +77,7 @@ class Monodomain:
             period = self.T
         self.stimuli.add(vtx_filepath, start, duration, intensity, period, count)
 
-    def add_condutivity(self, region_ids, il, it, el=None, et=None):
+    def add_conductivity(self, region_ids, il, it, el=None, et=None):
         self.conductivity.add(region_ids, il, it, el, et)
 
     def assemble(self):
