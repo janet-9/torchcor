@@ -4,9 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "torchcor"
-version = "0.1.2"
-description = "High-Performance large-scale cardic electrophysiology simulations on GPUs"
+version = "0.1.4"
+description = "High-Performance Large-Scale Cardic Electrophysiology Simulations on GPUs"
 authors = [{ name = "Bei Zhou", email = "bei.zhou@imperial.ac.uk" }]
+readme = "README.md" 
+license = {text = "MIT"}
+requires-python = ">=3.8"
 dependencies = [
     "torch",
     "matplotlib", 
