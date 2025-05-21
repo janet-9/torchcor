@@ -52,6 +52,8 @@ TorchCor is optimized for high-throughput cardiac electrophysiology simulations 
   </tr>
 </table>
 
+Unlike traditional CPU-based solvers like PETSc, which rely heavily on MPI-based parallelism and incur communication overhead, TorchCor minimizes latency by exploiting GPU-local memory and massive parallelism. This leads to superior scaling on large meshes, where CPU frameworks struggle with inter-process communication and abstraction overheads, allowing a high-throughput, low-latency pipeline well-suited for time-sensitive cardiac simulations.
+
 ## 🚀 Quickstart Example
 
 Here’s a concise example to run a simulation using the **TenTusscher-Panfilov** ionic model on a bi-ventricle mesh. The inputs are:
