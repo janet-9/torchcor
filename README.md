@@ -9,7 +9,7 @@
 - ⚙️ Support for a wide range of ionic models and conductivity heterogeneity  
 - 🔧 Fully customizable model parameters for flexible experimentation and prototyping
 - 🎯 Accurate simulation of cardiac electrical activity for research and development  
-- 📈 Generation of precise local activation time maps  
+- 📈 Generation of precise local activation and repolarization time maps  
 - 🩺 Simulation of clinically relevant 12-lead ECG signals through phie recovery (under testing)
 
 
@@ -20,11 +20,11 @@ Below are simulation results showcasing the electrical activation patterns over 
   <tr>
     <td align="center">
       <img src="docs/atrium.gif" alt="Left Atrium simulation" width="300"/><br/>
-      <strong>Left Atrium</strong>
+      <strong>3D left atrium surface mesh</strong>
     </td>
     <td align="center">
       <img src="docs/biv.gif" alt="Bi-ventricle simulation" width="300"/><br/>
-      <strong>Bi-ventricle</strong>
+      <strong>3D bi-ventricle volume mesh</strong>
     </td>
   </tr>
 </table>
@@ -54,7 +54,18 @@ TorchCor is optimized for high-throughput cardiac electrophysiology simulations 
 
 ## 🚀 Quickstart Example
 
-Here’s a concise example to run a simulation using the **TenTusscher-Panfilov** ionic model on a bi-ventricle mesh:
+Here’s a concise example to run a simulation using the **TenTusscher-Panfilov** ionic model on a bi-ventricle mesh. The inputs are:
+
+- `.pts` file: coordinates of the vertices
+- `.elem` file: connectivities of the mesh
+- `.lon` file: fibre orientations
+- One or more `.vtx` files: pacing locations
+
+Running the following code will produce:  
+- a list of membrane potentials, each saved after every 1 ms of the simulation
+- a local activation time map and  a repolarisation time map  
+
+all saved in `.pt` file format readable by `torch.load`. 
 
 ```python
 import torchcor as tc
