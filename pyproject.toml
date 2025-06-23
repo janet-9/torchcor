@@ -28,6 +28,7 @@ packages = [
     "torchcor", 
     "torchcor.core", 
     "torchcor.ionic", 
+    "torchcor.ionic.cellml",
     "torchcor.simulator",
     "torchcor.tools",
     "torchcor.electrodes",
