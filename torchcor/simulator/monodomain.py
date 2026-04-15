@@ -175,7 +175,6 @@ class Monodomain:
     
     def solve(self, a_tol, r_tol, max_iter, linear_guess=True, snapshot_interval=5, verbose=True, result_path=None):
         self.result_path = Path(result_path)
-        self.result_path.mkdir(parents=True, exist_ok=True)
         self.snapshot_interval = snapshot_interval
 
         self.assemble()
@@ -268,6 +267,7 @@ class Monodomain:
         Vm: torch.Tensor,
         snapshot_interval: float = 1,
         threshold: float = -10.0,
+        save: bool = True
     ) -> torch.Tensor:
         T, N = Vm.shape
         above = Vm > threshold                                   # (T, N)
@@ -278,7 +278,9 @@ class Monodomain:
         ATs = first_crossing.float() * snapshot_interval
         ATs[~has_crossing] = float('nan')
 
-        torch.save(ATs.cpu(), self.result_path / "ATs.pt")
+        if save:
+            self.result_path.mkdir(parents=True, exist_ok=True)
+            torch.save(ATs.cpu(), self.result_path / "ATs.pt")
         
 
         return ATs
@@ -291,6 +293,7 @@ class Monodomain:
         threshold: float = -70.0,
         search_after: torch.Tensor = None,
         first: bool = True,
+        save: bool = True
     ) -> torch.Tensor:
         T, N = Vm.shape
 
@@ -316,17 +319,22 @@ class Monodomain:
         RTs = (crossing.float() + 1) * snapshot_interval
         RTs[~has_crossing] = float('nan')
 
-        if first:
-            torch.save(RTs.cpu(), self.result_path / "RTs.pt")
-        else:
-            torch.save(RTs.cpu(), self.result_path / "RTs_last.pt")
+        if save:
+            self.result_path.mkdir(parents=True, exist_ok=True)
+            if first:
+                torch.save(RTs.cpu(), self.result_path / "RTs.pt")
+            else:
+                torch.save(RTs.cpu(), self.result_path / "RTs_last.pt")
         
         return RTs
 
     def save_vm(self, Vm):
+        self.result_path.mkdir(parents=True, exist_ok=True)
         torch.save(Vm.cpu(), self.result_path / "Vm.pt")
 
     def vm_to_vtk(self, Vm=None, step=1):
+        self.result_path.mkdir(parents=True, exist_ok=True)
+
         if self.elems.Tr.data is not None:
             visualization = VTK3DSurface(self.nodes, self.elems.Tr.data)
         elif self.elems.Tt.data is not None:
@@ -337,24 +345,24 @@ class Monodomain:
             n_solutions = Vm.shape[0]
             for i in range(0, n_solutions, step):
                 visualization.save_frame(color_values=Vm[i],
-                                        frame_path=self.result_path / f"Vm_vtk/ms_{i * self.snapshot_interval}.vtk")
+                                         frame_path=self.result_path / f"Vm_vtk/ms_{i * self.snapshot_interval}.vtk")
 
         ATS_path = self.result_path / "ATs.pt"
         if ATS_path.exists():
             ATs = torch.load(ATS_path)
             visualization.save_frame(color_values=ATs,
-                                    frame_path=self.result_path / "ATs.vtk")
+                                     frame_path=self.result_path / "ATs.vtk")
         
         RTs_path = self.result_path / "RTs.pt"
         if RTs_path.exists():
             RTs = torch.load(RTs_path)
             visualization.save_frame(color_values=RTs,
-                                    frame_path=self.result_path / "RTs.vtk")
+                                     frame_path=self.result_path / "RTs.vtk")
 
 
     def vm_to_igb(self, Vm, filename: str = "Vm.igb"):
-        ''' This function converts the output to an igb file format
-        '''
+        self.result_path.mkdir(parents=True, exist_ok=True)
+        
         data = Vm.cpu().numpy().astype(np.float32)  #ntXnx
         
         header = {'x':self.n_nodes, 'y':1, 'z':1,
