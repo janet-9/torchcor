@@ -43,6 +43,7 @@ ATs = simulator.compute_activation_map(Vm=Vm,
                                        threshold=0)
 print("ATs: ", ATs.min().item(), ATs.cpu().max().item(), flush=True)
 RTs = simulator.compute_repolarization_map(Vm=Vm, 
+                                           search_after=ATs,
                                            snapshot_interval=snapshot_interval, 
                                            threshold=-70)
 print("RTs: ", RTs.min().item(), RTs.cpu().max().item(), flush=True)

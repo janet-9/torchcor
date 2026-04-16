@@ -250,83 +250,135 @@ class Monodomain:
         Vm = torch.stack(solution_list, dim=0)
         return Vm
 
+    def compute_activation_map_dvdt(
+        self,
+        Vm: torch.Tensor,
+        snapshot_interval: float = 1.0,
+        threshold: float = 30.0,
+        interpolate: bool = False,
+        save: bool = False,
+    ) -> torch.Tensor:
+        T, N = Vm.shape
 
-    # def compute_activation_map(self, Vm: torch.Tensor, snapshot_interval: float, threshold=10) -> torch.Tensor:
-    #     dVdt = torch.diff(Vm, dim=0) / snapshot_interval
-    #     dVdt = dVdt * (dVdt > 0)
-    #     peak_idx = torch.argmax(dVdt, dim=0) 
-    #     activation_times = peak_idx.float() * snapshot_interval
-    #     max_dVdt, _ = dVdt.max(dim=0)                     
-    #     activation_times[max_dVdt < threshold] = float('nan')
+        dVdt = (Vm[1:] - Vm[:-1]) / snapshot_interval
+        peak_idx = torch.argmax(dVdt, dim=0)
+        max_dVdt = dVdt.gather(0, peak_idx.unsqueeze(0)).squeeze(0)
 
-    #     return activation_times
+        valid = max_dVdt >= threshold
+
+        if interpolate:
+            p = peak_idx.clamp(1, dVdt.shape[0] - 2)
+            y0 = dVdt.gather(0, (p - 1).unsqueeze(0)).squeeze(0)
+            y1 = dVdt.gather(0, p.unsqueeze(0)).squeeze(0)
+            y2 = dVdt.gather(0, (p + 1).unsqueeze(0)).squeeze(0)
+            curvature = y0 - 2 * y1 + y2
+            shift = torch.where(
+                curvature < -1e-12,
+                0.5 * (y0 - y2) / curvature.clamp(max=-1e-12),
+                torch.zeros_like(y1),
+            ).clamp(-1.0, 1.0)
+            at_idx = p.float() + shift
+            edge = (peak_idx == 0) | (peak_idx >= dVdt.shape[0] - 1)
+            at_idx = torch.where(edge, peak_idx.float(), at_idx)
+            ATs = at_idx * snapshot_interval
+        else:
+            ATs = peak_idx.float() * snapshot_interval
+
+        ATs[~valid] = float('nan')
+
+        if save:
+            self.result_path.mkdir(parents=True, exist_ok=True)
+            torch.save(ATs.cpu(), self.result_path / "ATs.pt")
+
+        return ATs
 
 
     def compute_activation_map(
         self,
         Vm: torch.Tensor,
-        snapshot_interval: float = 1,
-        threshold: float = -10.0,
-        save: bool = True
+        snapshot_interval: float = 1.0,
+        threshold: float = 0,
+        interpolate: bool = False,
+        save: bool = False
     ) -> torch.Tensor:
         T, N = Vm.shape
-        above = Vm > threshold                                   # (T, N)
-        crossings = above[1:].float() - above[:-1].float()      # (T-1, N)
-        ascending = crossings > 0                                # (T-1, N)
-        has_crossing = ascending.any(dim=0)                      # (N,)
-        first_crossing = torch.argmax(ascending.long(), dim=0)   # (N,)
-        ATs = first_crossing.float() * snapshot_interval
+
+        above = Vm > threshold
+        ascending = ~above[:-1] & above[1:]
+        has_crossing = ascending.any(dim=0)
+
+        crossing = torch.argmax(ascending.to(torch.uint8), dim=0)
+
+        if interpolate:
+            t0 = crossing.unsqueeze(0)
+            v0 = Vm.gather(0, t0).squeeze(0)
+            v1 = Vm.gather(0, (t0 + 1).clamp_max(T - 1)).squeeze(0)
+            denom = (v1 - v0).clamp(min=1e-12)
+            frac = ((threshold - v0) / denom).clamp(0.0, 1.0)
+            ATs = (crossing.float() + frac) * snapshot_interval
+        else:
+            ATs = crossing.float() * snapshot_interval
+
         ATs[~has_crossing] = float('nan')
 
         if save:
             self.result_path.mkdir(parents=True, exist_ok=True)
             torch.save(ATs.cpu(), self.result_path / "ATs.pt")
-        
-
         return ATs
 
 
     def compute_repolarization_map(
         self,
         Vm: torch.Tensor,
-        snapshot_interval: float = 1,
+        snapshot_interval: float = 1.0,
         threshold: float = -70.0,
         search_after: torch.Tensor = None,
         first: bool = True,
-        save: bool = True
+        interpolate: bool = False,
+        save: bool = False
     ) -> torch.Tensor:
         T, N = Vm.shape
+        device = Vm.device
 
-        above = Vm > threshold                                   # (T, N)
-        crossings = above[:-1].float() - above[1:].float()      # (T-1, N)
-        descending = crossings > 0                               # (T-1, N)
+        above = Vm > threshold
+        descending = above[:-1] & ~above[1:]
 
         if search_after is not None:
+            search_after = search_after.to(device)
             never_activated = torch.isnan(search_after)
-            act_idx = (search_after / snapshot_interval).long().clamp(0, T - 2)
+            safe = torch.where(never_activated, torch.zeros_like(search_after), search_after)
+            act_idx = (safe / snapshot_interval).long().clamp_(0, T - 2)
             act_idx[never_activated] = T - 1
-            time_idx = torch.arange(T - 1, device=Vm.device).unsqueeze(1)
+            time_idx = torch.arange(T - 1, device=device).unsqueeze(1)
             descending = descending & (time_idx >= act_idx.unsqueeze(0))
             descending[:, never_activated] = False
 
-        has_crossing = descending.any(dim=0)                     # (N,)
+        has_crossing = descending.any(dim=0)
 
         if first:
-            crossing = torch.argmax(descending.long(), dim=0)
+            crossing = torch.argmax(descending.to(torch.uint8), dim=0)
         else:
-            crossing = (T - 2) - torch.argmax(descending.flip(0).long(), dim=0)
+            flipped = descending.flip(0).to(torch.uint8)
+            crossing = (T - 2) - torch.argmax(flipped, dim=0)
 
-        RTs = (crossing.float() + 1) * snapshot_interval
+        if interpolate:
+            t0 = crossing.unsqueeze(0)
+            v0 = Vm.gather(0, t0).squeeze(0)
+            v1 = Vm.gather(0, (t0 + 1).clamp_max(T - 1)).squeeze(0)
+            denom = (v0 - v1).clamp(min=1e-12)
+            frac = ((v0 - threshold) / denom).clamp(0.0, 1.0)
+            RTs = (crossing.float() + frac) * snapshot_interval
+        else:
+            RTs = (crossing.float() + 1.0) * snapshot_interval
+
         RTs[~has_crossing] = float('nan')
 
         if save:
             self.result_path.mkdir(parents=True, exist_ok=True)
-            if first:
-                torch.save(RTs.cpu(), self.result_path / "RTs.pt")
-            else:
-                torch.save(RTs.cpu(), self.result_path / "RTs_last.pt")
-        
+            torch.save(RTs.cpu(), self.result_path / "RTs.pt")
+
         return RTs
+
 
     def save_vm(self, Vm):
         self.result_path.mkdir(parents=True, exist_ok=True)
