@@ -1,59 +1,110 @@
 """
-ECG Lead Field Solver -- Reciprocal Method (openCARP-compatible)
+ECG Lead Field Solver -- First-Principles Reciprocal Method
+===========================================================
 
-Computes body-surface ECGs from transmembrane potential (Vm) using the
-reciprocal (adjoint) lead field method on a combined heart-torso FE mesh.
+Computes body-surface ECG signals from cardiac transmembrane potentials
+(Vm) on a combined heart-torso tetrahedral FE mesh.  This implementation
+follows the openCARP / Potse (2018) lead-field algorithm using rigorous
+Dirichlet grounding (no penalty term) and full float64 numerics.
 
-Physics (Potse 2018, Bishop & Plank 2011):
+Physics
+-------
+Starting from the bidomain equations in the heart,
 
-    Bidomain elliptic equation (phi_e recovery):
+    div(sigma_i  grad(phi_i))  = + I_m          (intracellular)
+    div(sigma_e  grad(phi_e))  = - I_m          (extracellular / heart)
 
-        div( (sigma_i + sigma_e) grad(phi_e) ) = -div( sigma_i  grad(Vm) )
+with  Vm = phi_i - phi_e.  Adding and eliminating I_m gives
 
-    On the full torso domain the bulk conductivity is:
+    div( (sigma_i + sigma_e) grad(phi_e) )  =  -div( sigma_i grad(Vm) )
+                                                                (1)
 
-        sigma_bulk = sigma_i + sigma_e   in the myocardium
-        sigma_bulk = sigma_T             in extracardiac tissue
+In the passive torso, current is solenoidal:
 
-    Heart-torso coupling (Krassowska & Neu 1994):
-        - Potential continuity:  phi_e = u_T  on the epicardial surface
-        - Current continuity:    sigma_e grad(phi_e).n = sigma_T grad(u_T).n
-        Both are satisfied naturally by FEM on the combined mesh.
+    div( sigma_T grad(u) ) = 0                                  (2)
 
-Reciprocal method:
+Heart-torso coupling (Krassowska & Neu 1994):
 
-    For each electrode e with ground g, solve ONCE:
+    phi_e = u                  on  Gamma_heart  (continuity)
+    (sigma_e grad phi_e) . n   =  (sigma_T grad u) . n
 
-        K  Z_e  =  delta_e  -  delta_g          (1)
+Body-surface boundary (insulating air):
 
-    where K is the stiffness matrix with sigma_bulk.
-    The system is pure Neumann (insulating body surface) so the
-    stiffness matrix is singular (constant null space).  A penalty
-    term pins Z(g) ~ 0 to lift the singularity while preserving
-    the Neumann physics everywhere else.
+    (sigma_T grad u) . n  =  0  on  Gamma_body                  (3)
 
-    The lead field vector is:
+Unified formulation on Omega = heart ∪ torso
+--------------------------------------------
+Let G be the bulk conductivity tensor, defined piecewise as
 
-        q_e  =  -(K_i  Z_e)                     (2)
+    G(x) = sigma_i(x) + sigma_e(x)   for x in heart
+    G(x) = sigma_T(x)                for x in torso
 
-    where K_i is assembled from sigma_i on heart elements only
-    (in torso-mesh node numbering).
+and let  sigma_i_ext(x) = sigma_i(x)  in the heart and  0 in the torso.
+Then (1)-(3) reduce to the single elliptic PDE
 
-    The ECG signal at every time step is then:
+    -div( G grad u ) = div( sigma_i_ext grad Vm )   in Omega    (4)
 
-        V_e(t)  =  Vm(t)  @  q_e                (3)
+with the body-surface Neumann condition  (G grad u).n = 0.  FEM
+discretisation yields the symmetric positive semi-definite system
 
-    where Vm is (T, N_heart) and q_e is (N_heart,).
+    K_bulk  u(t)  =  - K_i  Vm(t)                               (5)
 
-Implementation notes:
-    - Both K and K_i are assembled on the torso mesh using the torso
-      mesh's own fibre directions, so there is no element-ordering or
-      node-numbering mismatch.
-    - The CG solve runs in float64 (matching openCARP / PETSc default)
-      for full numerical accuracy on large meshes.
-    - Neumann BC with penalty grounding: current is injected at the
-      electrode (+I) and extracted at the ground (-I), with a penalty
-      term alpha * e_g * e_g^T added to pin Z(g) ~ 0.
+where  K_bulk  is assembled with G  over the whole torso mesh and  K_i
+is assembled with  sigma_i  over the heart elements only (all other
+entries are structurally zero).
+
+The pure-Neumann operator has a 1-D null space (constants), so the
+solution is unique only up to an additive constant.  We fix that
+constant by a physical ground choice: the Right Leg (RL) electrode is
+grounded, u(g) = 0, via symmetric Dirichlet row/column elimination.
+This is the same gauge used by openCARP.
+
+Reciprocity (lead field)
+------------------------
+For each measurement electrode e (ground g), the ECG is
+
+    V_e(t) = u(e, t) = e_e^T u(t) = - e_e^T K_bulk^{-1} K_i Vm(t)
+
+Define the (Dirichlet-grounded) adjoint solution
+
+    K_bulk  Z_e  =  e_e,     Z_e(g) = 0                         (6)
+
+Then
+
+    V_e(t) = - Z_e^T K_i Vm(t) = Vm(t)^T q_e
+
+where the lead field vector is
+
+    q_e  =  - K_i Z_e                                           (7)
+
+K_i is zero on non-heart rows, so only the heart-node entries of q_e
+contribute.  We store  q_heart = q_e[heart nodes]  so the final ECG is
+a simple dense  (T, N_heart) @ (N_heart,) matrix-vector product.
+
+Implementation notes
+--------------------
+* Everything in the solve runs in float64 (matching PETSc defaults).
+* The ground is enforced by symmetric Dirichlet elimination -- row g
+  and column g of K_bulk are zeroed and K_bulk[g,g] is set to 1.  The
+  RHS is e_e with b[g] = 0 (b[e] = 1).  This removes the null space
+  exactly, so CG converges in far fewer iterations than a penalty.
+* K_bulk and K_i are both assembled on the torso mesh, using the
+  torso-mesh fibre field.  The standalone heart mesh is only loaded to
+  verify the node correspondence.
+* The 12-lead ECG (I, II, III, aVR, aVL, aVF, V1..V6) is computed with
+  the Wilson central terminal as reference for the precordial leads.
+  Einthoven's law (II = I + III) is checked as an end-to-end sanity
+  test.
+
+References
+----------
+- Potse M., 2018, "Scalable and accurate ECG simulation for
+  reaction-diffusion models of the human heart", Front. Physiol. 9:370.
+- Bishop M. J., Plank G., 2011, "Bidomain ECG simulations using an
+  augmented monodomain model for the cardiac source", IEEE TBME 58(8).
+- Krassowska W., Neu J. C., 1994, "Effective boundary conditions for
+  syncytial tissues", IEEE TBME 41(2).
+- openCARP: https://opencarp.org/  (ecg.cc / IGBReader).
 """
 
 from typing import Dict, Optional
@@ -78,32 +129,55 @@ warnings.filterwarnings(
 
 Tensor = torch.Tensor
 
+# Internal compute precision for the elliptic ECG solve.
+# openCARP uses double precision (PETSc default); lower precision
+# degrades lead-field accuracy dramatically, especially near the ground
+# electrode where the solution has a strong gradient.
+_F64 = torch.float64
+
 
 # ====================================================================== #
-#  LeadField class
+#  LeadField
 # ====================================================================== #
 class LeadField:
     """
-    ECG lead-field solver (reciprocal method, openCARP-compatible).
+    First-principles ECG lead-field solver (reciprocity method).
 
-    All stiffness matrices live on the torso mesh.  The standalone heart
-    mesh is loaded only for the Vm node-index mapping.
+    All stiffness matrices live on the torso mesh.  The heart mesh is
+    only used to verify the node correspondence and to report sizes.
+
+    Typical usage
+    -------------
+    >>> lf = LeadField(torso_dir, heart_dir, device, dtype)
+    >>> lf.add_torso_conductivity([10, 11], g=0.6667)
+    >>> lf.add_heart_conductivity([24, 25], il=0.5272, it=0.2076,
+    ...                                       el=1.0732, et=0.4227)
+    >>> lf.build()
+    >>> lf.load_electrodes("lf_src.vtx")
+    >>> lf.precompute_all()
+    >>> ecg = lf.compute_12lead(Vm)          # Vm: (T, N_heart)
+    >>> lf.plot_ecg(ecg, "ecg.png", dt=1.0)
     """
 
     def __init__(self, torso_mesh_dir, heart_mesh_dir, device, dtype):
         self.device = device
-        self.dtype = dtype                       # storage / Vm dtype
+        self.dtype = dtype                       # Vm / storage dtype
 
         # ---- meshes ----
         self._load_torso_mesh(torso_mesh_dir)
         self._load_heart_mesh(heart_mesh_dir)
 
-        # ---- per-element sigma for the torso mesh (set via add_*) ----
+        self.n_torso = int(self.torso_nodes.shape[0])
+
+        # ---- per-element sigma for the torso mesh (3x3 tensors) ----
         self.torso_sigma = torch.zeros(
             (self.torso_regions.shape[0], 3, 3),
-            device=device, dtype=dtype,
+            device=device, dtype=_F64,           # keep in float64
         )
-        self.n_torso = int(self.torso_nodes.shape[0])
+        self._torso_set = torch.zeros(
+            self.torso_regions.shape[0],
+            device=device, dtype=torch.bool,
+        )
 
         # ---- heart conductivity bookkeeping ----
         self._heart_cond_params = []
@@ -114,19 +188,19 @@ class LeadField:
         self.ground = "RL"
 
         # ---- matrices (filled by build()) ----
-        self.K_torso = None          # (sigma_i+sigma_e) heart, sigma_T torso
-        self.K_i = None              # sigma_i on heart elems, torso numbering
+        self.K_bulk_csr = None      # float64 CSR: (sigma_i+sigma_e) in heart, sigma_T in torso
+        self.K_i_csr    = None      # float64 CSR: sigma_i on heart elems only
 
         # ---- mapping (filled by build()) ----
-        self.heart_to_torso = None   # (N_heart,) int64
+        self.heart_to_torso = None  # (N_heart,) torso node ids of heart nodes
 
         # ---- lead fields (filled by precompute_*) ----
+        # q_heart[name] is float64, length = N_heart
         self.q_heart: Dict[str, Tensor] = {}
 
-        # ---- solver cache (filled by _prepare_solver()) ----
-        self._A = None               # float64 CSR: K_torso + penalty
-        self._K_i_f64 = None         # float64 CSR of K_i
-        self._pcd = None             # Jacobi preconditioner (float64)
+        # ---- solver state (filled by _prepare_solver()) ----
+        self._A_csr = None          # K_bulk with symmetric Dirichlet at ground
+        self._pcd   = None          # Jacobi preconditioner (float64)
 
     # ================================================================== #
     #  Mesh I/O
@@ -135,37 +209,53 @@ class LeadField:
         reader = MeshReader(mesh_dir)
         nodes, elems, _, fibres = reader.read(unit_conversion=unit_conversion)
 
-        self.torso_nodes   = torch.from_numpy(nodes).to(self.device, self.dtype)
+        self.torso_nodes   = torch.from_numpy(nodes).to(self.device, _F64)
         self.torso_elems   = torch.from_numpy(elems.Tt.data).to(self.device, torch.long)
         self.torso_regions = torch.from_numpy(elems.Tt.region).to(self.device, torch.long)
         self.torso_fibres  = torch.from_numpy(
             fibres[elems.Tt.idx]
-        ).to(self.device, self.dtype)
+        ).to(self.device, _F64)
 
     def _load_heart_mesh(self, mesh_dir, unit_conversion=1000):
         reader = MeshReader(mesh_dir)
         nodes, elems, _, fibres = reader.read(unit_conversion=unit_conversion)
 
-        self.heart_nodes   = torch.from_numpy(nodes).to(self.device, self.dtype)
+        self.heart_nodes   = torch.from_numpy(nodes).to(self.device, _F64)
         self.heart_elems   = torch.from_numpy(elems.Tt.data).to(self.device, torch.long)
         self.heart_regions = torch.from_numpy(elems.Tt.region).to(self.device, torch.long)
         self.heart_fibres  = torch.from_numpy(
             fibres[elems.Tt.idx]
-        ).to(self.device, self.dtype)
+        ).to(self.device, _F64)
 
     # ================================================================== #
     #  Conductivity registration
     # ================================================================== #
     def add_torso_conductivity(self, tags, g):
-        """Isotropic scalar conductivity *g* (S/m) for torso region tags."""
-        I3 = torch.eye(3, device=self.device, dtype=self.dtype)
+        """
+        Isotropic scalar conductivity `g` (S/m) for the given torso region
+        tags.  Must be called for every non-heart region present in the
+        torso mesh; unset elements would contribute a singular stiffness.
+        """
+        I3 = torch.eye(3, device=self.device, dtype=_F64)
         for tag in tags:
             mask = self.torso_regions == int(tag)
+            if not mask.any():
+                continue
             self.torso_sigma[mask] = float(g) * I3
+            self._torso_set[mask] = True
 
     def add_heart_conductivity(self, region_ids, il, it, el=None, et=None):
-        """Anisotropic bidomain conductivity for heart region tags."""
-        self.heart_tags.extend(region_ids)
+        """
+        Anisotropic bidomain conductivity (S/m) for the given heart
+        region tags.  il/it are intracellular longitudinal/transverse,
+        el/et are extracellular.  The bulk (sigma_i + sigma_e) is used in
+        K_bulk and sigma_i alone is used in K_i.
+        """
+        if el is None or et is None:
+            raise ValueError(
+                "ECG lead-field requires bidomain conductivities (il, it, el, et)"
+            )
+        self.heart_tags.extend(int(r) for r in region_ids)
         self._heart_cond_params.append((region_ids, il, it, el, et))
 
     # ================================================================== #
@@ -173,227 +263,360 @@ class LeadField:
     # ================================================================== #
     def build(self):
         """
-        Assemble the two stiffness matrices on the torso mesh.
+        Assemble K_bulk and K_i on the torso mesh.
 
-        K_torso  (N_torso x N_torso)
-            Bulk conductivity: sigma_i + sigma_e on heart elements,
-            sigma_T on extracardiac elements.
+        K_bulk   (N_torso, N_torso)
+            Full elliptic operator:
+                G = sigma_i + sigma_e    on heart elements
+                G = sigma_T              on extracardiac elements
 
-        K_i  (N_torso x N_torso, very sparse)
-            Intracellular conductivity sigma_i on heart elements only.
-            Non-heart rows/cols are structurally zero.
+        K_i      (N_torso, N_torso), very sparse
+            Source operator:
+                sigma_i    on heart elements
+                0          elsewhere
         """
+        if not self.heart_tags:
+            raise RuntimeError("No heart conductivity registered.")
+
         tag_t = torch.tensor(self.heart_tags, device=self.device, dtype=torch.long)
         heart_mask = torch.isin(self.torso_regions, tag_t)
+        if not heart_mask.any():
+            raise RuntimeError(
+                "heart_tags do not match any region in the torso mesh."
+            )
 
-        # -- heart conductivity from TORSO-mesh fibres ------------------
+        # Conductivity on torso heart elements (using TORSO-mesh fibres) --
         torso_heart_regions = self.torso_regions[heart_mask]
         torso_heart_fibres  = self.torso_fibres[heart_mask]
 
-        cond = Conductivity(torso_heart_regions, dtype=self.dtype)
+        cond = Conductivity(torso_heart_regions, dtype=_F64)
         for region_ids, il, it, el, et in self._heart_cond_params:
             cond.add(region_ids, il, it, el, et)
         sigma_i, sigma_e, _ = cond.calculate_sigma(torso_heart_fibres)
 
-        # -- K_torso:  sigma_i + sigma_e on heart,  sigma_T elsewhere ---
+        # Validate torso conductivity assignments
+        self._torso_set[heart_mask] = True  # heart covered via bulk below
+        unset = (~self._torso_set).nonzero(as_tuple=False).flatten()
+        if unset.numel() > 0:
+            missing_tags = torch.unique(self.torso_regions[unset]).tolist()
+            raise RuntimeError(
+                f"Torso regions with no conductivity assigned: {missing_tags}.  "
+                f"Call add_torso_conductivity() for every non-heart tag."
+            )
+
+        # K_bulk:  G = sigma_i + sigma_e on heart,  sigma_T elsewhere
         self.torso_sigma[heart_mask] = sigma_i + sigma_e
 
         torso_mats = Matrices3D(
             vertices=self.torso_nodes,
             tetrahedrons=self.torso_elems,
-            device=self.device, dtype=self.dtype,
+            device=self.device, dtype=_F64,
         )
-        K_torso_coo, _ = torso_mats.assemble_matrices(self.torso_sigma)
-        self.K_torso = K_torso_coo.to_sparse_csr()
+        K_bulk_coo, _ = torso_mats.assemble_matrices(self.torso_sigma)
+        K_bulk_coo = K_bulk_coo.coalesce()
+        self.K_bulk_csr = K_bulk_coo.to_sparse_csr()
 
-        # -- K_i:  sigma_i on heart elements, torso node numbering ------
+        # K_i:  sigma_i on heart elements, torso node numbering
         heart_elems_torso = self.torso_elems[heart_mask]
         heart_mats = Matrices3D(
             vertices=self.torso_nodes,
             tetrahedrons=heart_elems_torso,
-            device=self.device, dtype=self.dtype,
+            device=self.device, dtype=_F64,
         )
         K_i_coo, _ = heart_mats.assemble_matrices(sigma_i)
-        self.K_i = K_i_coo.to_sparse_csr()
+        K_i_coo = K_i_coo.coalesce()
+        self.K_i_csr = K_i_coo.to_sparse_csr()
 
-        # -- heart-to-torso node mapping --------------------------------
+        # Heart-to-torso node mapping
         self.heart_to_torso = torch.unique(
             heart_elems_torso.reshape(-1), sorted=True
         )
         self._verify_node_mapping()
 
-        n_heart = self.heart_to_torso.shape[0]
+        n_heart  = self.heart_to_torso.shape[0]
+        n_helems = int(heart_mask.sum())
         print(f"  Torso nodes : {self.n_torso:,}")
         print(f"  Heart nodes : {n_heart:,}")
-        print(f"  Heart elems : {int(heart_mask.sum()):,}")
+        print(f"  Heart elems : {n_helems:,}")
+        print(f"  K_bulk nnz  : {K_bulk_coo.values().numel():,}")
+        print(f"  K_i    nnz  : {K_i_coo.values().numel():,}")
 
     # ------------------------------------------------------------------ #
     def _verify_node_mapping(self):
-        """Check the standalone heart mesh matches the torso sub-domain."""
+        """
+        Verify the standalone heart mesh is the same sub-domain of the
+        torso mesh we just extracted.  Both must share node ordering
+        (guaranteed by torchcor.ecg.torso_heart.TorsoHeartMesh) and the
+        positions must match to floating-point precision.
+        """
         n_heart  = self.heart_nodes.shape[0]
         n_mapped = self.heart_to_torso.shape[0]
         if n_heart != n_mapped:
             raise RuntimeError(
-                f"Node count mismatch: heart mesh {n_heart} vs "
-                f"torso subdomain {n_mapped}. "
-                f"Ensure heart_tags covers all heart regions."
+                f"Node count mismatch: heart mesh has {n_heart} nodes, "
+                f"torso sub-domain has {n_mapped}.  Check heart_tags and "
+                f"ensure the heart mesh was extracted from this torso."
             )
         torso_sub = self.torso_nodes[self.heart_to_torso]
         diff = (self.heart_nodes - torso_sub).abs().max().item()
         if diff > 1e-3:
             raise RuntimeError(
-                f"Node position mismatch (max {diff:.6e}).  "
-                f"Heart mesh may not come from this torso mesh."
+                f"Heart and torso node positions do not match "
+                f"(max diff = {diff:.3e} m).  The heart mesh must be "
+                f"extracted from this torso via TorsoHeartMesh."
             )
-        print(f"  Node mapping verified (max coord diff = {diff:.2e})")
+        print(f"  Node mapping verified (max coord diff = {diff:.2e} m)")
 
     # ================================================================== #
     #  Electrodes
     # ================================================================== #
     def load_electrodes(self, filepath, names=None):
-        """Load electrode torso-node indices from a .vtx file."""
+        """
+        Load electrode torso-node indices from a CARP-style .vtx file.
+
+        Default electrode ordering (openCARP "lf_src.vtx"):
+            V1, V2, V3, V4, V5, V6, RA, LA, RL, LL
+        """
         if names is None:
             names = ["V1","V2","V3","V4","V5","V6","RA","LA","RL","LL"]
-        ids = np.loadtxt(filepath, dtype=np.int64, skiprows=1).tolist()
+
+        # CARP .vtx format:  line 1 = count, line 2 = "extra"/"intra",
+        # remaining lines = node indices.  Some tools omit the "extra"
+        # line, so be tolerant.
+        with open(filepath, "r") as f:
+            # first line:  "<count>" possibly followed by comments
+            first = f.readline().strip().split()
+            n_expected = int(first[0])
+            pos = f.tell()
+            peek_raw = f.readline().strip()
+            peek = peek_raw.split()[0] if peek_raw else ""
+            try:
+                int(peek)
+                f.seek(pos)                  # second line is an index
+            except ValueError:
+                pass                         # second line was a tag; skip
+            ids = []
+            for line in f:
+                s = line.strip()
+                if not s:
+                    continue
+                ids.append(int(s.split()[0]))
+
+        if len(ids) != n_expected:
+            raise ValueError(
+                f"vtx file header says {n_expected} nodes but found {len(ids)}"
+            )
         if len(ids) != len(names):
             raise ValueError(
                 f"Expected {len(names)} electrodes, got {len(ids)}"
             )
         self.electrodes = dict(zip(names, ids))
 
+        # Range-check
+        for name, idx in self.electrodes.items():
+            if not (0 <= idx < self.n_torso):
+                raise ValueError(
+                    f"Electrode {name} index {idx} is out of range "
+                    f"(n_torso = {self.n_torso})."
+                )
+        if self.ground not in self.electrodes:
+            raise ValueError(
+                f"Ground electrode '{self.ground}' not present in loaded "
+                f"electrode set {list(self.electrodes)}."
+            )
+
     # ================================================================== #
-    #  Solver preparation  (once, after electrodes are loaded)
+    #  Solver preparation
     # ================================================================== #
+    def _apply_symmetric_dirichlet(self, K_coo, g_idx):
+        """
+        Build A = K with row and column `g_idx` zeroed and A[g,g] = 1.
+
+        This enforces u(g) = 0 exactly for any RHS b with b[g] = 0.  The
+        resulting A is symmetric positive-definite (the null space of the
+        original Neumann K has been removed), so CG converges rapidly.
+        """
+        idx = K_coo.indices()
+        val = K_coo.values()
+
+        mask = (idx[0] != g_idx) & (idx[1] != g_idx)
+        new_idx = idx[:, mask]
+        new_val = val[mask]
+
+        # Add A[g, g] = 1
+        extra_idx = torch.tensor(
+            [[g_idx], [g_idx]], device=idx.device, dtype=torch.long
+        )
+        extra_val = torch.tensor(
+            [1.0], device=val.device, dtype=val.dtype
+        )
+        new_idx = torch.cat([new_idx, extra_idx], dim=1)
+        new_val = torch.cat([new_val, extra_val])
+
+        A_coo = torch.sparse_coo_tensor(
+            new_idx, new_val, K_coo.size(),
+            device=K_coo.device, dtype=K_coo.dtype,
+        ).coalesce()
+        return A_coo
+
     def _prepare_solver(self):
         """
-        Build the float64 system matrix with Neumann BC + penalty ground.
-
-        1. Promote K_torso to float64  (openCARP uses PETSc double).
-        2. Add penalty term  alpha * e_g e_g^T  to the ground node.
-           This pins Z(g) ~ 0  while keeping the Neumann (no-flux)
-           physics on the entire torso surface.
-        3. Build Jacobi preconditioner from the penalised matrix.
-        4. Promote K_i to float64 for accurate lead-field computation.
+        Build the grounded system matrix A and its Jacobi preconditioner.
+        Only depends on the ground electrode, so this is done once.
         """
-        if self._A is not None:
-            return                               # already prepared
+        if self._A_csr is not None:
+            return
 
-        ground_idx = self.electrodes[self.ground]
+        ground_idx = int(self.electrodes[self.ground])
 
-        # K_torso → float64 COO
-        K_coo_f64 = self.K_torso.to_sparse_coo().coalesce().to(torch.float64)
+        K_coo = self.K_bulk_csr.to_sparse_coo().coalesce()
+        A_coo = self._apply_symmetric_dirichlet(K_coo, ground_idx)
+        self._A_csr = A_coo.to_sparse_csr()
 
-        # Penalty parameter: scale from diagonal of K
-        idx = K_coo_f64.indices()
-        val = K_coo_f64.values()
-        diag_vals = val[idx[0] == idx[1]]
-        alpha = float(diag_vals.abs().max().item()) * 1e8
-
-        # Penalty matrix  D = alpha * e_g e_g^T
-        D_coo = torch.sparse_coo_tensor(
-            torch.tensor([[ground_idx], [ground_idx]],
-                         device=self.device, dtype=torch.long),
-            torch.tensor([alpha], device=self.device, dtype=torch.float64),
-            size=K_coo_f64.size(),
-            device=self.device, dtype=torch.float64,
-        )
-
-        # A = K + D  (Neumann + penalty)
-        A_coo = (K_coo_f64 + D_coo).coalesce()
-        self._A = A_coo.to_sparse_csr()
-
-        # Jacobi preconditioner (float64)
         self._pcd = Preconditioner()
         self._pcd.create_Jocobi(A_coo)
 
-        # K_i → float64 CSR
-        self._K_i_f64 = (
-            self.K_i.to_sparse_coo().coalesce().to(torch.float64).to_sparse_csr()
+        print(
+            f"  Solver ready  (symmetric Dirichlet, "
+            f"ground = {self.ground} @ node {ground_idx}, dtype = float64)"
         )
-
-        print(f"  Solver ready  (Neumann + penalty, ground = {self.ground}, "
-              f"node {ground_idx}, alpha = {alpha:.2e}, dtype = float64)")
 
     # ================================================================== #
     #  Reciprocal solve
     # ================================================================== #
     def _solve_reciprocal(self, electrode_name, a_tol, r_tol, max_iter):
         """
-        Solve  (K + D) Z  =  delta_e - delta_g   in float64.
+        Solve  A Z = e_electrode   in float64,
+        where A = K_bulk with symmetric Dirichlet at the ground node.
 
-        Neumann BC with balanced current: +1 at electrode, -1 at ground.
-        The penalty term D pins Z(g) ~ 0  to remove the null space.
+        The RHS is a unit delta at the electrode with b[g] = 0; this is
+        consistent with u(g) = 0 and produces the reciprocity adjoint.
         """
-        e_idx = self.electrodes[electrode_name]
-        g_idx = self.electrodes[self.ground]
+        e_idx = int(self.electrodes[electrode_name])
+        g_idx = int(self.electrodes[self.ground])
 
-        b = torch.zeros(self.n_torso, device=self.device, dtype=torch.float64)
-        b[e_idx] =  1.0
-        b[g_idx] = -1.0
+        b = torch.zeros(self.n_torso, device=self.device, dtype=_F64)
+        b[e_idx] = 1.0
+        # b[g_idx] is already 0 (enforced Dirichlet); do NOT add -1 here.
+        # If the user supplied e_idx == g_idx, that degenerate case would
+        # give Z = 0 and a zero lead field -- catch it:
+        if e_idx == g_idx:
+            raise ValueError(
+                f"Electrode '{electrode_name}' coincides with the ground."
+            )
+        b[g_idx] = 0.0
 
-        cg = ConjugateGradient(self._pcd, self._A, dtype=torch.float64)
+        cg = ConjugateGradient(self._pcd, self._A_csr, dtype=_F64)
         cg.initialize(
-            x=torch.zeros(self.n_torso, device=self.device, dtype=torch.float64),
+            x=torch.zeros(self.n_torso, device=self.device, dtype=_F64),
             linear_guess=False,
         )
         Z, n_iter = cg.solve(b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
 
         if torch.isnan(Z).any():
-            raise RuntimeError(f"CG diverged for electrode {electrode_name}")
+            raise RuntimeError(
+                f"CG produced NaNs for electrode {electrode_name}"
+            )
 
-        # Diagnostics
+        # Residual check
+        r = b - (self._A_csr @ Z)
+        res = torch.linalg.vector_norm(r).item()
+        b_norm = torch.linalg.vector_norm(b).item() + 1e-300
+
         Z_heart = Z[self.heart_to_torso]
-        print(f"    {electrode_name:>3s}:  CG iters = {n_iter:5d}   "
-              f"Z_heart range = [{Z_heart.min():.4e}, {Z_heart.max():.4e}]")
+        print(
+            f"    {electrode_name:>3s}:  CG iters = {n_iter:5d}   "
+            f"|res|/|b| = {res/b_norm:.2e}   "
+            f"Z_heart in [{Z_heart.min().item():+.3e}, "
+            f"{Z_heart.max().item():+.3e}]"
+        )
         return Z
 
     # ================================================================== #
     #  Lead-field precomputation
     # ================================================================== #
-    def precompute_electrode(self, name, a_tol, r_tol, max_iter):
+    def precompute_electrode(self, name, a_tol=1e-10, r_tol=1e-10,
+                             max_iter=20000):
         """
-        Compute the lead-field vector for one electrode.
+        Precompute the lead-field vector for one electrode.
 
-            q  =  -(K_i  Z)        ... Eq. (2)
+            q_e      = - K_i Z_e            (N_torso,)
+            q_heart  = q_e[heart nodes]     (N_heart,)
 
-        Only heart-node entries are non-zero; extract them so that
-        V(t) = Vm(t) @ q_heart  is a simple  (T, N_heart) @ (N_heart,).
+        Since K_i has support only on heart elements, q_e vanishes on
+        all extracardiac rows; extracting q_heart is lossless and saves
+        memory / compute at evaluation time.
         """
+        self._prepare_solver()
         Z = self._solve_reciprocal(name, a_tol, r_tol, max_iter)
 
-        q_full  = -(self._K_i_f64 @ Z)          # (N_torso,)  float64
-        q_heart = q_full[self.heart_to_torso]    # (N_heart,)  float64
-        self.q_heart[name] = q_heart.to(self.dtype)
+        q_full  = -(self.K_i_csr @ Z)                     # (N_torso,)
+        q_heart = q_full[self.heart_to_torso].contiguous() # (N_heart,)
+        self.q_heart[name] = q_heart                       # keep float64
 
     def precompute_all(self, a_tol=1e-10, r_tol=1e-10, max_iter=20000):
-        """Precompute lead fields for every electrode except the ground."""
+        """
+        Precompute lead fields for every electrode except the ground.
+        The ground electrode has q = 0 by construction.
+        """
+        if not self.electrodes:
+            raise RuntimeError(
+                "No electrodes loaded.  Call load_electrodes() first."
+            )
         self._prepare_solver()
         for name in self.electrodes:
-            if name != self.ground:
-                self.precompute_electrode(name, a_tol, r_tol, max_iter)
-
-        # Free float64 solver data
-        del self._A, self._K_i_f64, self._pcd
-        self._A = self._K_i_f64 = self._pcd = None
-        torch.cuda.empty_cache()
+            if name == self.ground:
+                # Zero lead field for the grounded electrode
+                self.q_heart[name] = torch.zeros(
+                    self.heart_to_torso.shape[0],
+                    device=self.device, dtype=_F64,
+                )
+                continue
+            self.precompute_electrode(name, a_tol, r_tol, max_iter)
 
     # ================================================================== #
     #  ECG computation
     # ================================================================== #
     def unipolar(self, Vm: Tensor, electrode: str) -> Tensor:
-        """Unipolar signal  U(t) = Vm(t) @ q_e."""
-        return Vm @ self.q_heart[electrode]
+        """
+        Unipolar signal at one electrode relative to the ground.
+
+            U_e(t) = Vm(t) . q_heart[e]
+
+        Vm may be (T, N_heart) or (N_heart,).  Computation is done in
+        float64 for accuracy and the result is returned in `self.dtype`.
+        """
+        if electrode not in self.q_heart:
+            raise KeyError(
+                f"Lead field for '{electrode}' not precomputed. "
+                f"Available: {list(self.q_heart)}"
+            )
+        # Compute on whichever device Vm currently lives on.  This lets
+        # the caller keep a large Vm tensor on CPU to avoid GPU OOM on
+        # big meshes, while still getting float64 precision.
+        Vm64 = Vm.to(_F64)
+        q = self.q_heart[electrode].to(Vm64.device)        # float64
+        sig = Vm64 @ q
+        return sig.to(self.dtype)
 
     def compute_12lead(self, Vm: Tensor) -> Dict[str, Tensor]:
         """
-        Standard 12-lead ECG.
+        Standard clinical 12-lead ECG from the transmembrane potential.
 
-        Limb (Einthoven):   I = LA-RA,  II = LL-RA,  III = LL-LA
-        Augmented:          aVR, aVL, aVF
-        Precordial:         V1..V6, referenced to Wilson Central Terminal
+        Limb leads (Einthoven):
+            I   = LA - RA
+            II  = LL - RA
+            III = LL - LA
+        Augmented (Goldberger):
+            aVR = RA - (LA + LL)/2
+            aVL = LA - (RA + LL)/2
+            aVF = LL - (RA + LA)/2
+        Precordial (Wilson Central Terminal):
+            WCT = (RA + LA + LL)/3
+            Vi  = unipolar(Vi) - WCT       for i = 1..6
+
+        Einthoven's law (II = I + III) is checked as an end-to-end test.
         """
-        Vm = Vm.to(self.device, self.dtype)
-
         ra = self.unipolar(Vm, "RA")
         la = self.unipolar(Vm, "LA")
         ll = self.unipolar(Vm, "LL")
@@ -412,12 +635,15 @@ class LeadField:
             "I": I, "II": II, "III": III,
             "aVR": aVR, "aVL": aVL, "aVF": aVF,
         }
-        for v in ("V1","V2","V3","V4","V5","V6"):
+        for v in ("V1", "V2", "V3", "V4", "V5", "V6"):
             ecg[v] = self.unipolar(Vm, v) - wct
 
-        # Verify Einthoven's law:  II = I + III  (pointwise)
+        # Einthoven consistency check (pure algebra -- any deviation is
+        # float round-off only).
         err = (II - (I + III)).abs().max().item()
-        print(f"  Einthoven check  max|II-(I+III)| = {err:.2e}")
+        rng = II.abs().max().item() + 1e-300
+        print(f"  Einthoven check  max|II-(I+III)| = {err:.2e} "
+              f"(rel {err/rng:.2e})")
 
         return ecg
 
@@ -425,11 +651,18 @@ class LeadField:
     #  Plotting
     # ================================================================== #
     def plot_ecg(self, ecg_dict, filename="ecg_12lead.png",
-                 dt: Optional[float] = None, smooth_sigma: float = 2.0):
+                 dt: Optional[float] = None, smooth_sigma: float = 0.0):
         """
-        12-lead ECG in a 3x4 clinical layout.
+        Render the 12-lead ECG in the conventional 3 x 4 clinical layout.
 
+        Parameters
+        ----------
+        ecg_dict     : dict returned by compute_12lead()
+        filename     : output PNG
+        dt           : sample period (ms); if None the x axis is samples
         smooth_sigma : Gaussian sigma in samples (0 = no smoothing).
+                       Smoothing is for display only and is off by
+                       default so the raw waveform is visible.
         """
         order = [
             "I",   "aVR", "V1", "V4",
@@ -453,7 +686,8 @@ class LeadField:
             ax.spines["right"].set_visible(False)
 
         fig.supylabel("Potential (a.u.)", fontsize=11)
-        fig.suptitle("12-Lead ECG", fontsize=13)
+        fig.suptitle("12-Lead ECG (lead-field reciprocity, Dirichlet gauge)",
+                     fontsize=13)
         plt.tight_layout(rect=[0.03, 0.0, 1, 0.96])
         plt.savefig(filename, dpi=300)
         plt.close(fig)

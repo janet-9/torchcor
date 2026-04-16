@@ -23,7 +23,7 @@ tc.set_device("cuda:0")
 mesh_dir = Path("/data/Bei/Torso/HC2/heart")
 torso_mesh_dir = "/data/Bei/Torso/HC2/mesh"
 heart_mesh_dir = "/data/Bei/Torso/HC2/heart"
-electrode_file = "/data/Bei/Torso/HC3/electrodes/lf_src.vtx"
+electrode_file = "/data/Bei/Torso/HC2/electrodes/lf_src.vtx"
 
 vm_file = Path("Vm_saved.pt")
 
@@ -60,7 +60,8 @@ else:
         result_path="./biventricle",
     )
     print(f"Vm shape: {Vm.shape}")
-    torch.save(Vm.cpu(), vm_file)
+    Vm = Vm.cpu()
+    torch.save(Vm, vm_file)
     print(f"Saved Vm to {vm_file}")
     del simulator, im
     torch.cuda.empty_cache()
@@ -95,7 +96,10 @@ print("\n" + "=" * 60)
 print("STEP 3: Precomputing lead fields (9 CG solves)")
 print("=" * 60)
 
-lf.load_electrodes(electrode_file)
+# Electrode order in lf_src.vtx (confirmed with dataset owner):
+#   V1, V2, V3, V4, V5, V6, RA, LA, RL, LL
+# RL is the reference/ground.
+lf.load_electrodes(electrode_file)   # uses the default names above
 lf.precompute_all(a_tol=1e-8, r_tol=1e-8, max_iter=20000)
 
 # ========== STEP 4: Compute & plot 12-lead ECG ==========
@@ -103,7 +107,8 @@ print("\n" + "=" * 60)
 print("STEP 4: Computing 12-lead ECG")
 print("=" * 60)
 
-Vm = Vm.to(device, dtype)
-ecg12 = lf.compute_12lead(Vm)
+# Keep Vm on CPU: the final Vm @ q_heart product is cheap (one per
+# electrode) and avoids shipping a multi-GB tensor to the GPU.
+ecg12 = lf.compute_12lead(Vm.cpu())
 lf.plot_ecg(ecg12, filename="ecg_12lead.png", dt=1.0)
 print("Done.")
