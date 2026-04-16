@@ -1,6 +1,11 @@
+import sys
 import numpy as np
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from torchcor.core import MeshReader, MeshWriter
+from torchcor.core.mesh import Elems, Element
 
 
 class TorsoHeartMesh:
@@ -39,20 +44,35 @@ class TorsoHeartMesh:
 
     def load_torsor_mesh(self, torsor_mesh_dir="/data/Bei/Torso/HC2/mesh", unit_conversion=1000):
         reader = MeshReader(torsor_mesh_dir)
-        self.torso_nodes, self.torso_elems, self.torso_regions, self.torso_fibres = reader.read(unit_conversion=unit_conversion)
+        nodes, elems, _, fibres = reader.read(unit_conversion=unit_conversion)
+        self.torso_nodes = nodes
+        self.torso_elems = elems.Tt.data
+        self.torso_regions = elems.Tt.region
+        self.torso_fibres = fibres[elems.Tt.idx]
         return self.torso_nodes, self.torso_elems, self.torso_regions, self.torso_fibres
     
     def load_heart_mesh(self, heart_mesh_dir="/data/Bei/Torso/HC2/heart", unit_conversion=1000):
         reader = MeshReader(heart_mesh_dir)
-        self.heart_nodes, self.heart_elems, self.heart_regions, self.heart_fibres = reader.read(unit_conversion=unit_conversion)
+        nodes, elems, _, fibres = reader.read(unit_conversion=unit_conversion)
+        self.heart_nodes = nodes
+        self.heart_elems = elems.Tt.data
+        self.heart_regions = elems.Tt.region
+        self.heart_fibres = fibres[elems.Tt.idx]
         return self.heart_nodes, self.heart_elems, self.heart_regions, self.heart_fibres
     
     def extract_heart_mesh(self, heart_mesh_dir="/data/Bei/Torso/HC2/heart", filename="1", tags=[24, 34, 36]):
         self.heart_mesh_dir = Path(heart_mesh_dir)
         self.heart_nodes, self.heart_elems, self.heart_regions, self.heart_fibres = self.extract_mesh_on_tags(self.torso_nodes, self.torso_elems, self.torso_regions, self.torso_fibres, tags)
-        writer = MeshWriter(mesh_dir=self.heart_mesh_dir, filename=filename)
 
-        writer.write(self.heart_nodes, self.heart_elems, self.heart_regions, self.heart_fibres)
+        elems = Elems()
+        elems.Tt = Element(
+            data=self.heart_elems,
+            idx=np.arange(self.heart_elems.shape[0]),
+            region=self.heart_regions,
+        )
+
+        writer = MeshWriter(mesh_dir=self.heart_mesh_dir, filename=filename)
+        writer.write(self.heart_nodes, elems, self.heart_fibres)
 
     def load_stimulus_region(self, vtx_filepath):
         with Path(vtx_filepath).open("r") as f:

@@ -59,9 +59,9 @@ class Elems:
         if self.Ln.data is not None:
             total += self.Ln.data.shape[0]
         if self.Tr.data is not None:
-            total += self.Ln.data.shape[0]
+            total += self.Tr.data.shape[0]
         if self.Tt.data is not None:
-            total += self.Ln.data.shape[0]
+            total += self.Tt.data.shape[0]
         return total
 
 class MeshReader:
@@ -172,18 +172,15 @@ class MeshWriter:
         self.mesh_dir = Path(mesh_dir)
         self.filename = filename
 
-    def write(self, nodes, elems, regions, fibres=None, unit_conversion=1000):
+    def write(self, nodes, elems, fibres=None, unit_conversion=1000):
         """
         nodes:   (N, 3) float
-        elems:   (M, 4) int for volume tets OR (M, 3) int for surface tris
-        regions: (M,)   int
+        elems:   Elems object
         fibres:  (M, 3) float (optional, typically for volume meshes)
         """
         self.mesh_dir.mkdir(parents=True, exist_ok=True)
 
         nodes = np.asarray(nodes, dtype=np.float64)
-        elems = np.asarray(elems, dtype=np.int64)
-        regions = np.asarray(regions, dtype=np.int64).reshape(-1)
 
         # ---- .pts ----
         pts_file = self.mesh_dir / f"{self.filename}.pts"
