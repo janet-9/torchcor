@@ -22,9 +22,12 @@ from torchcor.core.mesh import region_node_idx
 
 
 class Monodomain:
-    def __init__(self, ionic_models, T, dt, device=None, dtype=None):
+    def __init__(self, ionic_models, T, dt, device=None, dtype=None, mass_lumping=False):
         self.device = tc.get_device() if device is None else device
         self.dtype = torch.float64 if dtype is None else dtype
+
+        # Lump the FEM mass matrix (row-sum onto the diagonal) when True.
+        self.mass_lumping = mass_lumping
         
         self.T = T  # ms
         self.dt = dt  # ms
@@ -121,6 +124,18 @@ class Monodomain:
         K = K / self.Chi
         self.K = K.to(device=self.device, dtype=self.dtype)
         self.M = M.to(device=self.device, dtype=self.dtype)
+
+        if self.mass_lumping:
+            # Replace the consistent mass matrix with its lumped (row-sum)
+            Mc = self.M.coalesce()
+            rowsum = torch.sparse.sum(Mc, dim=1).to_dense()
+            idx = torch.arange(self.n_nodes, device=self.device)
+            self.M = torch.sparse_coo_tensor(
+                torch.stack([idx, idx]), rowsum,
+                (self.n_nodes, self.n_nodes),
+                device=self.device, dtype=self.dtype,
+            ).coalesce()
+
         A = self.M * self.Cm + self.K * self.dt * self.theta
         A = A.coalesce()
 

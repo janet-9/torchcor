@@ -104,10 +104,11 @@ class TorsoHeartMesh:
 
 
 if __name__ == "__main__":
-    torsor_mesh_dir = "/data/Bei/Torso/HC2/mesh"
-    heart_mesh_dir = "/data/Bei/Torso/HC2/heart"
+    base_dir = Path("/data/Bei/Torso/HC2")
+    torsor_mesh_dir = base_dir / "mesh"
+    heart_mesh_dir = base_dir / "heart"
     
     thm = TorsoHeartMesh()
     thm.load_torsor_mesh(torsor_mesh_dir=torsor_mesh_dir, unit_conversion=1000)
     thm.extract_heart_mesh(heart_mesh_dir=heart_mesh_dir, filename="1", tags=[24, 25, 34, 35, 36])
-    thm.convert_pacing_sites(pacing_sites_dir="/data/Bei/Torso/HC2/HPS")
+    thm.convert_pacing_sites(pacing_sites_dir=heart_mesh_dir / "HPS")

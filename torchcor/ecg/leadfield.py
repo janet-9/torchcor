@@ -599,6 +599,94 @@ class LeadField:
         sig = Vm64 @ q
         return sig.to(self.dtype)
 
+    # ================================================================== #
+    #  Direct forward solve (ground-truth cross-check of the lead field)
+    # ================================================================== #
+    def unipolar_direct(self, Vm: Tensor, frames=None,
+                        a_tol=1e-10, r_tol=1e-10, max_iter=20000) -> Dict[str, Tensor]:
+        """
+        Compute the unipolar electrode potentials by solving the FULL
+        forward problem directly, instead of via the precomputed lead
+        fields.  For each requested time frame t this solves
+
+            K_bulk  phi(t) = - K_i Vm(t),    phi(ground) = 0
+
+        (the same grounded operator used for the reciprocal solve) and
+        reads phi at every electrode node.  By reciprocity this MUST equal
+        ``unipolar()`` for every electrode; comparing the two is a
+        ground-truth check of the whole lead-field pipeline on the real
+        mesh, independent of any reciprocity assumption.
+
+        Parameters
+        ----------
+        Vm     : (T, N_heart) or (N_heart,) transmembrane potential.
+        frames : iterable of frame indices to solve (default: all).  Each
+                 frame is one large elliptic solve, so pass a handful of
+                 informative frames (e.g. the QRS peak and a T-wave frame)
+                 rather than the whole trace.
+
+        Returns
+        -------
+        dict {electrode_name: (len(frames),) potential relative to ground}.
+        """
+        self._prepare_solver()
+
+        if Vm.dim() == 1:
+            Vm = Vm.unsqueeze(0)
+        if frames is None:
+            frames = range(Vm.shape[0])
+        frames = list(frames)
+
+        g_idx = int(self.electrodes[self.ground])
+        names = list(self.electrodes)
+        out = {n: torch.zeros(len(frames), dtype=self.dtype) for n in names}
+
+        for fi, t in enumerate(frames):
+            vm_heart = Vm[t].to(self.device, _F64)
+            vm_full = torch.zeros(self.n_torso, device=self.device, dtype=_F64)
+            vm_full[self.heart_to_torso] = vm_heart
+
+            rhs = -(self.K_i_csr @ vm_full)
+            rhs[g_idx] = 0.0                      # consistent with phi(g)=0
+
+            cg = ConjugateGradient(self._pcd, self._A_csr, dtype=_F64)
+            cg.initialize(
+                x=torch.zeros(self.n_torso, device=self.device, dtype=_F64),
+                linear_guess=False,
+            )
+            phi, n_iter = cg.solve(rhs, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
+            phi = phi - phi[g_idx]                # enforce exact ground gauge
+
+            for n in names:
+                out[n][fi] = phi[int(self.electrodes[n])].to(self.dtype).cpu()
+            print(f"    direct frame {t:5d}: CG iters = {n_iter}")
+
+        return out
+
+    def validate_direct(self, Vm: Tensor, frames, **solve_kw) -> float:
+        """
+        Cross-check the reciprocity lead field against a direct forward
+        solve at the given frames.  Prints a per-electrode comparison and
+        returns the maximum absolute difference.  A value at solver
+        tolerance (<~1e-6 of the signal range) confirms the lead field is
+        a correct realisation of the forward problem on this mesh; if the
+        ECG still looks wrong, the cause is the Vm input, not the lead
+        field.
+        """
+        direct = self.unipolar_direct(Vm, frames=frames, **solve_kw)
+        frames = list(frames)
+        Vm2 = Vm.unsqueeze(0) if Vm.dim() == 1 else Vm
+        max_err = 0.0
+        print("  electrode |   reciprocity        direct          |err|")
+        for n in self.electrodes:
+            rec = self.unipolar(Vm2[frames], n).to(self.dtype).cpu()
+            dir_ = direct[n]
+            err = (rec - dir_).abs().max().item()
+            max_err = max(max_err, err)
+            print(f"  {n:>3s}: {rec.tolist()}  vs  {dir_.tolist()}  |err|={err:.2e}")
+        print(f"  MAX |reciprocity - direct| = {max_err:.3e}")
+        return max_err
+
     def compute_12lead(self, Vm: Tensor) -> Dict[str, Tensor]:
         """
         Standard clinical 12-lead ECG from the transmembrane potential.
