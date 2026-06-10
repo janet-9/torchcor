@@ -2,8 +2,12 @@
   <img src="docs/logo.png" alt="TorchCor logo" width="160"/>
 </p>
 
+<p align="center">
+  <b>GPU-accelerated cardiac electrophysiology simulation in PyTorch</b>
+</p>
 
 <p align="center">
+  <img src="https://img.shields.io/pypi/v/torchcor?color=blue&logo=pypi&logoColor=white">
   <img src="https://img.shields.io/badge/python-3.10+-blue">
   <img src="https://img.shields.io/badge/PyTorch-2.0+-EE4C2C?logo=pytorch&logoColor=white">
   <img src="https://img.shields.io/badge/CUDA-enabled-76B900?logo=nvidia">
@@ -21,7 +25,7 @@
 - 🔧 Fully customizable model parameters for flexible experimentation and prototyping
 - 🎯 Accurate simulation of cardiac electrical activity for research and development  
 - 📈 Generation of precise local activation and repolarization time maps  
-- 🩺 Simulation of clinically relevant 12-lead ECG signals through phie recovery (under testing)
+- 🩺 Simulation of clinically relevant **12-lead ECG** signals via the lead-field method
 
 
 ## 🫀 Simulation Previews
@@ -57,13 +61,20 @@ TorchCor is optimized for high-throughput cardiac electrophysiology simulations 
       <em>Execution time on cubic 3D volume meshes with increasing node counts.</em>
     </td>
     <td align="center">
-      <img src="docs/performance_biv.png" alt="Performance on bi-ventricle mesh" width="400"/><br/>
+      <img src="docs/performance_biv.png" alt="Performance on bi-ventricle mesh" width="240"/><br/>
       <em>Execution time on a bi-ventricle mesh (637,480 nodes) using various CPU cores and GPU devices.</em>
     </td>
   </tr>
 </table>
 
 Unlike traditional CPU-based solvers like PETSc, which rely heavily on MPI-based parallelism and incur communication overhead, TorchCor minimizes latency by exploiting GPU-local memory and massive parallelism. This leads to superior scaling on large meshes, where CPU frameworks struggle with inter-process communication and abstraction overheads, allowing a high-throughput, low-latency pipeline well-suited for time-sensitive cardiac simulations.
+
+## 📦 Installation
+
+```bash
+pip install torchcor
+```
+> **Note:** Requires PyTorch with CUDA support for GPU acceleration.
 
 ## 🚀 Quickstart Example
 
@@ -82,7 +93,7 @@ The inputs are:
 
 Running the following code will produce:  
 - a list of membrane potentials, each saved after every 1 ms of the simulation
-- a local activation time map and  a repolarisation time map  
+- a local activation time map and a repolarisation time map  
 
 all saved in `.pt` file format readable by `torch.load`. 
 
@@ -101,9 +112,9 @@ dt = 0.01
 
 home_dir = Path.home()
 mesh_dir = home_dir / "Data/ventricle/Case_1"
-# Load in the ionic model. Here we use TenTussherPanfilov for the simulation on bi-ventricle
+# Load in the ionic model. Here we use TenTusscherPanfilov for the simulation on bi-ventricle
 im = TenTusscherPanfilov(cell_type="ENDO", dt=dt, dtype=dtype)
-# 1. Initialise the Mondomain model
+# 1. Initialise the Monodomain model
 simulator = Monodomain(ionic_models=[im], T=simulation_time, dt=dt, dtype=dtype)
 # 2. Load in the mesh files (.pts .elem .lon)
 simulator.load_mesh(path=mesh_dir)
@@ -122,7 +133,7 @@ snapshot_interval = 1
 Vm = simulator.solve(a_tol=1e-5,              # absolute tolerance
                      r_tol=1e-5,              # relative tolerance
                      max_iter=100,            # maximum number of iterations for each CG calculation
-                     snapshot_interval=snapshot_interval,     # save the soluation after every 1 ms
+                     snapshot_interval=snapshot_interval,     # save the solution after every 1 ms
                      verbose=True,
                      result_path="./biventricle")  # the folder in which the results are saved
 
@@ -139,12 +150,37 @@ print("RTs: ", RTs.min().item(), RTs.cpu().max().item(), flush=True)
 simulator.vm_to_vtk(Vm=Vm, step=10)
 ```
 
-## 📦 Installation
+## 🩺 12-Lead ECG via the Lead-Field Method
 
-```bash
-pip install torchcor
+TorchCor reconstructs the clinical **12-lead ECG** directly from a cardiac simulation using the **lead-field (reciprocity) method** on a coupled heart–torso mesh. Each electrode's lead field is precomputed with a single elliptic solve; the entire ECG time series then follows from one matrix–vector product with the transmembrane potential `Vm`, so evaluating the ECG over a whole beat is effectively free.
+
+<p align="center">
+  <img src="docs/ecg_leadfield.png" alt="TorchCor simulated 12-lead ECG" width="720"/><br/>
+  <em>Simulated 12-lead ECG from a full heart–torso model, reconstructed with the lead-field reciprocity method.</em>
+</p>
+
+```python
+import torch
+from torchcor.ecg import LeadField
+
+# Coupled heart–torso mesh; precompute one lead field per electrode
+lf = LeadField(torso_mesh_dir, heart_mesh_dir,
+               device=torch.device("cuda:0"), dtype=torch.float64)
+
+# Passive torso/organ conductivities (S/m) + anisotropic bidomain heart conductivities
+lf.add_torso_conductivity([10, 11, 12], g=0.6667)
+lf.add_heart_conductivity([24, 25], il=0.5272, it=0.2076, el=1.0732, et=0.4227)
+lf.build()
+
+# Electrodes (V1–V6, RA, LA, RL, LL); one elliptic solve per lead
+lf.load_electrodes("electrodes/lf_src.vtx")
+lf.precompute_all()
+
+# Vm: (T, N_heart) from the EP simulation  ->  dict of the 12 standard leads
+ecg = lf.compute_12lead(Vm)
 ```
-> **Note:** Requires PyTorch with CUDA support for GPU acceleration.
+
+A complete heart → torso → 12-lead pipeline is provided in [`torchcor/ecg/run_ecg.py`](torchcor/ecg/run_ecg.py).
 
 ## 🐳 Docker Support
 
