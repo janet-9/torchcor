@@ -61,7 +61,7 @@ TorchCor is optimized for high-throughput cardiac electrophysiology simulations 
       <em>Execution time on cubic 3D volume meshes with increasing node counts.</em>
     </td>
     <td align="center">
-      <img src="docs/performance_biv.png" alt="Performance on bi-ventricle mesh" width="240"/><br/>
+      <img src="docs/performance_biv.png" alt="Performance on bi-ventricle mesh" width="400"/><br/>
       <em>Execution time on a bi-ventricle mesh (637,480 nodes) using various CPU cores and GPU devices.</em>
     </td>
   </tr>
