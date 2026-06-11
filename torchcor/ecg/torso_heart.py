@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from torchcor.core import MeshReader, MeshWriter
 from torchcor.core.mesh import Elems, Element
 
-
+class TorsoHeartMesh:
     def __init__(self):
         self.torso_nodes = None
         self.torso_elems = None

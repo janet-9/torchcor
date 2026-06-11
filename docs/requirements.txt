@@ -1,0 +1,5 @@
+# Documentation build dependencies (Read the Docs installs only these).
+# The runtime deps (torch, pyvista, ...) are mocked in conf.py when absent,
+# so they need not be installed just to build the docs.
+sphinx>=7
+furo

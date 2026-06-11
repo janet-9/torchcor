@@ -345,9 +345,9 @@ class ReactionEikonal(Monodomain):
         its own t_a.  Cells are electrically decoupled (no current flows between
         neighbours) and there is no linear solve, so it is fast.  Needs only
         add_velocity.  Use it for activation/repolarisation maps and fast runs.
-      * diffusion=True   ->  R-E+ (eq. 32): ADDS the monodomain diffusion operator,
-            Cm dVm/dt = I_foot - I_ion + div(sigma grad Vm)/beta,
-        solved with conjugate gradient every step.  This couples neighbouring
+      * diffusion=True   ->  R-E+ (eq. 32): ADDS the monodomain diffusion operator
+        (Cm dVm/dt = I_foot - I_ion + div(sigma grad Vm)/beta), solved with
+        conjugate gradient every step.  This couples neighbouring
         cells, recovering electrotonic loading / source-sink effects -- needed for
         accurate electrograms / ECGs.  It is slower (a linear solve per step) and
         also needs add_conductivity, calibrated to the same CV as add_velocity.
@@ -387,8 +387,8 @@ class ReactionEikonal(Monodomain):
     def set_diffusion_current(self, alpha, beta, gamma):
         """Use a triple-Gaussian diffusion current instead of the default AP foot.
 
-        Replaces the trigger by
-            I_diff(s) = sum_i alpha_i * exp(-((s - beta_i)/gamma_i)^2),   s = t - t_a,
+        Replaces the trigger by the triple Gaussian
+        I_diff(s) = sum_i alpha_i exp(-((s - beta_i)/gamma_i)^2) with s = t - t_a,
         which approximates div(sigma grad Vm).  `alpha` (mV/ms), `beta` (ms) and
         `gamma` (ms) are length-3 vectors fit once to a 1-D monodomain upstroke
         of the chosen ionic model.  Applied within +/- T_foot of each arrival.
