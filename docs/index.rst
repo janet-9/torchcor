@@ -1,38 +1,77 @@
 torchcor
 ========
 
-**GPU-accelerated cardiac electrophysiology simulation in PyTorch.**
+.. rst-class:: lead
 
-torchcor solves large-scale cardiac electrophysiology models on the GPU:
+   **GPU-accelerated cardiac electrophysiology simulation in PyTorch.**
 
-* **Monodomain** reaction-diffusion (the full reference model),
-* the **Reaction-Eikonal** model (fast activation times + recovered voltage),
-* body-surface **ECGs / electrograms** via a lead-field solver,
+torchcor solves large-scale cardiac electrophysiology on the GPU — from the full
+monodomain reaction-diffusion model to the fast reaction-eikonal model and
+body-surface ECGs — with a library of biophysical ionic cell models and a
+finite-element core that runs on CUDA or CPU.
 
-with a library of biophysical **ionic cell models** and a finite-element core
-that runs on CUDA or CPU.
+.. code-block:: bash
+
+   pip install torchcor
+
+What's inside
+-------------
+
+.. grid:: 2
+   :gutter: 3
+
+   .. grid-item-card:: 🫀 Monodomain
+      :link: tutorials/monodomain
+      :link-type: doc
+
+      The full reaction-diffusion reference model: implicit FEM diffusion +
+      explicit ionic update, on millions of nodes.
+
+   .. grid-item-card:: ⚡ Reaction-Eikonal
+      :link: tutorials/reaction_eikonal
+      :link-type: doc
+
+      Fast activation times from an eikonal solver, with the action potentials
+      filled in — a fraction of monodomain cost.
+
+   .. grid-item-card:: 📈 ECGs & electrograms
+      :link: tutorials/ecg
+      :link-type: doc
+
+      Body-surface 12-lead ECGs from the transmembrane voltage via a
+      reciprocal lead-field solver.
+
+   .. grid-item-card:: 🧬 Ionic models
+      :link: api/ionic
+      :link-type: doc
+
+      Phenomenological and biophysical human atrial / ventricular cell models.
+
+Why torchcor
+------------
+
+- **GPU-native.** Everything — FEM assembly, the conjugate-gradient solves, the
+  ionic ODEs, the eikonal sweeps — runs as vectorised PyTorch on the GPU.
+- **Whole-heart scale.** Designed for million-node meshes (atria, ventricles,
+  heart-torso).
+- **From timing to ECG.** Activation maps, full transmembrane voltage, and
+  body-surface potentials, in one library.
 
 .. toctree::
-   :maxdepth: 2
+   :hidden:
    :caption: Getting started
 
    installation
    quickstart
 
 .. toctree::
-   :maxdepth: 2
+   :hidden:
    :caption: Tutorials
 
    tutorials/index
 
 .. toctree::
-   :maxdepth: 2
+   :hidden:
    :caption: API reference
 
    api/index
-
-Indices
-=======
-
-* :ref:`genindex`
-* :ref:`modindex`

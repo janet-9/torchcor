@@ -87,3 +87,32 @@ central-terminal precordial leads, and prints an Einthoven consistency check
    problem at a few frames and compares it to the lead-field result — they must
    agree to solver tolerance.  If the ECG still looks wrong after that passes,
    the cause is the ``Vm`` source, not the lead field.
+
+How it works
+------------
+
+``build()`` assembles two stiffness matrices on the **torso** mesh:
+
+* ``K_bulk`` with the bulk conductivity ``G`` (``sigma_i + sigma_e`` inside the
+  heart, ``sigma_T`` in the surrounding torso), and
+* ``K_i`` with the intracellular conductivity ``sigma_i`` on the **heart elements
+  only** — the cardiac current source.
+
+The trick is **reciprocity**.  Instead of solving the elliptic problem for every
+time frame, ``precompute_all()`` solves the grounded *adjoint* problem **once per
+electrode**,
+
+.. math::
+
+   K_\mathrm{bulk}\, Z_e = e_e, \qquad Z_e(\text{ground}) = 0,
+
+and stores the **lead-field vector** ``q_e = −K_i Z_e`` restricted to the heart
+nodes.  The potential at electrode ``e`` is then just a dense product,
+
+.. math::
+
+   V_e(t) = V_m(t) \cdot q_e,
+
+so the entire ECG time trace costs **one matrix-vector product per electrode** —
+not one large elliptic solve per frame.  This is why a 500 ms, 1 kHz ECG is
+essentially free once the nine lead fields are precomputed.

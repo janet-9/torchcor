@@ -102,6 +102,42 @@ For pacing, pass ``period`` and ``count`` to repeat a stimulus.
 * ``compute_repolarization_map`` finds the down-crossing after ``search_after``
   (the activation map), so it returns proper repolarisation, not the upstroke.
 
+How the solve works
+-------------------
+
+Internally, ``solve()`` does the following.
+
+**1. Assembly (once).**
+The mesh is turned into finite-element **mass** ``M`` and **stiffness** ``K``
+matrices, where ``K`` carries the conductivity tensor ``sigma_m``.  The system
+matrix
+
+.. math::
+
+   A = C_m\,M + \theta\,\Delta t\,K
+
+is assembled and a Jacobi preconditioner is built for the conjugate-gradient
+(CG) solver.  With ``mass_lumping=True`` the mass matrix is diagonalised, which
+speeds up the solve and corrects the conduction velocity.
+
+**2. Time stepping (operator splitting).**
+Each ``dt`` is split into a reaction half-step and a diffusion half-step:
+
+* **Reaction (explicit).**  Every node advances its ionic model one step
+  (``differentiate``) — an embarrassingly parallel per-node ODE that fills the
+  right-hand side ``b`` together with any stimulus current.
+* **Diffusion (implicit).**  ``b`` is multiplied by ``M``, the explicit part of
+  the diffusion is subtracted, and ``A u = b`` is solved with preconditioned CG.
+  Because the diffusion is implicit it is unconditionally stable, so ``dt`` is
+  limited only by the stiffness of the ionic model.
+
+**3. Snapshots.**
+``Vm`` is recorded every ``snapshot_interval`` ms and returned as a
+``(T, N_nodes)`` tensor.
+
+The per-step cost is dominated by the CG diffusion solve — which is exactly what
+the :doc:`reaction_eikonal` model avoids when you don't need the full physics.
+
 .. tip::
    If you only need activation timing, the :doc:`reaction_eikonal` model gives
    it far faster.  Use the monodomain when you need the full diffusion physics

@@ -1,0 +1,33 @@
+/* torchcor docs polish */
+
+/* A touch more reading width on large screens */
+.content {
+    max-width: 52em;
+}
+
+/* Code blocks: subtle rounding + border */
+div.highlight {
+    border-radius: 6px;
+}
+
+/* Feature cards (sphinx-design) on the landing page */
+.sd-card {
+    border-radius: 10px;
+    transition: transform .12s ease, box-shadow .12s ease;
+}
+.sd-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.10);
+}
+
+/* Slightly bolder section titles */
+h1, h2 {
+    font-weight: 650;
+}
+
+/* Lead paragraph under the page title */
+p.lead {
+    font-size: 1.15rem;
+    color: var(--color-foreground-secondary);
+    margin-top: -0.3rem;
+}

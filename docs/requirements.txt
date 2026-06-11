@@ -3,3 +3,5 @@
 # so they need not be installed just to build the docs.
 sphinx>=7
 furo
+sphinx-design
+sphinx-copybutton
