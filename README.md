@@ -7,12 +7,13 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/pypi/v/torchcor?color=blue&logo=pypi&logoColor=white">
+ <a href="https://torchcor.readthedocs.io/en/latest/"><img src="https://img.shields.io/badge/docs-readthedocs-blue?logo=readthedocs&logoColor=white" alt="Documentation"></a>
+  <img src="https://img.shields.io/badge/License-MIT-yellow.svg">
   <img src="https://img.shields.io/badge/python-3.10+-blue">
   <img src="https://img.shields.io/badge/PyTorch-2.0+-EE4C2C?logo=pytorch&logoColor=white">
   <img src="https://img.shields.io/badge/CUDA-enabled-76B900?logo=nvidia">
-  <img src="https://img.shields.io/badge/License-MIT-yellow.svg">
 </p>
+
 
 
 **TorchCor** is a high-performance simulator for cardiac electrophysiology (CEP) using the finite element method (FEM) on general-purpose GPUs. Built on top of PyTorch, TorchCor delivers substantial computational acceleration for large-scale CEP simulations, with seamless integration into modern deep learning workflows and efficient handling of complex mesh geometries.
