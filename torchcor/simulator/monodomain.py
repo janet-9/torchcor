@@ -18,9 +18,6 @@ from torchcor.tools.igbreader import IGBReader
 from torchcor.core.mesh import region_node_idx
 
 
-
-
-
 class Monodomain:
     def __init__(self, ionic_models, T, dt, device=None, dtype=None, mass_lumping=False):
         self.device = tc.get_device() if device is None else device
@@ -459,15 +456,39 @@ class Monodomain:
                                      frame_path=self.result_path / f"igb_vtk/frame_{i}.vtk")
         
 
-    def phie_recovery(self, a_tol=1e-5, r_tol=1e-5, max_iter=1000):
-        Vm = torch.load(self.result_path / "Vm.pt").to(self.device)
+    def phie_recovery(self, Vm=None, a_tol=1e-5, r_tol=1e-5, max_iter=1000, verbose=False):
+        """Recover the extracellular potential phi_e from the monodomain Vm.
 
-        if self.elems.shape[1] == 3:
-            matrices = Matrices3DSurface(vertices=self.nodes, triangles=self.elems, device=self.device, dtype=self.dtype)
-        else:
-            matrices = Matrices3D(vertices=self.nodes, tetrahedrons=self.elems, device=self.device, dtype=self.dtype)
-        K_ie, _ = matrices.assemble_matrices(self.sigma_i + self.sigma_e)
-        K_i, _ = matrices.assemble_matrices(self.sigma_i)
+        Solves the pseudo-bidomain elliptic problem  K_ie phi_e = -K_i Vm  per
+        time frame, where K_ie is assembled with (sigma_i + sigma_e) and K_i with
+        sigma_i, gauged to zero mean (the operator is singular up to a constant).
+        This is the same formulation openCARP uses for its pseudo-bidomain phi_e.
+
+        Requires bidomain conductivities (il, it, el, et).  Pass ``Vm`` directly
+        or leave it ``None`` to load ``result_path/Vm.pt``.  Returns the
+        ``(T, N_nodes)`` phi_e field (also saved to ``result_path/Phi_e.pt``).
+        """
+        if self.sigma_i is None or self.sigma_e is None:
+            self.sigma_i, self.sigma_e, self.sigma_m = self.conductivity.calculate_sigma(self.fibres)
+        if self.sigma_i is None or self.sigma_e is None:
+            raise Exception("phie_recovery needs bidomain conductivities (il, it, el, et).")
+
+        if Vm is None:
+            Vm = torch.load(self.result_path / "Vm.pt")
+        Vm = Vm.to(self.device)
+
+        def stiffness(sigma):
+            if (self.elems.Ln.data is not None) and (self.elems.Tr.data is not None):
+                matrices = Matrices1D_3DSurface(vertices=self.nodes, elems=self.elems, device=self.device, dtype=self.dtype)
+            elif self.elems.Tr.data is not None:
+                matrices = Matrices3DSurface(vertices=self.nodes, triangles=self.elems.Tr.data, device=self.device, dtype=self.dtype)
+            else:
+                matrices = Matrices3D(vertices=self.nodes, tetrahedrons=self.elems.Tt.data, device=self.device, dtype=self.dtype)
+            K, _ = matrices.assemble_matrices(sigma)
+            return K.coalesce()
+
+        K_ie = stiffness(self.sigma_i + self.sigma_e)   # (sigma_i + sigma_e) stiffness
+        K_i = stiffness(self.sigma_i)                   # sigma_i stiffness
 
         pcd = Preconditioner()
         pcd.create_Jocobi(K_ie)
@@ -476,22 +497,22 @@ class Monodomain:
 
         K_ie = K_ie.to_sparse_csr()
         K_i = K_i.to_sparse_csr()
-        
+
         phie_list = []
         for i in range(Vm.shape[0]):
-            V = Vm[i, :]
-            
-            b = -K_i @ V
+            b = -K_i @ Vm[i, :]
             phi_e, n_iter = cg.solve(b, a_tol=a_tol, r_tol=r_tol, max_iter=max_iter)
-            
-            phi_e -= phi_e.mean()
+            phi_e = phi_e.clone()                       # detach from CG's reused internal buffer
+            phi_e -= phi_e.mean()                       # gauge the constant null-space
             phie_list.append(phi_e)
+            if verbose:
+                print(f"phi_e frame {i}: [{phi_e.min().item():.3f}, {phi_e.max().item():.3f}] | CG {n_iter}", flush=True)
 
-            print(phi_e.min().item(), phi_e.max().item(), n_iter)
-        
         phi_e_all = torch.stack(phie_list, dim=0)
-        torch.save(phi_e_all.cpu(), self.result_path / "Phi_e.pt")
-        print(phi_e_all.min().item(), phi_e_all.max().item())
+        if self.result_path is not None:
+            self.result_path.mkdir(parents=True, exist_ok=True)
+            torch.save(phi_e_all.cpu(), self.result_path / "Phi_e.pt")
+        return phi_e_all
 
 
     def simulated_ECG(self):
@@ -519,21 +540,6 @@ class Monodomain:
         ECGspd = pd.DataFrame(ECGs.data)
         print(ECGspd.columns)
         ECGspd.to_csv(self.result_path / 'simulated_filtered.dat', sep=' ', header=False, mode='w')
-    
-    def save_K_matrix(self, filepath="./heart_K.pt"):
-        K = self.K
-        K = K.cpu()
-
-        torch.save(
-            {
-                "crow_indices": K.crow_indices(),
-                "col_indices": K.col_indices(),
-                "values": K.values(),
-                "size": K.size(),
-                "dtype": K.dtype,
-            },
-            filepath,
-        )
 
 
 
