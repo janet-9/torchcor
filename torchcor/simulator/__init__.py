@@ -1,1 +1,2 @@
 from torchcor.simulator.monodomain import Monodomain
+from torchcor.simulator.reaction_eikonal import ReactionEikonal

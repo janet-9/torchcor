@@ -25,7 +25,7 @@ os.chdir(_HERE.parent)
 import torchcor as tc
 from torchcor.simulator import Monodomain
 from torchcor.ionic import TenTusscherPanfilov
-from ecg.leadfield import LeadField
+from torchcor.ecg import LeadField
 
 # ---------- Config ----------
 device = torch.device("cuda:0")

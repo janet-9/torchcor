@@ -180,7 +180,7 @@ lf.precompute_all()
 ecg = lf.compute_12lead(Vm)
 ```
 
-A complete heart → torso → 12-lead pipeline is provided in [`torchcor/ecg/run_ecg.py`](torchcor/ecg/run_ecg.py).
+A complete heart → torso → 12-lead pipeline is provided in [`torchcor/demo/ecg_12lead.py`](torchcor/demo/ecg_12lead.py).
 
 ## 🐳 Docker Support
 

@@ -769,6 +769,8 @@ class LeadField:
             else:
                 ax.plot(sig, "k", lw=0.8)
             ax.set_title(lead, fontsize=10, fontweight="bold")
+            ax.set_ylim(-5, 4)            # fixed, consistent scale (~ -4..4 mV)
+            ax.set_yticks([-4, -2, 0, 2, 4])
             ax.grid(True, alpha=0.3)
             ax.spines["top"].set_visible(False)
             ax.spines["right"].set_visible(False)
